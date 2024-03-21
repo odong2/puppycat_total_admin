@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.admin.AdminDaoSub">
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="adminColumns">
+        `snad`.`idx`,
+        `snad`.`id`,
+        `snad`.`name`,
+        `snad`.`password`,
+        `snad`.`level`,
+        `snad`.`login_ip`,
+        `snad`.`join_ip`,
+        CONVERT_TZ(`snad`.`last_login_date`, 'UTC', '${convertTZ}')  AS `last_login_date`,
+        CONVERT_TZ(`snad`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+        `snad`.`state`
+    </sql>
+
+    <!-- 검색 조건 -->
+    <sql id="adminSearch">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `snad`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `snad`.`name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `snad`.`state` = #{state}
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 로그인 성공시 회원 정보 가져오기 -->
+    <select id="getInfoForLogin" parameterType="AdminDto" resultType="AdminDto">
+        SELECT
+            `snad`.`idx`
+            ,`snad`.`id`
+            ,`snad`.`level`
+            ,`snad`.`state`
+            ,CONVERT_TZ(`snad`.`last_login_date`, 'UTC', '${convertTZ}')  AS `last_login_date`
+            ,CONVERT_TZ(`snad`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="databaseTotal" />`total_admin` AS `snad`
+        WHERE
+                `snad`.id = #{id}
+            AND `snad`.password = #{password}
+    </select>
+
+    <!-- id 로 체크하여 카운트 가져오기 -->
+    <select id="getCountById" parameterType="AdminDto" resultType="int">
+        SELECT
+            COUNT(`snad`.`idx`) AS `cnt`
+        FROM
+            <include refid="databaseTotal" />`total_admin` AS `snad`
+        WHERE `snad`.`id` = #{id}
+    </select>
+
+    <!-- 관리자 계정 전체 조회 -->
+    <select id="getListAdmin" parameterType="searchDto" resultType="AdminDto">
+        SELECT
+            <include refid="adminColumns" />
+        FROM <include refid="databaseTotal" />`total_admin` AS `snad`
+        <include refid="adminSearch"/>
+        ORDER BY `snad`.`reg_date` DESC
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+    </select>
+
+    <!-- 관리자 소셜 계정 전체 조회 -->
+    <select id="getListMemberAdmin" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`
+            , `pume`.`nick`
+        FROM <include refid="databaseMember" />`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseSns"/>`sns_member_admin` AS `snmead`
+            ON `pume`.`uuid` = `snmead`.`member_uuid`
+        ORDER BY `snmead`.`reg_date` DESC
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(*) AS `iTotalCount`
+        FROM <include refid="databaseTotal" />`total_admin` AS `snad`
+        <include refid="adminSearch"/>
+    </select>
+
+    <!-- 관리자 상세 -->
+    <select id="getViewAdmin" parameterType="_int" resultType="AdminDto">
+        SELECT
+            <include refid="adminColumns" />
+        FROM <include refid="databaseTotal" />`total_admin` AS `snad`
+        WHERE
+           `snad`.`idx` = #{idx}
+    </select>
+
+    <!-- 관리자 레벨 -->
+    <select id="getAdminLevel" parameterType="String" resultType="int">
+        SELECT
+            `toad`.`level`
+        FROM <include refid="databaseTotal" />`total_admin` AS `toad`
+        WHERE
+            `toad`.`id` = #{id}
+    </select>
+
+    <!-- Auth 체크 -->
+    <select id="getAuthCountById" parameterType="AdminDto" resultType="int">
+        SELECT
+            COUNT(`snad`.`idx`) AS `cnt`
+        FROM
+        <include refid="databaseTotal" />`total_admin` AS `snad`
+        WHERE `snad`.`idx` = #{idx}
+        AND `snad`.`id` = #{id}
+        AND `snad`.`level` = #{level}
+        AND `snad`.`last_login_date` = #{lastLoginDate}
+    </select>
+
+    <!-- 관리자 idx 조회 -->
+    <select id="getAdminIdxById" parameterType="String" resultType="Integer">
+        SELECT
+            `toad`.`idx`
+        FROM <include refid="databaseTotal"/>`total_admin` AS `toad`
+        WHERE
+            `toad`.`id` = #{id}
+    </select>
+
+</mapper>

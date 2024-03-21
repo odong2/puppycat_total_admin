@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `snco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                AND `snco`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                    AND (`snco`.`reg_date` >= #{searchStartDate} AND `snco`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+            AND `snco`.`menu_idx` <![CDATA[ = ]]> 1
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 회원 게시물 최근 20개 목록 by memberUuid-->
+    <select id="getContentLastTwentyCasesList" parameterType="ContentsDto" resultType="ContentsDto">
+        SELECT
+            `pume`.`idx` AS `member_idx`,
+            `pume`.`id` AS `member_id`,
+            `pume`.`nick` AS `member_nick`,
+            `snco`.contents AS `contents`,
+            `snco`.image_cnt AS `image_cnt`,
+            `snco`.is_comment AS `is_comment`,
+            `snco`.is_like AS `is_like`,
+            `snco`.is_view AS `is_view`,
+            `snco`.state AS `contents_state`,
+            IFNULL(`sncolicn`.`like_cnt`, 0) AS `like_cnt`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="databaseSns"/>`sns_contents` AS `snco`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+        INNER JOIN  <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        WHERE
+            `snco`.`member_uuid` = #{uuid}
+        ORDER BY  `snco`.`reg_date` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 컨텐츠 리스트 조회 -->
+    <select id="getListByIdx" parameterType="long" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx`,
+            `snco`.`state` AS `contentsState`,
+            CONVERT_TZ(`snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            `pume`.`nick` AS `memberNick`,
+            `sncoim`.`url` AS `thumbnailUrl`,
+            `sncoim`.`img_width`,
+            `sncoim`.`img_height`
+        FROM
+            <include refid="databaseSns"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `snco`.`member_uuid` = `pume`.`uuid`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                `snco`.`idx` = #{idx}
+            AND `sncoimre`.`idx` IS NULL
+        ORDER BY `sncoim`.`sort` ASC
+        LIMIT 1
+    </select>
+
+    <!-- 컨텐츠 메뉴 리스트 가져오기 -->
+    <select id="getMenuList" parameterType="ContentsDto" resultType="ContentsMenuDto">
+        SELECT
+            `sncome`.`idx`
+            , `sncome`.`name`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_menu`AS `sncome`
+        WHERE `sncome`.`state` = 1
+        ORDER BY `sncome`.`idx` ASC
+    </select>
+
+    <!-- 컨텐츠 위치 idx 가져오기 -->
+    <select id="getIdxByLocation" parameterType="string" resultType="Long">
+        SELECT
+            `sncolo`.`idx`
+        FROM
+            <include refid="databaseSns" />`sns_contents_location` AS `sncolo`
+        WHERE
+            `sncolo`.`location` = #{location}
+    </select>
+
+    <!-- 게시글 전체 카운트 -->
+    <select id="getTotalCount" parameterType="string" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseSns"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+            AND sncoim.sort = 1
+            AND sncoim.state = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 게시글 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `pume`.`uuid` AS `member_uuid`,
+            `pume`.`id` AS `member_id`,
+            `pume`.`idx` AS `member_idx`,
+            IFNULL(`pume`.`nick`, '') AS `member_nick`,
+            `snco`.`state` AS `contents_state`,
+            `snco`.`image_cnt` AS `imgCnt`,
+            `sncoim`.`url` AS `thumbnail_url`,
+            `snco`.`contents`,
+            `sncoim`.`img_width`,
+            `sncoim`.`img_height`,
+            `sncolicn`.`like_cnt`,
+            `sncosacn`.`save_cnt`,
+            `sncococn`.`comment_cnt`,
+            IFNULL(CONVERT_TZ( `snco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            COUNT(`sncore`.`idx`) AS `reportCnt`
+        FROM <include refid="databaseSns"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+            AND sncoim.sort = 1
+            AND sncoim.state = 1
+        INNER JOIN<include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`state` = 1
+        <include refid="searchCondition"/>
+        GROUP BY `snco`.`idx`, `sncoim`.`idx`
+            <choose>
+                <when test="searchSort == 'recent'">
+                    ORDER BY `snco`.`reg_date` DESC
+                </when>
+                <when test="searchSort == 'like'">
+                    ORDER BY `sncolicn`.`like_cnt` DESC, `snco`.`reg_date` DESC
+                </when>
+                <when test="searchSort == 'report'">
+                    ORDER BY `reportCnt` DESC, `snco`.`reg_date` DESC
+                </when>
+                <when test="searchSort == 'comment'">
+                    ORDER BY `sncococn`.`comment_cnt` DESC, `snco`.`reg_date` DESC
+                </when>
+                <when test="searchSort == 'save'">
+                    ORDER BY `sncosacn`.`save_cnt` DESC, `snco`.`reg_date` DESC
+                </when>
+            </choose>
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 인기 급상승 카운트 -->
+    <select id="getHourPopularTotalCnt" parameterType="SearchDto" resultType="Integer">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_hour_popular` AS `sncohopo`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncohopo`.`contents_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+                AND sncoim.sort = 1
+                AND sncoim.state = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 인기 급상승 리스트 -->
+    <select id="getHourPopularList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `pume`.`uuid` AS `member_uuid`,
+            `pume`.`id` AS `member_id`,
+            IFNULL(`pume`.`nick`, '') AS `member_nick`,
+            `snco`.`state` AS `contents_state`,
+            `sncoim`.`url` AS `thumbnail_url`,
+            `snco`.`contents`,
+            `sncoim`.`img_width`,
+            `sncoim`.`img_height`,
+            `sncolicn`.`like_cnt`,
+            `sncosacn`.`save_cnt`,
+            `sncococn`.`comment_cnt`,
+            IFNULL(CONVERT_TZ( `snco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            COUNT(`sncore`.`idx`) AS `reportCnt`,
+            `snco`.`image_cnt` AS `imgCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_hour_popular` AS `sncohopo`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncohopo`.`contents_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+            AND sncoim.sort = 1
+            AND sncoim.state = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`state` = 1
+        <include refid="searchCondition"/>
+        GROUP BY `snco`.`idx`, `sncoim`.`idx`, `sncohopo`.`rank`
+        ORDER BY `sncohopo`.`rank` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 주간 인기 카운트 -->
+    <select id="getWeekPopularTotalCnt" parameterType="SearchDto" resultType="Integer">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_week_popular` AS `sncowepo`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncowepo`.`contents_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+                AND sncoim.sort = 1
+                AND sncoim.state = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 주간 인기 리스트 -->
+    <select id="getWeekPopularList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `pume`.`uuid` AS `member_uuid`,
+            `pume`.`id` AS `member_id`,
+            IFNULL(`pume`.`nick`, '') AS `member_nick`,
+            `snco`.`state` AS `contents_state`,
+            `sncoim`.`url` AS `thumbnail_url`,
+            `snco`.`contents`,
+            `sncoim`.`img_width`,
+            `sncoim`.`img_height`,
+            `sncolicn`.`like_cnt`,
+            `sncosacn`.`save_cnt`,
+            `sncococn`.`comment_cnt`,
+            IFNULL(CONVERT_TZ( `snco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            COUNT(`sncore`.`idx`) AS `reportCnt`,
+            `snco`.`image_cnt` AS `imgCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_week_popular` AS `sncowepo`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncowepo`.`contents_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+            ON `sncoim`.`contents_idx` = `snco`.`idx`
+            AND sncoim.sort = 1
+            AND sncoim.state = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `snco`.`idx` = `sncolicn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_save_cnt` AS `sncosacn`
+            ON `snco`.`idx` = `sncosacn`.`contents_idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `snco`.`idx` = `sncococn`.`contents_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`state` = 1
+        <include refid="searchCondition"/>
+        GROUP BY `snco`.`idx`, `sncoim`.`idx`, `sncowepo`.`rank`
+        ORDER BY `sncowepo`.`rank` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 게시글 상세 by ContentsDto -->
+    <select id="getDetailList" parameterType="ContentsDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` ,
+            `sncome`.`name` AS `menu_name`,
+            `pume`.`nick` AS `member_nick`,
+            `pume`.`id` AS `member_id`,
+            `snco`.`is_comment`,
+            `snco`.`is_like`,
+            `snco`.`state` AS `contents_state`,
+            `snco`.`is_view`,
+            `snco`.`is_keep`,
+            `snco`.`contents`,
+            `sncolo`.`location`,
+            <if test="viewType == 'report'">
+            `sncore`.`contents` AS `reportContents`,
+            </if>
+            IFNULL(CONVERT_TZ( `snco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="databaseSns"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+        <if test="viewType == 'report'">
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+            ON `snco`.`idx` = `sncore`.`contents_idx`
+        </if>
+        WHERE
+            `snco`.`idx` = #{idx}
+        LIMIT 1
+    </select>
+
+    <!-- 게시글 이미지 목록 -->
+    <select id="getDetailImgList" parameterType="ContentsDto" resultType="ContentsImgDto">
+        SELECT
+            *
+        FROM
+            <include refid="databaseSns"/>`sns_contents_img` AS `sncoim`
+        WHERE
+            `sncoim`.`contents_idx` = #{idx}
+        AND `state` = 1
+    </select>
+
+    <!-- 이미지 내 목록 -->
+    <select id="getImgTag" parameterType="ContentsImgDto" resultType="ContentsImgTagDto">
+        SELECT
+            `pume`.`uuid` AS `member_uuid`,
+            `pume`.`nick` AS `member_nick`,
+            `snimmetama`.`width` AS `width`,
+            `snimmetama`.`height` AS `height`,
+            `snimmetama`.`state` AS `tag_state`
+        FROM
+            <include refid="databaseSns"/>`sns_img_member_tag_mapping` AS `snimmetama`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snimmetama`.`member_uuid`
+            AND `pume`.`state` = 1
+        WHERE
+                `snimmetama`.`img_idx` = #{idx}
+            AND `snimmetama`.`state` = 1
+    </select>
+
+    <!-- 좋아요 회원 카운트 -->
+    <select id="getLikeMemberTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            `like_cnt`
+        FROM <include refid="databaseSns"/>`sns_contents_like_cnt`
+        WHERE
+            `contents_idx` = #{idx}
+    </select>
+
+    <!-- 좋아요 회원 리스트 -->
+    <select id="getLikeMemberList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            CONVERT_TZ(`sncoli`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_like` AS `sncoli`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncoli`.`member_uuid` = `pume`.`uuid`
+        WHERE
+                `sncoli`.`contents_idx` = #{idx}
+            AND `sncoli`.`state` = 1
+        ORDER BY `sncoli`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 저장한 회원 카운트 -->
+    <select id="getSaveMemberTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            `save_cnt`
+        FROM <include refid="databaseSns"/>`sns_contents_save_cnt`
+        WHERE
+            `contents_idx` = #{idx}
+    </select>
+
+    <!-- 저장한 회원 리스트 -->
+    <select id="getSaveMemberList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            CONVERT_TZ(`sncosa`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_save` AS `sncosa`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncosa`.`member_uuid` = `pume`.`uuid`
+            AND `pume`.`state` = 1
+        WHERE
+                `sncosa`.`contents_idx` = #{idx}
+            AND `sncosa`.`state` = 1
+        ORDER BY `sncosa`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 댓글 작성한 회원 카운트 -->
+    <select id="getCommentsTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            `comment_cnt`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_cnt`
+        WHERE
+            `contents_idx` = #{idx}
+    </select>
+
+    <!-- 댓글 작성한 회원 리스트 -->
+    <select id="getCommentsList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            `sncoco`.`contents`,
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"></include>`puppycat_member` AS `pume`
+            ON `sncoco`.`member_uuid` = `pume`.`uuid`
+            AND `pume`.`state` = 1
+        WHERE
+                `sncoco`.`contents_idx` = #{idx}
+            AND `sncoco`.`state` = 1
+        ORDER BY `sncoco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 컨텐츠 신고 카운트 -->
+    <select id="getReportTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+        WHERE
+                `contents_idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 컨텐츠 신고한 회원 리스트 -->
+    <select id="getReportMemberList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            CONVERT_TZ(`sncore`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncore`.`member_uuid` = `pume`.`uuid`
+            AND `pume`.`state` = 1
+        WHERE
+                `sncore`.`contents_idx` = #{idx}
+            AND `sncore`.`state` = 1
+        ORDER BY `sncore`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+</mapper>

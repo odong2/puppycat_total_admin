@@ -1,0 +1,102 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.admin.title.mypage}"></h5>
+            </div>
+
+            <div class="card-body row">
+                <form id="frm" accept-charset="utf-8">
+                    <table class="table">
+                        <thead></thead>
+                        <colgroup>
+                            <col style="width: 20%;">
+                        </colgroup>
+                        <tbody>
+                        <tr style="border:solid currentColor; border-width:2px 0px;">
+                            <th class="table-primary" colspan="2" th:text="#{lang.admin.information}"></th>
+                        </tr>
+                        </tbody>
+                        <tbody>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.idx}"></th>
+                            <td class="p-0 pl-2" name="idx" id="idx"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.id}"></th>
+                            <td class="p-0 pl-2" name="id" id="id"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.name}"></th>
+                            <td class="p-0 pl-2" name="name" id="name"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.level}"></th>
+                            <td class="p-0 pl-2">
+                                <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="level" id="level0" value="0" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level0">Lv0</label>
+                                    <input type="radio" class="btn-check" name="level" id="level1" value="1" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level1">Lv1</label>
+                                    <input type="radio" class="btn-check" name="level" id="level2" value="2" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level2">Lv2</label>
+                                    <input type="radio" class="btn-check" name="level" id="level3" value="3" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level3">Lv3</label>
+                                    <input type="radio" class="btn-check" name="level" id="level4" value="4" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level4">Lv4</label>
+                                    <input type="radio" class="btn-check" name="level" id="level7" value="7" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level7">Lv7</label>
+                                    <input type="radio" class="btn-check" name="level" id="level8" value="8" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level8">Lv8</label>
+                                    <input type="radio" class="btn-check" name="level" id="level9" value="9" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="level9">Lv9</label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.state}"></th>
+                            <td class="p-0 pl-2">
+                                <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="state" id="state1" value="1" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-success" for="state1" th:text="#{lang.admin.state.normal}"></label>
+                                    <input type="radio" class="btn-check" name="state" id="state2" value="2" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-warning" for="state2" th:text="#{lang.admin.state.wait}"></label>
+                                    <input type="radio" class="btn-check" name="state" id="state0" value="0" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-danger" for="state0" th:text="#{lang.admin.state.out}"></label>
+                                </div>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.login_ip}"></th>
+                            <td class="p-0 pl-2" name="loginIp"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.login_date}"></th>
+                            <td class="p-0 pl-2" name="loginDate"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.join_ip}"></th>
+                            <td class="p-0 pl-2" name="joinIp"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.admin.regdate}"></th>
+                            <td class="p-0 pl-2" name="regdate"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="form-group row">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="admin.list();" th:text="#{lang.admin.button.list}"></button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="admin.modify();" th:text="#{lang.admin.button.modify}"></button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="admin.modifyPasswordPopup();" th:text="#{lang.admin.button.modify.password}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

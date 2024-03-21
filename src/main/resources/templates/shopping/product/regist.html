@@ -1,0 +1,233 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.product.MP.register}"></h5>
+            </div>
+
+            <div class="card-body row">
+                <form id="frm" onsubmit="return false;" accept-charset="utf-8">
+                    <!-- 카테고리 선택 -->
+                    <div id="lay_category_select">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width:33.3%;">
+                                <col style="width:33.3%;">
+                                <col style="width:33.3%;">
+                            </colgroup>
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="3" th:text="#{lang.category.title.view}"></th>
+                                </tr>
+                                <tr></tr>
+                            </thead>
+                            <tbody>
+                                <tr></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- //카테고리 선택 -->
+
+                    <!-- 브랜드 선택 -->
+                    <div id="lay_brand_select">
+                        <table class="table">
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" th:text="#{lang.brand.title.view}"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- //브랜드 선택 -->
+
+                    <!-- 상품 기본 정보 -->
+                    <div id="lay_information">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width: 20%;">
+                            </colgroup>
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="2" th:text="#{lang.product.information}"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 상품명 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.name}"></th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" class="form-control form-control-sm" name="productName" id="productName">
+                                        <span class="fncut_info"><span class="current_cnt">0</span> /250</span>
+                                    </td>
+                                </tr>
+                                <!-- 정가 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.price}"></th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" class="form-control form-control-sm" name="price" id="price">
+                                    </td>
+                                </tr>
+                                <!-- 썸네일 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.thumb}"></th>
+                                    <td>
+                                        <div class="preview" id="thumbnail"></div>
+
+                                        <div class="col-md-8 col-sm-9 pt-1">
+                                            <label class="py-1 px-3 rounded-2">
+                                                <input type="file" name="fileData" multiple="" accept="image/jpg,image/jpeg,image/png" onchange="image.add(this);" th:text="#{lang.product.button.file}">
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 상품 상세 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.detail}"></th>
+                                    <td class="p-0 pl-2 py-1">
+                                        <textarea class="w-100 p-1 rounded-1 mt-2" maxlength="1000" rows="6" name="detail" id="detail"></textarea>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- //상품 기본 정보 -->
+
+                    <!-- 상품 주요 정보 -->
+                    <div id="lay_main">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width: 20%;">
+                            </colgroup>
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="2" th:text="#{lang.product.main}"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 인증정보 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.certification}"></th>
+                                    <td>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="certificationType" id="typeTarget" value="1">
+                                            <label class="form-check-label" for="typeTarget" th:text="#{lang.product.certification.type.target}"></label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="certificationType" id="typeNotTarget" value="0">
+                                            <label class="form-check-label" for="typeNotTarget" th:text="#{lang.product.certification.type.not_target}"></label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="certificationType" id="typeDetail" value="2">
+                                            <label class="form-check-label" for="typeDetail" th:text="#{lang.product.certification.type.detail}"></label>
+                                        </div>
+                                        <div class="certification-wrapper d-none">
+                                            <div>
+                                                <ul class="row m-0">
+                                                    <li class="col-sm-4 table-header" th:text="#{lang.product.certification.type}"></li>
+                                                    <li class="col-sm-4 table-header" th:text="#{lang.product.certification.number}"></li>
+                                                    <li class="col-sm-4 table-header" th:text="#{lang.product.button.add.delete}"></li>
+                                                </ul>
+                                            </div>
+                                            <div id="certification">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 상품정보 제공고시 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.attribute}"></th>
+                                    <td>
+                                        <div style="padding-bottom: 0.6rem;" id="attributeSet"></div>
+                                        <div id="attributeName"></div>
+                                    </td>
+                                </tr>
+                                <!-- 구성성분(알러지) -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.ingredient}"></th>
+                                    <td>
+                                        <div class="ingredient-wrapper">
+                                            <div>
+                                                <ul class="row m-0">
+                                                    <li class="col-sm-3 table-header" th:text="#{lang.product.ingredient}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.ingredient.ratio}"></li>
+                                                    <li class="col-sm-3 table-header" th:text="#{lang.product.ingredient.value}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.ingredient.unit}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.button.add.delete}"></li>
+                                                </ul>
+                                            </div>
+                                            <div id="ingredient">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 건강질환 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.health}"></th>
+                                    <td>
+                                        <div id="health">
+                                            <ul class="list-group list-group-horizontal">
+                                                <li th:each="health : ${jsonData.get('healthList')}" class="list-group-item border-top-0" th:attr="data-idx=${health.get('idx')}" onclick="selected.health(this);" th:value="${health.get('idx')}" th:text="${health.get('health')}"></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 용량 -->
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.volume}"></th>
+                                    <td>
+                                        <div class="ingredient-wrapper">
+                                            <div>
+                                                <span>Ex)총용량 3kg, 100g당:1000원 => 3000, kg, 100, g</span>
+                                                <ul class="row m-0">
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.volume.total}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.volume.unit}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.volume.standard}"></li>
+                                                    <li class="col-sm-2 table-header" th:text="#{lang.product.volume.standard.unit}"></li>
+                                                </ul>
+                                            </div>
+                                            <div id="volume">
+                                                <ul class="row m-0">
+                                                    <li class="col-sm-2">
+                                                        <input type="number" class="form-control form-control-sm" name="volume">
+                                                    </li>
+                                                    <li class="col-sm-2">
+                                                        <select class="form-select form-select-sm" name="volumeUnit">
+                                                            <option value="0" th:text="#{lang.product.placeholder.select}"></option>
+                                                            <option th:each="unit : ${jsonData.get('unitList')}" th:value="${unit.get('idx')}" th:text="${unit.get('unit')}"></option>
+                                                        </select>
+                                                    </li>
+                                                    <li class="col-sm-2">
+                                                        <input type="number" class="form-control form-control-sm" name="standard">
+                                                    </li>
+                                                    <li class="col-sm-2">
+                                                        <select class="form-select form-select-sm" name="standardUnit">
+                                                            <option value="0" th:text="#{lang.product.placeholder.select}"></option>
+                                                            <option th:each="unit : ${jsonData.get('unitList')}" th:value="${unit.get('idx')}" th:text="${unit.get('unit')}"></option>
+                                                        </select>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- //상품 주요 정보 -->
+
+                    <div class="form-group row" id="btnGroup">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="productMp.list(1);" th:text="#{lang.common.button.close}"></button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="productMp.register()" th:text="#{lang.common.button.regist}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

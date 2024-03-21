@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.partner.PartnerDaoSub">
+
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `shpa`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'president'">
+                        AND `shpade`.`president` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'companyName'">
+                        AND `shpade`.`company_name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'loginIp'">
+                        AND `shpa`.`login_ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'joinIp'">
+                        AND `shpa`.`join_ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'phone'">
+                        AND  replace(`shpain`.`phone`,'-','') LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                AND `shpa`.`state` = #{state}
+            </if>
+            <if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''">
+                <choose>
+                    <when test="searchDateType.equals('lastLogin')">
+                        AND (`shpa`.`last_login_date`<![CDATA[>=]]> #{searchStartDate} AND `shpa`.`last_login_date` <![CDATA[<=]]> #{searchEndDate})
+                    </when>
+                    <when test="searchDateType.equals('regDate')">
+                        AND (`shpa`.`reg_date`<![CDATA[>=]]> #{searchStartDate} AND `shpa`.`reg_date` <![CDATA[<=]]> #{searchEndDate})
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 파트너 리스트 -->
+    <select id="getPartnerTotalCount" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`shpa`.`idx`) AS `totalCnt`
+        FROM <include refid="databaseShop"/>`shop_partner` AS `shpa`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpa`.`idx` = `shpade`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_info` AS `shpain`
+            ON `shpa`.`idx` = `shpain`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_restrain` AS `shpare`
+            ON `shpa`.`idx` = `shpare`.`partner_idx`
+            AND `shpare`.`state` = 1
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 파트너 리스트 -->
+    <select id="getPartnerList" parameterType="SearchDto" resultType="PartnerDto">
+        SELECT
+            DISTINCT `shpa`.`idx`,
+            IF(`shpare`.`state` IS NOT NULL, 9,`shpa`.`state`) AS `state`,
+            `shpa`.`id`,
+            `shpade`.`president`,
+            `shpade`.`company_name`,
+            `shpade`.`business_type`,
+            `shpade`.`business_item`,
+            `shpade`.`email`,
+            `shpade`.`company_tel`,
+            `shpain`.`phone`,
+            CONVERT_TZ(`shpa`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            CONVERT_TZ(`shpa`.`last_login_date`, 'UTC', '${convertTZ}') AS `last_login_date`
+        FROM <include refid="databaseShop"/>`shop_partner` AS `shpa`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpa`.`idx` = `shpade`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_info` AS `shpain`
+            ON `shpa`.`idx` = `shpain`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_restrain` AS `shpare`
+            ON `shpa`.`idx` = `shpare`.`partner_idx`
+            AND `shpare`.`state` = 1
+        <include refid="searchCondition"/>
+        ORDER BY `reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 회원 가입시 입력한 파트너 정보 조회 -->
+    <select id="getPartnerDetailByIdx" parameterType="_int" resultType="PartnerDto">
+        SELECT
+            DISTINCT `shpa`.`idx`,
+            `shpa`.`id`,
+            `shpa`.`partner_code`,
+            `shpa`.`password`,
+            `shpa`.`partner_code`,
+            IF(`shpare`.`state` IS NOT NULL, 9,`shpa`.`state`) AS `state`,
+            `shpade`.`president`,
+            `shpade`.`president_tel`,
+            `shpade`.`business_number`,
+            `shpade`.`company_name`,
+            `shpade`.`company_number`,
+            `shpade`.`tax_type`,
+            `shpade`.`president_type`,
+            `shpade`.`business_type`,
+            `shpade`.`business_item`,
+            `shpade`.`approval_number`,
+            `shpade`.`company_type`,
+            `shpade`.`company_zipcode`,
+            `shpade`.`company_addr`,
+            `shpade`.`company_addr_detail`,
+            IFNULL(`shpade`.`email`, '') AS email,
+            IFNULL(`shpade`.`company_tel`, '') AS company_tel,
+            IFNULL(`shpade`.`website`, '') AS website,
+            `shpain`.`name`,
+            `shpain`.`phone`,
+            `shpain`.`txseq`,
+            `shpain`.`ip`,
+            `shpain`.`ci`,
+            `shpain`.`di`
+        FROM <include refid="databaseShop"/>`shop_partner` AS `shpa`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpa`.`idx` = `shpade`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_info` AS `shpain`
+            ON `shpa`.`idx` = `shpain`.`partner_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_restrain` AS `shpare`
+            ON `shpa`.`idx` = `shpare`.`partner_idx`
+            AND `shpare`.`state` = 1
+        WHERE
+            `shpa`.`idx` = #{idx}
+    </select>
+
+    <!-- 회원가입 시 업로드한 이미지 조회 -->
+    <select id="getPartnerJoinImgListByIdx" parameterType="_int" resultType="PartnerImgDto">
+        SELECT
+            `shpaim`.`idx`,
+            `shpaim`.`file_name`,
+            `shpaim`.`type`
+        FROM <include refid="databaseShop"/>`shop_partner_img` AS `shpaim`
+        WHERE
+                `shpaim`.`partner_idx` = #{idx}
+            AND `shpaim`.`state` = 1
+        ORDER BY
+            `shpaim`.`type`, `shpaim`.`sort`
+    </select>
+
+    <!-- 파트너 거래 은행 정보 조회 -->
+    <select id="getPartnerBankInfoByIdx" parameterType="_int" resultType="PartnerBankDto">
+        SELECT
+            `shpaba`.`bank_idx`,
+            `shpaba`.`account_holder`,
+            `shpaba`.`account_number`,
+            `shbaca`.`name` AS `bankName`
+        FROM <include refid="databaseShop"/>`shop_partner_bank` AS `shpaba`
+        INNER JOIN <include refid="databaseShop"/>`shop_bank_category` AS `shbaca`
+            ON `shpaba`.`bank_idx` = `shbaca`.`idx`
+            AND `shbaca`.`state` = 1
+        WHERE
+                `shpaba`.`partner_idx` = #{idx}
+            AND `shpaba`.`state` = 1
+    </select>
+
+    <!-- 파트너 매니저 리스트 조회 -->
+    <select id="getPartnerManagerListByIdx" parameterType="_int" resultType="PartnerManagerDto">
+        SELECT
+            `partner_idx`,
+            `type`,
+            `manager_name`,
+            `tel`,
+            `phone`,
+            `email`
+        FROM <include refid="databaseShop"/>`shop_partner_manager`
+        WHERE
+                `partner_idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 파트너 이미지 조회 -->
+    <select id="getPartnerImgByIdx" parameterType="_int" resultType="PartnerImgDto">
+        SELECT
+            `idx`,
+            `type`,
+            `file_name`,
+            `url`,
+            `sort`,
+            `state`
+        FROM <include refid="databaseShop"/>`shop_partner_img`
+        WHERE
+            `idx` = #{idx}
+    </select>
+
+    <!-- 최근 반려 사유 조회 -->
+    <select id="getPartnerRejectReason" parameterType="int" resultType="String">
+        SELECT
+            `reason`
+        FROM <include refid="databaseShop"/>`shop_partner_reason`
+        WHERE
+            `partner_idx` = #{idx}
+        ORDER BY `reg_date` DESC
+        LIMIT 1
+    </select>
+
+    <!-- id 로 체크하여 카운트 가져오기 -->
+    <select id="getCountById" parameterType="String" resultType="int">
+        SELECT
+            COUNT(`shpa`.`idx`) AS `cnt`
+        FROM <include refid="databaseShop" />`shop_partner` AS `shpa`
+        WHERE
+            `shpa`.`id` = #{id}
+    </select>
+
+    <!-- id 로 체크하여 카운트 가져오기 -->
+    <select id="getPartnerCompayNameList" resultType="PartnerDto">
+        SELECT
+            `shpa`.`main_idx`
+            ,`shpa`.`partner_code`
+            ,`shpade`.`company_name`
+        FROM <include refid="databaseShop" />`shop_partner` as `shpa`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpa`.`idx` = `shpade`.`partner_idx`
+        ORDER BY `shpade`.`company_name` ASC
+    </select>
+</mapper>

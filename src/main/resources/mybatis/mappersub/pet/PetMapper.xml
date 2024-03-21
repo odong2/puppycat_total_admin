@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.pet.PetDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+    <where>
+        <if test="searchWord != '' and searchWord != null">
+            <bind name="val" value="'%' + searchWord + '%'" />
+            <choose>
+                <when test="searchType == 'id'">
+                    AND `pume`.`id` LIKE #{val}
+                </when>
+                <when test="searchType == 'nick'">
+                    AND `pume`.`nick` LIKE #{val}
+                </when>
+                <when test="searchType == 'name'" >
+                    AND `pet`.`name` LIKE #{val}
+                </when>
+                <when test="searchType == 'breed'" >
+                    AND `pebr`.`name` LIKE #{val}
+                </when>
+            </choose>
+        </if>
+        <if test="type != null">
+            AND `pety`.`idx` = #{type}
+        </if>
+        <if test="state != null and state == 0">
+            AND `snmepe`.`state` = #{state}
+        </if>
+        <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+            <![CDATA[
+                AND (`pet`.`reg_date` >= #{searchStartDate} AND `pet`.`reg_date` <= #{searchEndDate})
+                ]]>
+        </if>
+    </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 반려동물 카운트 -->
+    <select id="getTotalPetCount" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`snmepe`.`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_member_pet` AS `snmepe`
+        INNER JOIN <include refid="databaseSns"/>`pet` AS `pet`
+            ON `pet`.`idx` = `snmepe`.`pet_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmepe`.`member_idx`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pebr`.`idx` = `breed_idx`
+            AND `pebr`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+            AND `pety`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_info` AS `pein`
+            ON `pein`.`pet_idx` = `pet`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_code` AS `pepeco`
+            ON `pepeco`.`idx` = `pein`.`personality_idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_etc` AS `pebret`
+            ON `pebret`.`pet_idx` = `pet`.`idx`
+            AND `pebret`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_etc` AS `pepeet`
+            ON `pepeet`.`pet_idx` = `pein`.`idx`
+            AND `pepeet`.`state` = 1
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 반려동물 리스트 -->
+    <select id="getPetList" parameterType="SearchDto" resultType="PetDto">
+        SELECT
+            `pet`.`name`,
+            `snmepe`.`member_idx`,
+            `snmepe`.`pet_idx` AS `idx`,
+            `snmepe`.`state`,
+            `pume`.`id` AS `memberId`,
+            `pume`.`nick` AS `memberNick`,
+            `pety`.`name` AS `typeName`,
+            `pein`.`number`,
+            `pein`.`gender`,
+            `pein`.`size`,
+            `pein`.`weight`,
+            `pein`.`birth`,
+            `pepeco`.`idx` AS `personalityIdx`,
+            `pebr`.`idx`AS `breedIdx`,
+            `pebr`.`name` AS `breedName`,
+            IFNULL(`pebr`.`name`, '') AS `breedName`,
+            IFNULL(`pebret`.`name`, '') AS `breedNameEtc`,
+            IFNULL(`pepeco`.`name`, '') AS `personality`,
+            IFNULL(`pepeet`.`personality`, '') AS `personalityEtc`,
+            CONVERT_TZ( `pet`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`
+        FROM <include refid="databaseSns"/>`sns_member_pet` AS `snmepe`
+        INNER JOIN <include refid="databaseSns"/>`pet` AS `pet`
+            ON `pet`.`idx` = `snmepe`.`pet_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmepe`.`member_idx`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pebr`.`idx` = `breed_idx`
+            AND `pebr`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+            AND `pety`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_info` AS `pein`
+            ON `pein`.`pet_idx` = `pet`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_code` AS `pepeco`
+            ON `pepeco`.`idx` = `pein`.`personality_idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_etc` AS `pebret`
+            ON `pebret`.`pet_idx` = `pet`.`idx`
+            AND `pebret`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_etc` AS `pepeet`
+            ON `pepeet`.`pet_idx` = `pein`.`idx`
+            AND `pepeet`.`state` = 1
+        <include refid="searchCondition"/>
+        ORDER BY `snmepe`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 반려동물 상세 -->
+    <select id="getPetDetail" parameterType="SearchDto" resultType="PetDto">
+        SELECT
+            `pet`.`name`,
+            `snmepe`.`member_idx`,
+            `snmepe`.`pet_idx` AS `idx`,
+            `snmepe`.`state`,
+            `pume`.`id` AS `memberId`,
+            `pume`.`nick` AS `memberNick`,
+            `pety`.`name` AS `typeName`,
+            `pein`.`number`,
+            `pein`.`gender`,
+            `pein`.`size`,
+            `pein`.`weight`,
+            `pein`.`birth`,
+            `pepeco`.`idx` AS `personalityIdx`,
+            `pebr`.`idx`AS `breedIdx`,
+            `pebr`.`name` AS `breedName`,
+            `peprim`.`img_width`,
+            `peprim`.`img_height`,
+            `peprim`.`sort` AS `imgSort`,
+            IFNULL(`peprim`.`url`, '') AS url,
+            IFNULL(`pebr`.`name`, '') AS `breedName`,
+            IFNULL(`pebret`.`name`, '') AS `breedNameEtc`,
+            IFNULL(`pepeco`.`name`, '') AS `personality`,
+            IFNULL(`pepeet`.`personality`, '') AS `personalityEtc`,
+            CONVERT_TZ( `pet`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`
+        FROM <include refid="databaseSns"/>`sns_member_pet` AS `snmepe`
+        INNER JOIN <include refid="databaseSns"/>`pet` AS `pet`
+            ON `pet`.`idx` = `snmepe`.`pet_idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmepe`.`member_idx`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pebr`.`idx` = `breed_idx`
+            AND `pebr`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+            AND `pety`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`pet_info` AS `pein`
+            ON `pein`.`pet_idx` = `pet`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_code` AS `pepeco`
+            ON `pepeco`.`idx` = `pein`.`personality_idx`
+            AND `pepeco`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_etc` AS `pebret`
+            ON `pebret`.`pet_idx` = `pet`.`idx`
+            AND `pebret`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_etc` AS `pepeet`
+            ON `pepeet`.`pet_idx` = `pein`.`idx`
+            AND `pepeet`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_profile_img` AS `peprim`
+            ON `peprim`.`pet_idx` = `pet`.`idx`
+        WHERE
+            `snmepe`.`pet_idx` = #{petIdx}
+        AND `snmepe`.`member_idx` = #{memberIdx}
+    </select>
+
+    <!-- 알러지 정보 리스트 -->
+    <select id="getPetAllergyListByIdx" parameterType="Long" resultType="String">
+        SELECT
+            `pealty`.`name` AS `name`
+        FROM <include refid="databaseSns"/>`pet` AS `pet`
+        LEFT JOIN <include refid="databaseSns"/>`pet_info_allergy` AS `peinal`
+            ON `peinal`.`pet_idx` = `pet`.`idx`
+            AND `peinal`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_allergy_type` AS `pealty`
+            ON `pealty`.`idx` = `peinal`.`allergy_type_idx`
+            AND `pealty`.`state` = 1
+        WHERE
+            `pet`.`idx` = #{idx}
+    </select>
+
+    <!-- 건강 정보 리스트 -->
+    <select id="getPetHealthListByIdx" parameterType="Long" resultType="String">
+        SELECT
+            `pehety`.`name` AS `name`
+        FROM <include refid="databaseSns"/>`pet` AS `pet`
+        LEFT JOIN <include refid="databaseSns"/>`pet_info_health` AS `peinhe`
+            ON `peinhe`.`pet_idx` = `pet`.`idx`
+            AND `peinhe`.`state` = 1
+        LEFT JOIN <include refid="databaseSns"/>`pet_health_type` AS `pehety`
+            ON `pehety`.`idx` = `peinhe`.`health_type_idx`
+            AND `pehety`.`state` = 1
+        WHERE
+            `pet`.`idx` = #{idx}
+    </select>
+
+    <!-- 반려동물 정보 리스트 by uuid -->
+    <select id="getPetInfoListByUuid" parameterType="List" resultType="PetDto">
+        SELECT
+            `pet`.`idx` AS `idx`,
+            `pet`.`uuid` AS `uuid`,
+            `pet`.`name` AS `name`,
+            `pein`.`age` AS `age`,
+            `pein`.`birth` AS `birth`,
+            `pein`.`number` AS `number`,
+            `pepeco`.`name` AS `personality`,
+            `pepeet`.`personality` AS `personalityEtc`,
+            `pety`.`name` AS `typeName`,
+            `pebr`.`name` AS `breedName`,
+            `pebret`.`name` AS `breedNameEtc`
+        FROM <include refid="databaseSns"/>`pet` AS `pet`
+        INNER JOIN <include refid="databaseSns"/>`pet_info` AS `pein`
+            ON `pein`.`pet_idx` = `pet`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pet`.`breed_idx` = `pebr`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_code` AS `pepeco`
+            ON `pein`.`personality_idx` = `pepeco`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_personality_etc` AS `pepeet`
+            ON `pet`.`idx` = `pepeet`.`pet_idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_etc` AS `pebret`
+            ON `pet`.`idx` = `pebret`.`pet_idx`
+        WHERE
+            `pet`.`uuid` IN
+            <foreach collection="petUuidList" item="uuid" open="(" separator="," close=")">
+                #{uuid}
+            </foreach>
+    </select>
+
+</mapper>

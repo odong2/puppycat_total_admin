@@ -1,0 +1,431 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        // 상세 정보
+        partner_product.view();
+
+        // 디폴트 탭 1
+        selected.showTab('tab1');
+        selected.showHideCertification('target');
+    });
+
+     // json data
+    let jsonStr = '[[${jsonData}]]';
+    let jsonObject = JSON.parse(jsonStr.replace(/&quot;/g,'"'));
+
+    // 인증유형 리스트
+    let certificationList = jsonObject['certificationList'];
+    // 상품정보 제공고시
+    let attributeSetList = jsonObject['attributeSetList'];
+
+    let text = {
+        wonText: "[[#{lang.product.partner.won}]]",
+        gaeText: "[[#{lang.product.partner.gae}]]",
+        freeText: "[[#{lang.product.partner.cost.free}]]",                      // 무료
+        certificationType: "[[#{lang.product.partner.certification.type}]]",           // 인증유형
+        certificationNumber: "[[#{lang.product.partner.certification.number}]]",       // 인증번호
+        atrributePartner: "[[#{lang.product.partner.product.attribute}]]",             // 파트너사에서 등록된 정보입니다.
+        placeholder: {
+            selected: "[[#{lang.product.placeholder.select}]]",                     // 선택해주세요.
+            reference: "[[#{lang.product.placeholder.reference}]]",                 // 상품 상세설명 참조
+            referenceSet: "[[#{lang.product.placeholder.reference.setting}]]",      // '상품 상세설명 참조' 설정
+            returnReason: "[[#{lang.product.placeholder.return.reason}]]",          // 반려 사유를 입력해주세요.
+        }
+        ,approvalBtn: "[[#{lang.product.partner.button.approval}]]"             // 승인 버튼
+        ,refuseBtn: "[[#{lang.product.partner.button.refuse}]]"                 // 반려 버튼
+        ,refuseConfirmMessage:"[[#{lang.product.partner.confirm.refuse}]]"      //요청을 반려하시겠습니까?
+        ,approvalConfirmMessage:"[[#{lang.product.partner.confirm.approval}]]"  //요청을 승인하시겠습니까?
+    }
+
+   let partner_product = {
+         view: function () {
+            // 상세 정보
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/product/partner/view/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        let productPartner = res.data.productPartner;
+                        // 버튼 세팅
+                        if(productPartner.state == 2){
+                            // 승인
+                           let approvalBtn = `<button type="button" class="btn btn-sm btn-primary" onclick="partner_product.approval()">${text.approvalBtn}</button> `;
+                           $('#approvalBtn').replaceWith(approvalBtn);
+                           // 반려
+                           let refuseBtn = `<button type="button" class="btn btn-sm btn-danger" onclick="partner_product.refuse()">${text.refuseBtn}</button>`;
+                            $('#refuseBtn').replaceWith(refuseBtn);
+                        }
+
+                        // 반려 상태이면 반려 사유 노출
+                        if(productPartner.state == 9){
+                            $("#returnReasonArea").removeClass('hidden');
+                             $("td[name=returnReason]").text(productPartner.returnReason);
+                             $("td[name=returnReasonAdmin]").text(productPartner.returnReasonAdmin);
+                        }
+
+                        // 등록일
+                         $("td[name=regdate]").text(productPartner.regDate);
+                         // 상품 상태
+                         $("td[name=state]").text(productPartner.stateText);
+                         // 판매가
+                         $("td[name=salePrice]").text(productPartner.salePrice.toLocaleString()  + text.wonText);
+                         // 포인트 지급 설정
+                         $("td[name=benefitPoint]").text(productPartner.benefitStateText);
+                         // 설정 노출 최저가
+                         $("td[name=setMinPrice]").text(productPartner.discountPrice.toLocaleString()  + text.wonText);
+
+                         // 현재 노출 최저가
+                         var nowMinPrice = productPartner.nowMinPrice;
+                         if(nowMinPrice!=null && nowMinPrice!=""){
+                             $("td[name=nowMinPrice]").text(nowMinPrice.toLocaleString() +" "+ text.wonText);
+                         }else{
+                             $("td[name=nowMinPrice]").text("-");
+                         }
+
+                         // 파트너사
+                         $("td[name=partnerName]").text(productPartner.companyName);
+
+                         // 상품명
+                         $("#productName").val(productPartner.productName);
+
+                        // 카테고리
+                        let categoryName = "";
+                        if (productPartner.categoryList.length > 0) {
+                            let groupNum = "";
+
+                            categoryName += "<div>";
+                            $.each(productPartner.categoryList, function (idx, categoryEl) {
+                                let division = "";
+                                if (groupNum == categoryEl.groupNum) {
+                                    division = "<span> > </span>";
+                                } else {
+                                    groupNum = categoryEl.groupNum;
+                                    if (idx != 0) {
+                                        division = "";
+                                        categoryName += "</div>";
+                                    }
+                                }
+                                categoryName += division + `<span class="mx-2" data-code="${categoryEl.code}">${categoryEl.category}</span>`
+                            })
+                            categoryName += "</div>";
+                        }
+                        $("#category_div").html(categoryName);
+
+                         // 상품 상세
+                         $("#detail").html(productPartner.detail);
+                         // 정가
+                         $("td[name=orginPrice]").text(productPartner.price.toLocaleString() +" "+ text.wonText);
+                         // 판매가
+                         $("td[name=salePrice]").text(productPartner.salePrice.toLocaleString() +" "+ text.wonText);
+
+                         // 포인트 지급 설정
+                         $("#benefitState").html(`<span class="badge ${productPartner.benefitStateBg}">${productPartner.benefitStateText}</span>`);
+                         // 임시저장이 아니고, 판매가 사용일때
+                         if(productPartner.benefitState == 1 && productPartner.state != 10){
+                            $("#lowestPriceTable").removeClass('hidden');
+                         }
+                         $("#buy").text(productPartner.buy.toLocaleString() +" "+ text.wonText);
+                        if (productPartner.isAuto == 1) {
+                            $('#isAuto').prop('checked', true);
+                        }
+                        $("#review").text(productPartner.review.toLocaleString() +" "+ text.wonText);
+                        $("#review30").text(productPartner.review30.toLocaleString() +" "+ text.wonText);
+
+                        // 최저가 설정
+                        $("#minPriceState").html(`<span class="badge ${productPartner.syncBg}">${productPartner.syncText}</span>`);
+                         // 임시저장이 아니고, 최저가 설정 사용일때
+                         if(productPartner.sync == 1 && productPartner.state != 10){
+                            $("#finalLowestPriceTable").removeClass('hidden');
+                         }
+
+                        $("#minPrice").text(productPartner.minPrice.toLocaleString() +" "+ text.wonText);
+
+                        // 상품 재고 설정
+                        // 재고 수량
+                        if (productPartner.unlimit == 1) {
+                            $('#unlimit').prop('checked', true);
+                        }else{
+                            $("#stock").text(productPartner.stock.toLocaleString() +" "+ text.gaeText);
+                        }
+                        // 알람
+                        $("#alarm").html(`<span class="badge ${productPartner.alarmBg}">${productPartner.alarmText}</span>`);
+                         // 임시저장이 아니고, alarm 설정 사용일때
+                         if(productPartner.alarm == 1 && productPartner.state != 10){
+                            $("#stockAlarmTable").removeClass('hidden');
+                         }
+                        $("#alarmCount").text(productPartner.alarmCount.toLocaleString() +" "+ text.gaeText);
+
+                        // 정가
+                        var orginPrice = productPartner.price;
+
+                       // 인증정보
+                        var certificationTypeValue = productPartner.certificationType;
+                        $('input[name="certificationType"]').prop('disabled', false);
+                        // 모든 라디오 버튼을 순회하면서 처리합니다.
+                        $('input[name="certificationType"]').each(function() {
+                            // 라디오 버튼의 값과 productMp.certificationType 값을 비교합니다.
+                            if ($(this).val() != certificationTypeValue) {
+                                // 값이 다르면 비활성화 처리합니다.
+                                $(this).prop('disabled', true);
+                            }else{
+                                $(this).prop('checked', true);
+                            }
+                        });
+
+                        if (productPartner.certificationType == 1) {
+                            // 새로운 <table> 요소를 생성합니다.
+                            var table = $('<table id="certificationTable" class="custom-table" style="margin-top: 10px; width:75%"></table>');
+
+                            // <thead> 요소를 생성하고 안에 <tr> 요소를 추가합니다.
+                            var thead = $('<thead></thead>');
+                            var trHead = $('<tr></tr>');
+                            trHead.append('<th class="custom-th">' + text.certificationType + '</th>');
+                            trHead.append('<th class="custom-th">' + text.certificationNumber + '</th>');
+                            thead.append(trHead);
+
+                            // <tbody> 요소를 생성하고 안에 <tr> 요소를 추가합니다.
+                            var tbody = $('<tbody></tbody>');
+                            $.each(productPartner.certificationList, function (idx, certificationEl) {
+                                var trBody = $('<tr></tr>');
+                                var select = $('<select name="certification[]" class="form-control form-select"></select>');
+                                let selectHtml = ``;
+                                $.each( certificationList, (idx, el) => {
+                                    if( el.idx ==  certificationEl.certificationIdx ){
+                                        selectHtml += `<option value="${el.idx}">${el.certificationName}</option>`;
+                                    }
+                                })
+                                select.append(selectHtml);
+                                trBody.append($('<td class="custom-td"></td>').append(select));
+                                trBody.append('<td class="custom-td"><input type="text" name="certificationNumber" readonly class="form-control form-control-sm text-left" value="' + certificationEl.certificationNum + '"></td>');
+                                tbody.append(trBody);
+                            });
+                            // <table>에 <thead>와 <tbody>를 추가합니다.
+                            table.append(thead);
+                            table.append(tbody);
+
+                            // 생성된 <table>을 원하는 위치에 추가합니다.
+                            $('#certification').append(table);
+                        }
+
+                        // 상품정보 제공고시
+                        if(productPartner.attributeList != null && productPartner.attributeList.length > 0){
+                            $.each(attributeSetList, (idx, el) => {
+                                if( el[0].idx ==  productPartner.attributeList[0].idx ){
+                                    selectAttribute = `${el[0].attributeSetName}`;
+                                    selectIdx = el[0].idx;
+                                }
+                            })
+                            $(".input-group[name='attributeSetIdx']").html('<input type="text" class="form-control form-control-sm" data-idx="'+selectIdx+'" value="' + selectAttribute + '" readonly>');
+                            trHtml =``;
+                             $.each(attributeSetList[selectIdx], (idx, el) => {
+                                trHtml += `
+                                    <tr>
+                                        <th class="text-center">${el.attributeName}</th>
+                                        <td class="">
+                                            <input type="text" class="form-control form-control-sm" name="attributeValue" data-idx="${el.attributeIdx}" maxlength="255" readonly>
+                                        </td>
+                                    </tr>`;
+                            })
+                            $('#attributeList tbody').append(trHtml);
+                            // 제공고시가 파트너사에서 조회된것이라면
+                            if(productPartner.partnerAttributeUseState!=null && productPartner.partnerAttributeUseState ==1){
+                                 $(".input-group[name='attributeSetIdx']").append('<div style="color:red;">'+text.atrributePartner+'</div>');
+                            }
+
+                             // 상품정보 제공고시
+                            if (productPartner.attributeList != undefined && productPartner.attributeList.length > 0) {
+                                $("#attributeSet select").val(productPartner.attributeList[0].idx).change();
+                                $.each($("input[name=attributeValue]"), function (idx, el) {
+                                    let dataIdx = $(el).data("idx");
+                                    let attribute = productPartner.attributeList.filter(function (obj) {
+                                        return obj["attributeIdx"] === dataIdx;
+                                    })
+                                    $(el).val(attribute[0].attributeValue);
+                                })
+                            }
+
+                            // 배송정보
+                            // 배송 속성
+                            $("td[name=deliveryProperty]").text(productPartner.deliveryList.propertyText);
+                            // 출고기한
+                            var deadlineText = productPartner.deliveryList.deadline + "일";
+                            if (productPartner.deliveryList.deadline === 1) {
+                               deadlineText = "당일 ( " + productPartner.deliveryList.sameDayDeliveryTimeHour + "시" + productPartner.deliveryList.sameDayDeliveryTimeMinute + "분 이전 구매시 )";
+                            }
+                            $("td[name=deliveryDeadline]").text(deadlineText);
+
+                            // 배송비 조건
+                            // 무료일때
+                            if ( productPartner.deliveryList.paymentType == 1 ){
+                                $("td[name=deliveryPaymentType]").text(productPartner.deliveryList.paymentTypeText);
+                                $("input[name=deliveryFee]").val(0);
+                                $("td[name=deliveryFeeText]").text(text.freeText);
+                            }
+                            else{
+                                $("td[name=deliveryPaymentType]").text(productPartner.deliveryList.paymentTypeText + " / " + productPartner.deliveryList.basicFee.toLocaleString()  + text.wonText);
+                                $("input[name=deliveryFee]").val(productPartner.deliveryList.basicFee);
+                                $("td[name=deliveryFeeText]").text(productPartner.deliveryList.basicFee.toLocaleString()  + text.wonText );
+                            }
+                            // 택배사
+                            $("td[name=deliveryCompany]").text(productPartner.deliveryList.companyName);
+                            // 묶음 배송
+                            $("td[name=deliveryIsCombine]").text(productPartner.deliveryList.isCombineText);
+                            // 출고지
+                            $("td[name=deliveryReleaseAddress]").html(productPartner.deliveryList.releaseAddress + "<br>" + productPartner.deliveryList.releaseAddressDetail);
+                            // 반품 택배사
+                            $("td[name=deliveryReturnCompany]").text(productPartner.deliveryList.companyName);
+                            // 반품 배송비
+                            $("td[name=deliveryReturnFee]").text(productPartner.deliveryList.returnFee.toLocaleString() + text.wonText);
+                            // 교환 배송비
+                            $("td[name=deliveryExchangeFee]").text(productPartner.deliveryList.exchangeFee.toLocaleString() + text.wonText);
+                            // 반품 회수지
+                            $("td[name=deliveryReturnAddress]").html(productPartner.deliveryList.returnAddress + "<br>" + productPartner.deliveryList.returnAddressDetail);
+                            // 도서 산간 추가 비용
+                            if ( productPartner.deliveryList.isIsland == 1 ){
+                                $("td[name=deliveryIslandFee]").text(productPartner.deliveryList.isIslandText + " / " + productPartner.deliveryList.islandFee.toLocaleString()  + text.wonText);
+                            }
+                            else{
+                                $("td[name=deliveryIslandFee]").text(productPartner.deliveryList.isIslandText);
+                            }
+
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        refuse:function (){
+            formData = new FormData();
+            formData.set("partnerProductIdx", "[[${idx}]]");
+            if (confirm(text.refuseConfirmMessage)) {
+
+                // 반려 사유 입력
+                var returnReason = prompt(text.placeholder.returnReason,'');
+                if(returnReason == null){
+                    return false;
+                }else if( returnReason == ""){
+                    alert(text.placeholder.returnReason);
+                    return false;
+                }else{
+                    formData.set("returnReason", returnReason);
+                }
+
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/product/partner/refuse',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'PATCH',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            if (res.data != undefined) {
+                                toast.alert(res.message);
+                                setTimeout(() => {
+                                    self.close();
+                                    opener.location.reload();
+                                }, 1000);
+                            } else {
+                                // 삭제 실패
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        approval:function (){
+            formData = new FormData();
+            formData.set("partnerProductIdx", "[[${idx}]]");
+            if (confirm(text.approvalConfirmMessage)) {
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/product/partner/approval',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'PATCH',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            if (res.data != undefined) {
+                                toast.alert(res.message);
+                                setTimeout(() => {
+                                    self.close();
+                                    opener.location.reload();
+                                }, 1000);
+                            } else {
+                                // 삭제 실패
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+   }
+
+   // 등록 폼 세팅 관련
+    let selected = {
+        /* START 탭 관리 */
+        showTab : function(tabId) {
+            var tabs = document.querySelectorAll('.custom-tab-content');
+            tabs.forEach(function(tab) {
+                tab.style.display = 'none';
+            });
+
+            var tabButtons = document.querySelectorAll('.custom-tab');
+            tabButtons.forEach(function(button) {
+                button.classList.remove('active-tab');
+            });
+
+            document.getElementById(tabId).style.display = 'block';
+
+            var activeTabButton = document.querySelector('.custom-tab[data-tab="' + tabId + '"]');
+            activeTabButton.classList.add('active-tab');
+        },
+        showHideCertification : function(type) {
+            var certification = document.getElementById('certification');
+
+            if (type === 'target') {
+                certification.classList.remove('hidden');
+            } else {
+                certification.classList.add('hidden');
+            }
+        },
+    }
+
+</script>

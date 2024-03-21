@@ -1,0 +1,113 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.product.MP.management}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-12">
+                                            <!-- 상품 등록일 검색 -->
+                                            <div class="form-control form-control-sm border-0 col-1 font-weight-bold" th:text="#{lang.product.regDate}"></div>
+                                            <input class="form-control form-control-sm text-center col-2" type="date" name="searchStartDate" th:value="${param.searchStartDate}">
+                                            <span class="form-control-sm text-center">~</span>
+                                            <input class="form-control form-control-sm text-center col-2" type="date" name="searchEndDate" th:value="${param.searchEndDate}">
+
+                                            <!-- 상품 등록일 자동 입력 -->
+                                            <!--<div class="d-grid gap-2 d-sm-flex form-control-sm ml-3 p-0">
+                                                <button type="button" class="btn btn-success rounded-1 me-md-2 col-3" th:text="#{lang.common.date.today}"></button>
+                                                <button type="button" class="btn btn-success rounded-1 me-md-2 col-3" th:text="#{lang.common.date.week}"></button>
+                                                <button type="button" class="btn btn-success rounded-1 me-md-2 col-3" th:text="#{lang.common.date.month('1')}"></button>
+                                                <button type="button" class="btn btn-success rounded-1 me-md-2 col-3" th:text="#{lang.common.date.month('3')}"></button>
+                                            </div>-->
+                                        </div>
+
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-12">
+                                            <!-- 상품명 검색 -->
+                                            <div class="form-control form-control-sm border-0 col-1 font-weight-bold" th:text="#{lang.product.name}"></div>
+                                            <select name="searchType" class="form-control form-select col-1" style="width:80px;">
+                                                <option th:value="name">상품명</option>
+                                                <option th:value="idx">상품고유번호</option>
+                                            </select>
+                                            <input class="form-control form-control-sm text-center col-3 mx-lg-2" type="text" name="searchWord" id="searchWord" style="width:100px;" th:value="${search.searchWord}">
+
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.common.button.search}" class="btn btn-success rounded-left px-3" onclick="productMp.list(1);"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="productMp.reset();">
+                                                <i class="fa-solid fa-rotate-left"></i>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="row justify-content-between">
+                                        <div class="form-control-sm col-2">
+                                            <strong class="totalCount" th:text="#{lang.common.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+
+                                        <div class="form-control-sm col-2 text-right p-0">
+                                            <button type="button" id="add" th:text="#{lang.product.button.add}" class="btn btn-warning btn-sm px-3" onclick="productMp.regist();"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <colgroup>
+                            <col style="width:5%;">
+                            <col style="width:10%;">
+                            <col style="width:20%;">
+                            <col style="width:5%;">
+                            <col style="width:20%;">
+                            <col style="width:10%;">
+                            <col style="width:5%;">
+                            <col style="width:10%;">
+                        </colgroup>
+                        <thead class="table-dark">
+                            <tr class="text-center">
+                                <th scope="col" th:text="#{lang.product.MP.idx}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.image}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.name}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.state}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.category.name}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.brand.name}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.price}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.partner}" class="text-center"></th>
+                                <th scope="col" th:text="#{lang.product.regDate}" class="text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

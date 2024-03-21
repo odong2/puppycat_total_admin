@@ -1,0 +1,37 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.pet.breed.title.regist}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="memberImageLayer">
+        <form id="registForm">
+            <div class="col-md-12">
+                <div class="row border-bottom pb-3 pt-2">
+                    <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.pet.type}"></label>
+                    <div class="col-md-8 col-sm-9 pt-1">
+                        <select name="typeIdx" class="form-select form-select-sm" >
+                            <th:block th:each="petType : ${petTypeList}">
+                                <option th:value="${petType.typeIdx}" th:text="${petType.type}"></option>
+                            </th:block>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="row border-bottom pb-3 pt-2">
+                    <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.pet.breed}"></label>
+                    <div class="col-md-8 col-sm-9 pt-1">
+                        <input class="form-control form-control-sm ml-1" name="breed" autocomplete="off" >
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="petBreed.cancel();" th:text="#{lang.pet.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="petBreed.regist();" th:text="#{lang.pet.button.regist}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

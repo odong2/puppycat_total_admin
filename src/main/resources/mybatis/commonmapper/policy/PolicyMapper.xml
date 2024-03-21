@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.commondao.policy.PolicyDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- databaseCommon name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- 이용약관 등록하기 -->
+    <insert id="insertPolicy" parameterType="PolicyDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_policy`
+        <set>
+            `menu_idx`       = #{menuIdx}
+            ,`required`      = #{required}
+            ,`current`       = 1
+            ,`title`         = #{title}
+            ,`state`         = 1
+            ,`reg_date`      = #{regDate}
+            ,`reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 이용약관 제목 등록하기 -->
+    <insert id="insertPolicyTitle" parameterType="PolicyDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_policy_title`
+        <set>
+            `policy_idx`     = #{policyIdx}
+            ,`title`          = #{title}
+            ,`lang`           = 'ko'
+            ,`state`          = 1
+            ,`reg_date`       = #{regDate}
+            ,`reg_date_tz`    = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 이용약관 내용 등록하기 -->
+    <insert id="insertPolicyDetail" parameterType="PolicyDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_policy_detail`
+        <set>
+            `policy_idx`     = #{policyIdx}
+            ,`detail`        = #{detail}
+            ,`lang`          = 'ko'
+            ,`state`         = 1
+            ,`reg_date`      = #{regDate}
+            ,`reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 이용약관 수정 -->
+    <update id="updatePolicy" parameterType="PolicyDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_policy`
+        SET
+            `menu_idx`       = #{menuIdx}
+            ,`required`      = #{required}
+        <if test="current != null">
+            ,`current`  = #{current}
+        </if>
+            ,`title`         = #{title}
+            ,`state`         = #{state}
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+    <!-- 이용약관 제목 수정 -->
+    <update id="updatePolicyTitle" parameterType="PolicyDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_policy_title`
+        SET
+            `title`      = #{title}
+        WHERE
+                `policy_idx` = #{policyIdx}
+            AND `lang`  = 'ko'
+    </update>
+
+    <!-- 이용약관 내용 수정 -->
+    <update id="updatePolicyDetail" parameterType="PolicyDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_policy_detail`
+        SET
+            `detail`   = #{detail}
+        WHERE
+                `policy_idx` = #{policyIdx}
+            AND `lang`  = 'ko'
+    </update>
+
+    <!-- 이용약관 내용 수정 -->
+    <update id="updatePolicyCurrent" parameterType="PolicyDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_policy`
+        SET
+            `current`   = 0
+        WHERE
+            `menu_idx` = #{menuIdx}
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

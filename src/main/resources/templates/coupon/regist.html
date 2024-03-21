@@ -1,0 +1,219 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid p-3" layout:fragment="content">
+        <form id="registForm">
+            <table class="table">
+                <thead class="table-primary">
+                <tr>
+                    <th colspan="2" th:text="#{lang.coupon.title.registration}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- 쿠폰명 -->
+                <tr>
+                    <th style="width: 30%;">
+                        <label for="name" th:text="#{lang.coupon.name}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm col-5" id="name" name="name" type="text" value="" maxlength="50">
+                    </td>
+                </tr>
+                <!-- 쿠폰 관리명 -->
+                <tr>
+                    <th>
+                        <label for="managementName" th:text="#{lang.coupon.management.name}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm col-8" id="managementName" name="managementName" type="text" value="" maxlength="255">
+                    </td>
+                </tr>
+                <!-- 할인타입 -->
+                <tr>
+                    <th>
+                        <label for="discountType" th:text="#{lang.coupon.discount.type}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <span id="discountType" th:text="#{lang.coupon.discount.type.product}"></span>
+                    </td>
+                </tr>
+                <!-- 할인금액 -->
+                <tr>
+                    <th>
+                        <label for="discount" th:text="#{lang.coupon.discount.amount}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm text-right col-4" oninput="formatPrice('discount');" id="discountText" name="discountText" maxlength="9" type="text" value="" style="display: inline-block;" th:placeholder="#{lang.coupon.placeholder.number}">
+                        <input class="form-control form-control-sm text-right col-4" id="discount" name="discount" type="hidden" value="">
+                        <span th:text="#{lang.coupon.won}"></span>
+                    </td>
+                </tr>
+                <!-- 쿠폰 조건부 금액 -->
+                <tr>
+                    <th>
+                        <label for="useCondition" th:text="#{lang.coupon.conditional.amount}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm text-right col-4" oninput="formatPrice('useCondition');" id="useConditionText" name="useConditionText" maxlength="9" type="text" value="" style="display: inline-block;" th:placeholder="#{lang.coupon.placeholder.number}">
+                        <input class="form-control form-control-sm text-right col-4" id="useCondition" name="useCondition" type="hidden" value="">
+                        <span th:text="#{lang.coupon.won}"></span>
+                    </td>
+                </tr>
+                <!-- 쿠폰 발급 유형 (다운로드/타겟쿠폰/교환권) -->
+                <tr>
+                    <th>
+                        <label for="typeIdx" th:text="#{lang.coupon.type}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <select id="typeIdx" name="typeIdx" class="form-control form-control-sm form-select col-4" onchange="coupon.showHideType(this.value)">
+                            <option value=""  th:text="#{lang.coupon.placeholder.select}"></option>
+<!--                            <option th:each="couponTypeList : ${couponTypeList}" th:value="${couponTypeList.typeIdx}" th:text="${couponTypeList.typeName}"></option>-->
+                            <option th:value="${couponTypeList[0].typeIdx}" th:text="${couponTypeList[0].typeName}"></option>
+                            <option th:value="${couponTypeList[1].typeIdx}" th:text="${couponTypeList[1].typeName}" disabled style="background: #c9cbce;"></option>
+                            <option th:value="${couponTypeList[2].typeIdx}" th:text="${couponTypeList[2].typeName}" disabled style="background: #c9cbce;"></option>
+                        </select>
+                    </td>
+                </tr>
+                <!-- 발급 건 수 제한 -->
+                <tr id="isLimitInput" class="hidden">
+                    <th>
+                        <label for="isLimit" th:text="#{lang.coupon.is_limit}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <select id="isLimit" name="isLimit" class="form-control form-control-sm form-select col-4" onchange="coupon.showHideIsLimit()">
+                            <option value="0" th:text="#{lang.coupon.no.limit}"></option>
+                            <option value="1" th:text="#{lang.coupon.limit}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <!-- 발급 건 수 제한 있음 - 제한 개수 -->
+                <tr id="qtyPerPersonInput" class="hidden">
+                    <th>
+                        <label for="qty" th:text="#{lang.coupon.limit.amount}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <span th:text="#{lang.coupon.is_limit.count}"></span>
+                        <input class="form-control form-control-sm col-2" id="qty" name="qty" type="number" min="1" value="1" style="display: inline-block;">
+                        <span th:text="#{lang.coupon.gun}"></span>
+                    </td>
+                </tr>
+                <!-- 타겟 쿠폰 - 회원 선택 -->
+                <tr id="targetCouponInput" class="hidden">
+                    <th>
+                        <label for="memberUuidList" th:text="#{lang.coupon.target.coupon.user}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <button class="btn btn-sm btn-success" onClick="coupon.searchLayer('member');" type="button" th:text="#{lang.coupon.button.member.search}"></button>
+                        <button class="btn btn-sm btn-info" onClick="coupon.excelUploadLayer('member');" type="button" th:text="#{lang.coupon.button.excel.upload}"></button>
+                        <div class="send-list-box" id="previewMember"></div>
+                        <input id="memberUuidList" name="memberUuidList" type="hidden">
+                    </td>
+                </tr>
+                <!-- 교환권 - 발급수량 입력 -->
+                <tr id="exchangeCouponInput" class="hidden">
+                    <th>
+                        <label for="qtyForExchangeCoupon" th:text="#{lang.coupon.exchange.coupon.quantity}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <span th:text="#{lang.coupon.exchange.coupon.quantity}"></span>
+                        <input class="form-control form-control-sm col-2" id="qtyForExchangeCoupon" name="qtyForExchangeCoupon" min="1" type="number" value="" style="display: inline-block;">
+                        <span th:text="#{lang.coupon.gun}"></span>
+                    </td>
+                </tr>
+                <!-- 부담주체 -->
+                <tr>
+                    <th>
+                        <label for="host" th:text="#{lang.coupon.host}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <select id="host" name="host" class="form-control form-control-sm form-select col-4">
+                            <option value="puppycat" th:text="#{lang.coupon.puppycat}" ></option>
+                        </select>
+                    </td>
+                </tr>
+                <!-- 발급 조건 -->
+                <tr>
+                    <th>
+                        <label for="issueCondition" th:text="#{lang.coupon.issue.type}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <select id="issueCondition" name="issueCondition" class="form-control form-control-sm form-select col-4" onchange="coupon.showHideIssueCondition(this.value)">
+                            <option value=""  th:text="#{lang.coupon.placeholder.select}"></option>
+                            <option value="1"  th:text="#{lang.coupon.issue.type.issue.date}"></option>
+                            <option value="2" th:text="#{lang.coupon.issue.type.use.date}" ></option>
+                        </select>
+                    </td>
+                </tr>
+                <!-- 발급 조건 : 발급일 - 기한 입력 -->
+                <tr id="useDaysInput" class="hidden">
+                    <th>
+                        <label for="useDays" th:text="#{lang.coupon.issue.type.issue.date.input}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <span th:text="#{lang.coupon.issue.type.issue.date.from}"></span>
+                        <input class="form-control form-control-sm col-2" id="useDays" name="useDays" min="1" type="number" value="1" style="display: inline-block;">
+                        <span th:text="#{lang.coupon.date}"></span>
+                    </td>
+                </tr>
+                <!-- 발급 조건 : 사용기한 - 기간 날짜 선택 -->
+                <tr id="useDateInput" class="hidden">
+                    <th>
+                        <label for="useStart" th:text="#{lang.coupon.issue.type.use.date.input}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm col-5" onchange="coupon.changeDate(this.value); coupon.setDateMin('useStart', 'useEnd');" id="useStart" name="useStart" type="datetime-local" value="" style="display: inline-block;">
+                        &nbsp;&nbsp;<span>~</span> &nbsp;&nbsp;
+                        <input class="form-control form-control-sm col-5" id="useEnd" name="useEnd" type="datetime-local" value="" style="display: inline-block;">
+                    </td>
+                </tr>
+                <!-- 다운로드 기한 -->
+                <tr>
+                    <th>
+                        <label for="issueStart" th:text="#{lang.coupon.issue.start.end.date}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <input class="form-control form-control-sm col-5" onchange="coupon.setDateMin('issueStart','issueEnd');" id="issueStart" name="issueStart" type="datetime-local" value="" style="display: inline-block;">
+                        &nbsp;&nbsp;<span>~</span> &nbsp;&nbsp;
+                        <input class="form-control form-control-sm col-5" id="issueEnd" name="issueEnd" type="datetime-local" value="" style="display: inline-block;">
+                    </td>
+                </tr>
+                <!-- 적용 대상 (고유상품번호, 카테고리, 브랜드) -->
+                <tr>
+                    <th>
+                        <label for="rangeIdx" th:text="#{lang.coupon.apply.target}"></label>
+                        <label style="color: red">*</label>
+                    </th>
+                    <td>
+                        <select id="rangeIdx" name="rangeIdx" class="form-control form-control-sm form-select col-4" onchange="coupon.showHideRange(this.value)">
+                            <option value=""  th:text="#{lang.coupon.placeholder.select}"></option>
+                            <option th:each="couponRangeList : ${couponRangeList}" th:value="${couponRangeList.rangeIdx}" th:text="${couponRangeList.rangeName}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <!-- 적용 대상 검색 -->
+                <tr id="rangeInput">
+                </tr>
+                </tbody>
+            </table>
+            <div class="form-group row">
+                <div class="col text-center">
+                    <button class="btn btn-sm btn-success" onClick="coupon.regist();" type="button" th:text="#{lang.coupon.button.register}"></button>
+                    <button class="btn btn-sm btn-primary" onClick="self.close();" type="button" th:text="#{lang.coupon.button.list}"></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</th:block>

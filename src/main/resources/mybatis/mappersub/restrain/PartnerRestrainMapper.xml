@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.restrain.partner.PartnerRestrainDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 검색 조건 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'idx'">
+                        AND `shpa`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'id'">
+                        AND `shpa`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'companyName'">
+                        AND `shpade`.`company_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                AND `shpare`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test='type != null'>
+                AND `shparety`.`idx` <![CDATA[ = ]]> #{type}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <choose>
+                    <when test="searchDateType.equals('regdate')">
+                        <![CDATA[
+                        AND (`shpare`.`reg_date` >= #{searchStartDate} AND `shpare`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('startDate')">
+                        <![CDATA[
+                        AND (`shpare`.`start_date` >= #{searchStartDate} AND `shpare`.`start_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('endDate')">
+                        <![CDATA[
+                        AND (`shpare`.`end_date` >= #{searchStartDate} AND `shpare`.`end_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 파트너 제재 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="PartnerRestrainDto">
+        SELECT
+            `shpare`.`idx`,
+            `shpare`.`partner_idx`,
+            `shpare`.`info`,
+            `shpa`.`id`,
+            `shpare`.`state`,
+            `shpade`.`company_name`,
+            `shparety`.`name` AS `type`,
+            `shpare`.`start_date`,
+            `shpare`.`end_date`,
+            CONVERT_TZ(`shpare`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`,
+            IFNULL(CONVERT_TZ( `shpare`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modiDate`
+        FROM <include refid="databaseShop"/>`shop_partner_restrain` AS `shpare`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpare`.`partner_idx` = `shpa`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpade`.`partner_idx` = `shpa`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_restrain_type` AS `shparety`
+            ON `shparety`.`idx` = `shpare`.`type_idx`
+        <include refid="searchCondition"/>
+        ORDER BY  `shpare`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shpare`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseShop"/>`shop_partner_restrain` AS `shpare`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpare`.`partner_idx` = `shpa`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+            ON `shpade`.`partner_idx` = `shpa`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_restrain_type` AS `shparety`
+            ON `shparety`.`idx` = `shpare`.`type_idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 제재 사유 목록 -->
+    <select id="getTypeList" resultType="PartnerRestrainDto">
+        SELECT
+            `shparety`.`idx`,
+            `shparety`.`name` AS `type`
+        FROM <include refid="databaseShop" />`shop_partner_restrain_type` as `shparety`
+        WHERE
+            `shparety`.`state` = 1
+        ORDER BY
+            `shparety`.`idx` ASC
+    </select>
+
+    <!-- 제재 목록 -->
+    <select id="getRestrainInfo" resultType="PartnerDto">
+        SELECT
+            `shpare`.`start_date`,
+            `shpare`.`end_date`
+        FROM <include refid="databaseShop" />`shop_partner_restrain` as `shpare`
+        WHERE
+                `shpare`.`partner_idx` = #{idx}
+            AND `shpare`.`state`       = 1
+        ORDER BY `shpare`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+</mapper>

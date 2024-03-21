@@ -1,0 +1,403 @@
+<script th:fragment="importJsFragment">
+    let tree = [];  // treeview 전체 배열
+    let currentNode = {}; // 현재 노드
+    let jstreeExtend = {}; // jstree bind 함수
+
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+
+    let text = {
+        categoryName : "[[#{lang.category.node}]]",                     // 최상위 노드
+        notAddNode : "[[#{lang.category.exception.not_any_more}]]",     // 더이상 추가 할수 없습니다.
+        modifyConfirm : "[[#{lang.category.confirm.modify}]]",          // 수정하시겠습니까?
+        notSelected : "[[#{lang.category.exception.idx}]]",             // 선택된 카테고리가 없습니다.
+        exceptionCategoryName : "[[#{lang.category.exception.name}]]",  // 카테고리명을 입력해주세요.
+        modify : "[[#{lang.common.button.modify}]]",                    // 수정
+        register : "[[#{lang.common.button.regist}]]",                  // 등록
+
+    }
+
+    $(function () {
+        category.list();
+    });
+
+
+    let category = {
+        list: function () {
+            let state = 0;
+            if ($("input[name=stateChecked]:checked").val() == "on") {
+                state = 1;
+            }
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/category',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: {state : state},
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        tree = [];
+                        let nodeList = category.node(res.data.list[0]);
+                        tree.push({
+                            text : text.categoryName,
+                            data : null,
+                            children : nodeList
+                        });
+                        createTree();
+                    } else {
+                        toast.alert(res.message);
+                    }
+
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        register : function () {
+            let formData = new FormData(form);
+            let categoryName = $("input[name=category]").val();
+
+            if (categoryName != null && categoryName != "") {
+                formData.set("category", categoryName);
+            } else {
+                toast.alert(text.exceptionCategoryName);
+                $("input[name=category]").focus();
+                return false;
+            }
+
+            formData.set("parent", currentNode.data.parent);
+            formData.set("sort", currentNode.data.sort);
+            formData.set("depth", currentNode.data.depth);
+            formData.set("code", $("input[name=code]").val());
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/category',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        category.list();
+                        toast.alert(res.message);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+        },
+        modify : function () {
+            if (confirm(text.modifyConfirm)) {
+                formData = new FormData(form);
+                if (currentNode.data != null) {
+                    let categoryIdx = currentNode.data.idx;
+                    formData.set("idx", categoryIdx);
+                    formData.set("parent", currentNode.data.parent);
+
+                    $.ajax({
+                        url: '[[${SERVER.shopDomain}]]/v1/category',
+                        headers: {
+                            'Authorization': `Bearer `+$.cookie('accessToken'),
+                        },
+                        method: 'PUT',
+                        data: formData,
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.result) {
+                                category.list();
+                                toast.alert(res.message);
+                            } else {
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        },
+                        error: function (request, status, error) {
+                            // filter error
+                            toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                        }
+                    });
+                } else {
+                    toast.alert(text.notSelected);
+                }
+            }
+
+            return false;
+        },
+        // 트리 구조 생성
+        node : function (data) {
+            let nodes = new Array();
+
+            $.each(data, function (index, el) {
+                let childNodes = new Object();
+
+                if (el.childrenCategory != null) {
+                    let childrenCategory = category.node(el.childrenCategory);
+                    childNodes.text = el.category;
+                    childNodes.data = el;
+                    childNodes.children = childrenCategory;
+                    childNodes.state = el.state;
+                    nodes.push(childNodes);
+                } else {
+                    childNodes.text = el.category;
+                    childNodes.data = el;
+                    childNodes.state = el.state;
+                    nodes.push(childNodes);
+                }
+            });
+
+            return nodes;
+        }
+    }
+
+
+    // treeview 생성
+    function createTree(){
+        let options = {
+            "core" : {
+                // so that create works
+                "check_callback" : function (op, obj, par, pos, more) {
+
+                    if (op == 'create_node') {
+                        // 노드 생성
+                        return true;
+                    } else if (par.id != obj.parent) {
+                        // 같은 DEPTH 에서만 이동(순서만 변경 가능)
+                        return false;
+                    }
+                },
+            },
+            "types" : {
+                "#" : {
+                    "max_children" : 1,
+                    "max_depth" : 5,    // root 제외 4depth
+                    "valid_children" : ["root"],
+                },
+                "root" : {
+                    "icon" : "glyphicon glyphicon-file",
+                    "valid_children" : ["root"]
+                },
+                "default" : {
+                    "valid_children" : ["default","file"]
+                },
+                "file" : {
+                    "icon" : "glyphicon glyphicon-file",
+                    "valid_children" : []
+                },
+            },
+            "state" : { "key" : "demo2" },
+            "plugins" : [ "state", "types"] //"contextmenu", "dnd",
+        };
+
+        $('#treeView').jstree(options);
+        $('#treeView').jstree(true).settings.core.data = tree;
+        $('#treeView').jstree(true).refresh();
+        jstreeExtend.jstree($('#treeView'));
+    };
+
+    /** jstree event **/
+    // 노드 선택
+    $('#treeView').on("select_node.jstree", function (event, data) {
+        if (data.node.parent != "#") {
+            $(".card-body > div:last-child").removeClass("d-none");
+
+            if (data.node.data != null) {
+                $("input[name=code]").val(data.node.data.code);
+                $("input[name=category]").val(data.node.data.category);
+
+                let categoryState = (data.node.data.state != null) ? data.node.data.state : 0;
+                $("input[name=state]").radioSelect(categoryState);
+
+                let categoryIdx = "";
+                if (data.node.data.idx != null) {
+                    categoryIdx = data.node.data.idx;
+
+                    // 버튼 변경
+                    $("#registerCategory").removeClass("btn-success").addClass("btn-warning").text(text.modify);
+
+                } else {
+                    // 버튼 변경
+                    $("#registerCategory").removeClass("btn-warning").addClass("btn-success").text(text.register);
+                }
+
+                $("td[name=idx]").text(categoryIdx);
+            }
+        } else {
+            $(".card-body > div:last-child").addClass(" d-none");
+        }
+
+        currentNode = data.node;
+    });
+
+    // 노드 추가 버튼
+    $("#addCategory").on("click", function () {
+        jstreeExtend.createNode();
+    });
+
+    // 노드 저장, 수정
+    $("#registerCategory").on("click", function () {
+
+        if (currentNode.data.idx != null) {
+            category.modify();
+        } else {
+            category.register();
+        }
+        return false;
+    })
+
+    jstreeExtend.jstree = function (element) {
+        let _tree = element;
+
+        // 노드 새로고침
+        this.refresh = function () {
+            _tree.jstree(true).refresh();
+        }
+
+        // id의 노드 가져옴
+        this.getNode = function(id) {
+            return _tree.jstree(true).get_node(id);
+        };
+
+        // 하위 노드 open
+        this.openNode = function(id) {
+            _tree.jstree("open_node", id);
+        };
+
+        // 선택 노드 변경
+        this.changeNode = function (id) {
+            _tree.jstree("deselect_all");
+            _tree.jstree("select_node", id);
+        }
+
+        // 노드 생성
+        this.createNode = function () {
+            let ref = $('#treeView').jstree(true),
+                sel = ref.get_selected();
+
+            if (!sel.length && tree.length > 0) {
+                toast.alert(text.notSelected);
+                return false;
+            }
+            let newCode = this.newCode();
+            let newNodeJson = {
+                "type": "default",
+                "data": {
+                    code: newCode.code,
+                    sort: newCode.sort,
+                    depth: newCode.depth,
+                    parent: newCode.parent
+                },
+            }
+
+            let createNode = ref.create_node(sel[0], newNodeJson);
+            if (createNode) {
+                jstreeExtend.changeNode(createNode);
+                jstreeExtend.openNode(sel);
+                $("input[name=category]").focus();
+
+            } else {
+                toast.alert(text.notAddNode);
+            }
+        }
+
+        // 카테고리 코드 생성
+        this.newCode = function () {
+            let childNode = jstreeExtend.getNode(currentNode.children[currentNode.children.length-1]);
+            let currentNodeIdx = 0;
+            if (currentNode.data != null) {
+                currentNodeIdx = currentNode.data.idx;
+            }
+
+            let data = new Object();
+            if (childNode) {
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/category/lastNode/' + currentNodeIdx,
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    cache : true,
+                    method: 'GET',
+                    dataType: 'json',
+                    async: false,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            let lastNode = res.data.lastNode;
+
+                            data.code = (currentNode.data != null) ? currentNode.data.code.concat("0001") : "0001";
+                            data.sort = 1;
+                            data.depth = (currentNode.data != null) ? currentNode.data.depth + 1 : 1;
+                            data.parent = (currentNode.data != null) ? currentNode.data.idx : 0;
+                            if (lastNode != null) {
+                                let newCode = (parseInt(lastNode.code) + 1).toString()
+
+                                data.code = "000".concat(newCode);
+                                data.sort = lastNode.sort + 1;
+                                data.depth = lastNode.depth;
+                                data.parent = currentNodeIdx;
+                            }
+
+                        } else {
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+
+            } else {
+                data.code = "0001";
+                data.sort = 1;
+                data.depth = 1;
+                data.parent = 0;
+                if (currentNode.data != null) {
+                    data.code = currentNode.data.code.concat(data.code);
+                    data.sort = 1;
+                    data.depth = currentNode.data.depth + 1;
+                    data.parent = currentNode.data.idx;
+                }
+            }
+
+            return data;
+        }
+    }
+
+    /** jstree event **/
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function(val) {
+        this.each(function() {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+
+</script>

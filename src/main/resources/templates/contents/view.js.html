@@ -1,0 +1,259 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let idx = "[[${dataSet.idx}]]";
+        let viewType = "[[${dataSet.viewType}]]";
+        contents_detail.view(idx, viewType);
+    });
+
+    let text = {
+        addBtn: "[[#{lang.contents.button.add}]]",        // 등록 버튼
+        restrainBtn: "[[#{lang.contents.button.restrain}]]", // 제재
+        deleteConfirm: "[[#{lang.contents.confirm.delete.tag}]]",  // 삭제 confirm
+        tagOverAlert: "[[#{lang.contents.exception.image.tag.limit.over}]]", // 태그 개수 초과 alert
+        imageEmptyAlert: "[[#{lang.contents.exception.image.restrain.idx.list.empty}]]", // 제재 이미지 비었음 alert
+        reasonAlert: "[[#{lang.contents.exception.image.restrain.memo.empty}]]" // 제재 사유 미입력 alert
+    }
+
+    let contents_detail = {
+        view:function (idx, viewType){
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/contents/view/' + idx + '?viewType=' + viewType,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        $("input[name=category]").val(res.data.list[0].menuName);
+                        $("input[name=nick]").val(res.data.list[0].memberNick + '(' + res.data.list[0].memberId + ')');
+                        $("input[name=location]").val(res.data.list[0].location);
+                        $("input[name=regDate]").val(res.data.list[0].regDate);
+                        $("input[name=modiDate]").val(res.data.list[0].modiDate);
+                        $("textarea[name=contents]").val(res.data.list[0].contents);
+                        checkedOnOff('state' + res.data.list[0].contentsState);
+                        checkedOnOff('commentState' + res.data.list[0].isComment);
+                        checkedOnOff('likeState' + res.data.list[0].isLike);
+                        checkedOnOff('keepState' + res.data.list[0].isKeep);
+                        checkedOnOff('viewState' + res.data.list[0].isView);
+
+                        // sort table 초기화
+                        let sortHtml = "";
+                        let num = 1;
+
+                        $.each(res.data.imgList, function (idx, el) {
+                            sortHtml += `
+                                        <tr class="cut-tr cutnum1">
+                                            <td class="text-center">
+                                                <span>` + num +`</span>
+                                            </td>
+                                            <td class="text-center nosort">
+                                                <img src="${el.url}" onclick="image.click('${el.originUrl}',${el.imgWidth},${el.imgHeight})" style="cursor: pointer"/>
+                                            </td>
+                                            <td class="text-center nosort">`;
+
+                                // 이미지 내 태그
+                                $.each(el.imgTagList, function (idx, img_el) {
+                                    sortHtml += `<a href='/members/view/`
+                                        + img_el.memberIdx +`'">` + '@' + img_el.memberNick + `</a><br />`;
+                                });
+
+                            sortHtml += `</td>`;
+                            sortHtml += `
+                                         <td class="text-center">
+                                            <input type="checkbox" name="restrainCheck" value="${num}" data-idx="${el.idx}"/>
+                                        </td>`;
+                            sortHtml += `</tr>`;
+                            num++;
+                        })
+
+                        $("#sortTable tbody").html(sortHtml);
+
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+
+        // 수정
+        modify: function () {
+            var form = $("#modifyForm")[0];
+            var formData = new FormData(form);
+            let idx = "[[${dataSet.idx}]]";
+
+            $.ajax({
+                url: '[[${SERVER.snsDomain}]]/v1/contents/modify/state/' + idx,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        location.reload();
+                        alert(res.message);// hmImportFile put 이슈 발생하여 중간에 처리함
+                        opener.location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+    let image = {
+        idxArr : [], // 제재할 이미지 idx 배열
+
+        restrain : () => {
+            const query = "input[name='restrainCheck']:checked";      // 쿼리
+            const checkedElements = document.querySelectorAll(query); // 체크된 엘리먼트들
+
+            // let idxArr = []; // 제재할 이미지 idx 배열
+            let numArr = [];    // 이미지 순서 배열 [화면 표기 용]
+            idxArr = [];        // 이전값 빈값으로 설정 [서버 전달 용]
+            // 체크된 엘리먼트에서 이미지 idx 배열에 추가
+            checkedElements.forEach((el) =>{
+                image.idxArr.push($(el).attr('data-idx'));
+                numArr.push(el.value);
+            });
+
+            // 선택된 이미지 없으면 모달 열지 않기
+            if (image.idxArr.length === 0) {
+                alert(text.imageEmptyAlert);
+                $('#restrainModal').modal('hide');
+            } else{  // 모달 열기
+                $('#restrainModal').modal('show');
+            }
+            // 화면에 선택된 이미지 sort 표시
+            $('#restrainNum').text(numArr);
+
+        },
+        // 제재 등록
+        send : () => {
+            let reason = $('#reason').val();
+            // 제재 사유가 비었을 경우
+            if (reason.trim() === '') {
+                alert(text.reasonAlert);
+                return;
+            }
+
+            const formData = new FormData();
+            const idx = '[[${dataSet.idx}]]';
+
+            // 데이터 set
+            formData.append('memo', $('#reason').val());
+            formData.append('contentsIdx', idx);
+            // idx 배열 form 데이터 추가
+            image.idxArr.forEach(value => {
+                formData.append('idxList', value);
+            });
+
+            // formData -> jsonObject 변환
+            let jsonData = formDataToJson(formData);
+
+            $.ajax({
+                url: '[[${SERVER.snsDomain}]]/v1/restrain/contents',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                data: JSON.stringify(jsonData),
+                method: 'POST', // body 로 보냄
+                dataType: 'json',
+                processData: false,
+                contentType: 'application/json',
+                success: function (res) {
+                    // 성공
+                    if (res.result === true) {
+                        // 1. 모달 숨기기
+                        $('#restrainModal').modal('hide');
+                        toast.alert(res.message);
+
+                        // 이미지가 남아 있는 경우
+                        if (res.data.totalImgCnt > 0) {
+                            contents_detail.view(idx);
+
+                        // 이미지 제재로 컨텐츠 삭제된 경우
+                        } else{
+                            setTimeout(() =>{
+                                // 부모창 새로고침
+                                opener.parent.contents.list();
+                                // 자식창 닫기
+                                window.close();
+                            }, 2000);
+
+                        }
+                    // 실패
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+        },
+        // 이미지 확대
+        click: function (originUrl, imgWidth, imgHeight) {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/contents/image?originUrl=' + originUrl + "&imgWidth=" + imgWidth + "&imgHeight=" + imgHeight,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache: true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        window.open(res.data.imgUrl);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        }
+    }
+    // FormData를 JSON으로 변환
+    function formDataToJson(formData) {
+        let jsonObject = {};
+
+        formData.forEach(function(value, key) {
+
+            if (key == 'idxList') {
+                // 키값이 존재하지 않음
+                if (!jsonObject[key]) {
+                    jsonObject[key] = []; // 배열 생성
+                }
+                jsonObject[key].push(value); // 배열에 추가
+
+            } else {
+                jsonObject[key] = value;
+            }
+        });
+        return jsonObject;
+    }
+
+    // checked 실행
+    function checkedOnOff(target) {
+        $("input:radio[id=" + target + "]").prop('checked', true);
+    }
+</script>

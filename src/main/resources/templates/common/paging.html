@@ -1,0 +1,96 @@
+<div th:fragment="importPagingFragment">
+    <th:block th:if="${dataSet.paging.type} == 'link'">
+        <th:block th:if="${dataSet.paging.isView}">
+            <!-- 링크형 페이지 -->
+            <div class="col-md-12 d-flex flex-row-reverse my-3">
+                <ul class="pagination" style="font-size: 12px;">
+                    <!-- 첫 페이지 -->
+                    <li th:if="${dataSet.paging.isFirst}" class="page-item">
+                        <a th:href="${SERVER.currentDomain} + ${SERVER.requestUri} + ${dataSet.paging.link}"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <!-- 이전 페이지 -->
+                    <li th:if="${dataSet.paging.isPrev}" class="page-item">
+                        <a th:href="${SERVER.currentDomain} + ${SERVER.requestUri} + ${dataSet.paging.link} + '&page=' + ${dataSet.paging.prevPage}"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+
+                    <!-- 페이지 리스트 -->
+                    <li th:each="item : ${dataSet.paging.pages}"
+                        th:class="'page-item ' + ${dataSet.paging.nowPage == item ? 'active' : ''}">
+                        <a th:href="${SERVER.currentDomain} + ${SERVER.requestUri} + ${dataSet.paging.link} + '&page=' + ${item}"
+                           th:text="${item}" class="page-link rounded-circle mx-1"></a>
+                    </li>
+
+                    <!-- 다음 페이지 -->
+                    <li th:if="${dataSet.paging.isNext}" class="page-item">
+                        <a th:href="${SERVER.currentDomain} + ${SERVER.requestUri} + ${dataSet.paging.link} + '&page=' + ${dataSet.paging.nextPage}"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <!-- 마지막 페이지 -->
+                    <li th:if="${dataSet.paging.isLast}" class="page-item">
+                        <a th:href="${SERVER.currentDomain} + ${SERVER.requestUri} + ${dataSet.paging.link} + '&page=' + ${dataSet.paging.lastPage}"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </th:block>
+    </th:block>
+
+    <th:block th:unless="${dataSet.paging.type} == 'link'">
+        <th:block th:if="${dataSet.paging.isView}">
+            <!-- 함수형 페이지 -->
+            <div class="col-md-12 d-flex flex-row-reverse my-3">
+                <ul class="pagination" style="font-size: 12px;">
+                    <!-- 첫 페이지 -->
+                    <li th:if="${dataSet.paging.isFirst}" class="page-item">
+                        <a href="javascript:;" th:onclick="${dataSet.paging.functionName} + '(1);'"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <!-- 이전 페이지 -->
+                    <li th:if="${dataSet.paging.isPrev}" class="page-item">
+                        <a href="javascript:;"
+                           th:onclick="${dataSet.paging.functionName} + '(' + ${dataSet.paging.prevPage} + ');'"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+
+                    <!-- 페이지 리스트 -->
+                    <li th:each="item : ${dataSet.paging.pages}"
+                        th:class="'page-item ' + ${dataSet.paging.nowPage == item ? 'active' : ''}">
+                        <a href="javascript:;" th:onclick="${dataSet.paging.functionName} + '(' + ${item} + ');'"
+                           th:text="${item}" class="page-link rounded-circle mx-1"></a>
+                    </li>
+
+                    <!-- 다음 페이지 -->
+                    <li th:if="${dataSet.paging.isNext}" class="page-item">
+                        <a href="javascript:;"
+                           th:onclick="${dataSet.paging.functionName} + '(' + ${dataSet.paging.nextPage} + ');'"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <!-- 마지막 페이지 -->
+                    <li th:if="${dataSet.paging.isLast}" class="page-item">
+                        <a href="javascript:;"
+                           th:onclick="${dataSet.paging.functionName} + '(' + ${dataSet.paging.lastPage} + ');'"
+                           class="page-link rounded-circle mx-1">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </th:block>
+    </th:block>
+</div>

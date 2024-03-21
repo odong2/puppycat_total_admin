@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.commondao.notice.NoticeDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- databaseCommon name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- 공지사항 등록하기 -->
+    <insert id="insertNotice" parameterType="NoticeDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_notice`
+        <set>
+            `menu_idx`       = #{menuIdx}
+            ,`is_top`        = #{isTop}
+            ,`title`         = #{title}
+            ,`admin_id`      = #{adminId}
+            ,`state`         = 1
+            ,`reg_date`       = #{regDate}
+            ,`reg_date_tz`    = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 공지사항 제목 등록하기 -->
+    <insert id="insertNoticeTitle" parameterType="NoticeDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_notice_title`
+        <set>
+            `notice_idx`     = #{noticeIdx}
+            ,`title`          = #{title}
+            ,`lang`           = 'ko'
+            ,`state`          = 1
+            ,`reg_date`        = #{regDate}
+            ,`reg_date_tz`     = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 공지사항 내용 등록하기 -->
+    <insert id="insertNoticeContents" parameterType="NoticeDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_notice_contents`
+        <set>
+            `notice_idx`     = #{noticeIdx}
+            ,`contents`       = #{contents}
+            ,`lang`           = 'ko'
+            ,`state`          = 1
+            ,`reg_date`        = #{regDate}
+            ,`reg_date_tz`     = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 공지사항 수정 -->
+    <update id="updateNotice" parameterType="NoticeDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_notice`
+        SET
+            `menu_idx`       = #{menuIdx}
+            ,`is_top`        = #{isTop}
+            ,`title`         = #{title}
+            ,`state`         = #{state}
+            ,`admin_id`      = #{adminId}
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+    <!-- 공지사항 제목 수정 -->
+    <update id="updateNoticeTitle" parameterType="NoticeDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_notice_title`
+        SET
+            `title`      = #{title}
+        WHERE
+                `notice_idx` = #{noticeIdx}
+            AND `lang`  = 'ko'
+    </update>
+
+    <!-- 공지사항 내용 수정 -->
+    <update id="updateNoticeContents" parameterType="NoticeDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_notice_contents`
+        SET
+            `contents`   = #{contents}
+        WHERE
+                `notice_idx` = #{noticeIdx}
+            AND `lang`  = 'ko'
+    </update>
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

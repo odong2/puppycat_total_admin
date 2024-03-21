@@ -1,0 +1,103 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.wordcheck.member.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="wordcheck_member.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 날짜 검색 -->
+                                            <div class ="form-control form-control-sm text-center" th:text="#{lang.wordcheck.regdate}"></div>
+                                            <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" th:value="${param.searchStartDate}">
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input  type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}">
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-2">
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.wordcheck.search}" ></option>
+                                                <option th:value="word" th:text="#{lang.wordcheck.word}" th:selected="${search.searchType} == 'word'"></option>
+                                                <option th:value="adminId" th:text="#{lang.wordcheck.adminId}" th:selected="${search.searchType} == 'adminId'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.wordcheck.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 사용 상태 -->
+                                            <select name="state" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.wordcheck.state}"></option>
+                                                <option value="1" th:text="#{lang.wordcheck.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                <option value="0" th:text="#{lang.wordcheck.state.delete}" th:selected="${search.state} == '0'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.wordcheck.button.search}" onclick="wordcheck_member.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="wordcheck_member.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <!-- 등록 -->
+                                            <button type="button" id="btnRegist" th:text="#{lang.wordcheck.button.add}" onclick="wordcheck_member.layer();" class="btn btn-sm btn-success"></button>
+                                            <!-- 엑셀 다운로드 -->
+                                            <button type="button" id="btnExcel" th:text="#{lang.wordcheck.button.excel.download}" onclick="wordcheck_member.excel();" class="btn btn-sm btn-primary"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.wordcheck.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.wordcheck.num}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.wordcheck.word}" class="text-center" style="width:20%"></th>
+                            <th scope="col" th:text="#{lang.wordcheck.changeWord}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.wordcheck.type}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.wordcheck.memo}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.wordcheck.adminId}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.wordcheck.state}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.wordcheck.regdate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.wordcheck.setting}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

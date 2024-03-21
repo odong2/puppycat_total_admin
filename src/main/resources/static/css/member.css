@@ -1,0 +1,48 @@
+/* layer */
+#memberImageLayer > div > div > div > label{background: #aeafb4; color: #ffffff; border: 1px solid #aeafb4;}
+#memberImageLayer > div > div > div > label > input{position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;}
+#memberImageLayer > div > div > div > div.image-preview-wrap{padding: 22px 8px 8px 8px; margin: 8px 0; display: inline-block; height: auto; width: auto; max-width: 150px; min-width: 35px; text-align: center; position: relative; line-height: 35px; border: 1px solid #dadada; border-radius: 5px;}
+#memberImageLayer > div > div > div > div > div.bg{display: table; background: #eee; min-height: 30px; width: 100%;}
+#memberImageLayer > div > div > div > div > div.bg > div.preview-img{display: table-cell; vertical-align: middle; max-width: 150px;}
+#memberImageLayer > div > div > div > div > div.bg > div > a > img{cursor: pointer; max-width: 100%; height: auto;}
+
+/* member report list tooltip */
+
+#tooltip {
+    position: relative;
+}
+
+#tooltip .tooltip-text {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+}
+
+#tooltip:hover .tooltip-text {
+    visibility: visible;
+}
+
+#tooltip .tooltip-text::after {
+    content: " ";
+    position: absolute;
+    border-style: solid;
+    border-width: 5px;
+}
+
+#tooltip .tooltip-right {
+    top: -3px;
+    left: 80%;
+}
+
+#tooltip .tooltip-right::after {
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-color: transparent black transparent transparent;
+}

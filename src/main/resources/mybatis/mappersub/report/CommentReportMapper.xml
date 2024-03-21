@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.report.CommentReportDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchTargetType == 'all'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                            OR `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                            OR  BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reporter'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reported'">
+                        <if test="searchType == 'id'">
+                            AND `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `sncocore`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="code != null">
+                AND `sncocore`.`report_code` <![CDATA[ = ]]> #{code}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null">
+                <![CDATA[
+                AND (`sncocore`.`reg_date` >= #{searchStartDate} AND `sncocore`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 댓글 신고 목록 조회 -->
+    <select id="getList" parameterType="SearchDto" resultType="CommentReportDto">
+        SELECT
+            `snco`.`idx` AS `contentsIdx`,
+            `sncocore`.`idx`,
+            `sncocore`.`member_uuid`,
+            `sncoco`.`idx` AS `commentIdx`,
+            `sncoco`.`parent_idx` AS `parentIdx`,
+            `pume1`.`id` ,
+            `pume1`.`idx` as `member_idx` ,
+            `pume1`.`nick` ,
+            `sncoco`.`member_uuid` AS `reportMemberUuid`,
+            `pume2`.`id` AS `reportMemberId`,
+            `pume2`.`idx` AS `reportMemberIdx`,
+            `pume2`.`nick` AS `reportMemberNick`,
+            `sncocore`.`contents`,
+            `sncocore`.`state`,
+            `snreco`.`idx` AS `reportCodeIdx`,
+            `snreco`.`name`,
+            `sncocorere`.`reason`,
+            `sncoco`.`state` AS `commentState`,
+            `sncocoreadlo`.`state` AS `adminChkState`,
+            CONVERT_TZ(`sncocoreadlo`.`reg_date`, 'UTC', '${convertTZ}') AS `adminChkDate`,
+            CONVERT_TZ(`sncocore`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_report` AS `sncocore`
+        INNER JOIN <include refid="databaseSns"/>`sns_report_code` AS `snreco`
+            ON `sncocore`.`report_code` = `snreco`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+            ON `sncocore`.`comment_Idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `sncocore`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `sncoco`.`member_uuid` = `pume2`.`uuid`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `sncoco`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_comment_report_admin_log` AS `sncocoreadlo`
+            ON `sncocore`.`idx` = `sncocoreadlo`.`report_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_comment_report_reason` AS `sncocorere`
+            ON `sncocore`.`idx` = `sncocorere`.`report_idx`
+        <include refid="searchCondition"/>
+        ORDER BY `sncocore`.`reg_date` DESC
+        <if test="pagination != null">
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 신고 카운트 -->
+    <select id="getTotalCount" resultType="_int">
+        SELECT
+            COUNT(`sncocore`.`idx`) AS iTotalCount
+        FROM <include refid="databaseSns"/>`sns_contents_comment_report` AS `sncocore`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `sncocore`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `sncoco`.`member_uuid` = `pume2`.`uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 부모 댓글 내용 by commentIdx-->
+    <select id="getParentCommentByIdx" parameterType="_long" resultType="CommentReportDto">
+        SELECT
+            `sncoco`.`idx` AS `parentCommentIdx`,
+            `sncoco`.`state` AS `state`,
+            `sncoco`.`contents` AS `parentContents`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`idx` = #{idx}
+        LIMIT 1
+    </select>
+
+    <!-- idx 검색 -->
+    <select id="getChkIdxList" parameterType="List" resultType="Long">
+        SELECT
+            `report_idx`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_comment_report_admin_log`
+        WHERE
+            `report_idx` IN
+            <foreach collection="idxList" item="idx" open="("  separator="," close=")">
+                #{idx}
+            </foreach>
+    </select>
+
+</mapper>

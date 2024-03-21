@@ -1,0 +1,146 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        productMp.list(page);
+    })
+
+    let text = {
+        partnerProductButton:"[[#{lang.product.partner.product}]]",     //파트너 상품
+    }
+
+    let productMp = {
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/product/mp',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                // 썸네일
+                                let thumbnail = "";
+                                if (el.thumbnailList.length) {
+                                    thumbnail = el.thumbnailList[0].url;
+                                }
+
+
+                                let productName = el.productName.replace(/<[^>]*>?/g, '');
+
+                                if(productName.length > 30){
+                                    productName = productName.substring(0,30);
+                                    productName = productName.concat('...');
+                                }
+
+                                let categoryName = "";
+                                if (el.categoryList.length > 0) {
+                                    let groupNum = "";
+
+                                    categoryName += "<div>";
+                                    $.each(el.categoryList, function (idx, categoryEl) {
+                                        let division = "";
+                                        if (groupNum == categoryEl.groupNum) {
+                                            division = "<span> > </span>";
+                                        } else {
+                                            groupNum = categoryEl.groupNum;
+                                            if (idx != 0) {
+                                                division = "";
+                                                categoryName += "</div>";
+                                            }
+                                        }
+                                        categoryName += division + `<span class="mx-2" data-code="${categoryEl.code}">${categoryEl.category}</span>`
+                                    })
+                                    categoryName += "</div>";
+                                }
+
+                                // 정가
+                                let price = (el.price != undefined) ? addComma(el.price) : 0;
+
+                                // state
+                                let bgClass = "";
+                                if (el.state == 0) {
+                                    bgClass = "bg-secondary";
+                                }
+
+                                listTbody +=`
+                                <tr class="${bgClass}">
+                                    <td class="text-center">${listNum}</td>
+                                    <td class="text-center"><img src="${thumbnail}" style="max-height:100px; max-width:200px"></td>
+                                    <td class="text-left"><a href="javascript:void(0);" onclick="productMp.view(${el.idx});">${productName}</a></td>
+                                    <td class="text-center"><span class="p-1 badge ${el.stateBg}">${el.stateText}</span></td>>
+                                    <td class="text-left">${categoryName}</td>
+                                    <td class="text-center">${ (el.brandName) ? el.brandName : "-"}</td>
+                                    <td class="text-right">${price}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="productMp.viewParterList(${el.idx});">${text.partnerProductButton}</a></td>
+                                    <td class="text-center">${el.regDate}</td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("productMp", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="7" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        regist: function () {
+            location.href = '[[${SERVER.currentDomain}]]/shop/product/mp/regist';
+        },
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/shop/product/mp/view/' + idx;
+        },
+        reset: function () {
+            $("input[name=searchStartDate]").val("");
+            $("input[name=searchEndDate]").val("");
+            $("input[name=searchWord]").val("");
+            productMp.list(1);
+
+        },
+        viewParterList:function (idx){
+            location.href = "[[${SERVER.currentDomain}]]/shop/product/partner/list?searchType=idx&searchWord="+idx;
+        },
+    }
+</script>

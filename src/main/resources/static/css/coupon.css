@@ -1,0 +1,12 @@
+/* layer */
+.send-list-box-modal{width: 300px; height: 88px; padding: 10px; border: 1px solid #bbb3b3; margin-top: 10px; overflow-y: scroll; border-radius: 3px;}
+.send-list-box{width: 400px; height: 88px; padding: 10px; border: 1px solid #bbb3b3; margin-top: 10px; overflow-y: scroll; border-radius: 3px;}
+.delete{border: 1px solid #8d8888; width: 13px; height: 13px; border-radius: 3px; background: url("../images/btn_pop_close.gif") no-repeat center center; cursor: pointer;}
+.disabled {
+    pointer-events: none;
+    background: #e9ecef;
+}
+.table-responsive {
+    overflow-y: auto;
+    height: 300px;
+}

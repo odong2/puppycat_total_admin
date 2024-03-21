@@ -1,0 +1,46 @@
+<script th:fragment="importJsFragment">
+    let restrain_apply = {
+        regist: function () {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/restrain/member/apply',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        alert(res.message);
+                        //location.href = res.data.location;
+                        opener.location.reload();
+                        self.close();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+    $(document).ready(function () {
+        // select 요소의 변경 이벤트를 감지합니다.
+        $('#codeIdx').on('change', function () {
+            var selectedValue = $(this).val(); // 선택된 option의 값을 가져옵니다.
+
+            if (selectedValue == '5') {
+                $('#reason').prop('disabled', false); // input을 활성화합니다.
+            } else {
+                $('#reason').prop('disabled', true); // input을 비활성화합니다.
+            }
+        });
+    });
+</script>

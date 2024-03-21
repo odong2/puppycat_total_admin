@@ -1,0 +1,71 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+
+        // ckeditor
+        if ($("#detail").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#detail"), {
+                    language: "ko",
+                    simpleUpload: {
+                        uploadUrl: "[[${SERVER.currentDomain}]]/v1/policy/tempImage",
+                        withCredentials: true,
+                    },
+                })
+                .then(newEditor => {
+                    const fileInput = newEditor.ui.view.element.querySelector('input[type="file"]');
+                    fileInput.setAttribute("accept", ".jpg,.jpeg,.png"); // jpg, jpeg, png 이미지만 허용
+                    editor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    });
+
+    let text = {
+        manyCharacters : "[[#{lang.policy.exception.characters}]]", // 글자 수가 너무 많습니다.
+        categoryText : "[[#{lang.policy.category}]]",               // 카테고리
+    }
+
+    let form = $("#frm")[0];
+
+    /** 이용약관 등록 **/
+    let policy = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/policy/list?" + qStr;
+        },
+        regist : function () {
+            formData = new FormData(form);
+            formData.set('detail' , editor.getData());
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/policy',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.href = "[[${SERVER.currentDomain}]]/policy/list";
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        }
+    }
+</script>

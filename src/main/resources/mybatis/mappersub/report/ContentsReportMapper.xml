@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.report.ContentsReportDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchTargetType == 'all'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                            OR `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                            OR BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reporter'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reported'">
+                        <if test="searchType == 'id'">
+                            AND `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `sncore`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="code != null">
+                AND `sncore`.`report_code` <![CDATA[ = ]]> #{code}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null">
+                <![CDATA[
+                AND (`sncore`.`reg_date` >= #{searchStartDate} AND `sncore`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 콘텐츠 신고 목록 조회 -->
+    <select id="getList" parameterType="SearchDto" resultType="ContentsReportDto">
+        SELECT
+            `sncore`.`idx`,
+            `sncore`.`member_uuid`,
+            `snco`.`idx` AS `contentsIdx`,
+            `pume1`.`id` ,
+            `pume1`.`idx` AS `member_idx`,
+            `pume1`.`nick` ,
+            `snco`.`member_uuid` AS `reportMemberUuid`,
+            `snco`.`state` AS `contentsState`,
+            `pume2`.`id` AS `reportMemberId`,
+            `pume2`.`idx` AS `reportMemberIdx`,
+            `pume2`.`nick` AS `reportMemberNick`,
+            `sncore`.`contents`,
+            `sncore`.`state`,
+            `snreco`.`idx` AS `reportCodeIdx`,
+            `snreco`.`name`,
+            `sncorere`.`reason`,
+            `sncoreadlo`.`state` AS `adminChkState`,
+            CONVERT_TZ(`sncoreadlo`.`reg_date`, 'UTC', '${convertTZ}') AS `adminChkDate`,
+            CONVERT_TZ(`sncore`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM  <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+        INNER JOIN <include refid="databaseSns"/>`sns_report_code` AS `snreco`
+            ON `sncore`.`report_code` = `snreco`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `sncore`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `snco`.`member_uuid` = `pume2`.`uuid`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report_admin_log` AS `sncoreadlo`
+            ON `sncore`.`idx` = `sncoreadlo`.`report_idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_report_reason` AS `sncorere`
+            ON `sncore`.`idx` = `sncorere`.`report_idx`
+        <include refid="searchCondition"/>
+            ORDER BY `sncore`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 신고 카운트 -->
+    <select id="getTotalCount" resultType="_int">
+        SELECT
+            COUNT(`sncore`.`idx`) AS iTotalCount
+        FROM  <include refid="databaseSns"/>`sns_contents_report` AS `sncore`
+        INNER JOIN <include refid="databaseSns"/>`sns_report_code` AS `snreco`
+            ON `sncore`.`report_code` = `snreco`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `sncore`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN   <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `snco`.`member_uuid` = `pume2`.`uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- idx 검색 -->
+    <select id="getChkIdxList" parameterType="List" resultType="Long">
+        SELECT
+            `report_idx`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_report_admin_log`
+        WHERE 
+            `report_idx` IN
+            <foreach collection="idxList" item="idx" open="("  separator="," close=")">
+                #{idx}
+            </foreach>
+    </select>
+
+</mapper>

@@ -1,0 +1,457 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid p-3" layout:fragment="content">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.partner.title.modify}"></h5>
+            </div>
+
+            <!-- 폼 태그 -->
+            <form id="frm">
+            <!-- 회원 정보 입력 -->
+                <container>
+                    <div class="card-body row">
+                        <!-- 리스트 -->
+                        <div class="col-12">
+
+                            <h6 class="mt-2 mb-3" th:text="#{lang.partner.title.join.member.info}"></h6>
+
+                            <table class="table">
+                                <tbody>
+                                <!-- 아이디 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.id}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm col-5" id="id" th:value="${partnerInfo.id}" readonly/>
+                                    </td>
+                                </tr>
+
+                                <!-- 상태 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.state}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                            <input type="radio" class="btn-check" name="state" id="state1" th:checked="${partnerInfo.state eq 1}" value="1" autocomplete="off" onclick="btn.stateChange();">
+                                            <label class="btn btn-sm btn-outline-success" for="state1" th:text="#{lang.partner.state.1}"></label>
+                                            <input type="radio" class="btn-check" name="state" id="state6" th:checked="${partnerInfo.state eq 2}" value="2" autocomplete="off" onclick="btn.stateChange();">
+                                            <label class="btn btn-sm btn-outline-secondary" for="state6" th:text="#{lang.partner.state.2}"></label>
+                                            <input type="radio" class="btn-check" name="state" id="state3" th:checked="${partnerInfo.state eq 3}" value="3" autocomplete="off" onclick="btn.stateChange();">
+                                            <label class="btn btn-sm btn-outline-info" for="state3" th:text="#{lang.partner.state.3}"></label>
+                                            <input type="radio" class="btn-check" name="state" id="state4" th:checked="${partnerInfo.state eq 4}" value="4" autocomplete="off" onclick="btn.stateChange();">
+                                            <label class="btn btn-sm btn-outline-primary" for="state4" th:text="#{lang.partner.state.4}"></label>
+                                            <input type="radio" class="btn-check" name="state" id="state5" th:checked="${partnerInfo.state eq 5}" value="5" autocomplete="off" onclick="btn.stateChange();">
+                                            <label class="btn btn-sm btn-outline-warning" for="state5" th:text="#{lang.partner.state.5}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 반려 사유 -->
+                                <tr id="reasonWrap" style="display: none;">
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.reject.reason}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm" name="reason" th:value="${partnerInfo.reason}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 파트너 코드 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.partner.code}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <p class="text-left col-5 p-0" th:text="${partnerInfo.partnerCode}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 대표자명 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.president.name}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm col-5" th:value="${partnerInfo.president}" readonly/>
+                                        <input type="hidden" name="president" class="form-control form-control-sm col-5" th:value="${partnerInfo.president}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 대표자 연락처 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="form-label" th:text="#{lang.partner.president.tel}"/>
+                                        </p>
+                                    </th>
+                                    <td class="col-12 d-flex" style="border-top: none; border-bottom: none;">
+                                        <input type="number" name="presidentTel1" class="form-control form-control-sm col-2" id="presidentTel1" maxlength="4"
+                                               th:value="${partnerInfo.presidentTel1}" oninput="check.maxLengthCheck(this);">
+                                        <p class="position-relative" style="top:5px;">&nbsp;-&nbsp;</p>
+                                        <input type="number" name="presidentTel2" class="form-control form-control-sm col-2" id="presidentTel2" maxlength="4"
+                                               th:value="${partnerInfo.presidentTel2}" oninput="check.maxLengthCheck(this);">
+                                        <p class="position-relative" style="top:5px;">&nbsp;-&nbsp;</p>
+                                        <input type="number" name="presidentTel3" class="form-control form-control-sm col-2" id="presidentTel3" maxlength="4"
+                                               th:value="${partnerInfo.presidentTel3}" oninput="check.maxLengthCheck(this);">
+                                    </td>
+                                </tr>
+
+                                <!-- 휴대폰 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.phone}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="number" oninput="check.maxLengthCheck(this);" maxlength="11" class="form-control form-control-sm col-5" id="phone" readonly>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+
+                            <h6 class="mt-2 mb-3" th:text="#{lang.partner.title.join.partner.info}"></h6>
+
+                            <table class="table">
+                                <tbody>
+
+                                <!-- 사업자 번호 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.businessNumber}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm col-5 check" type="text" maxlength="10" name="businessNumber" id="businessNumber"
+                                               th:value="${partnerInfo.getBusinessNumber()}" th:placeholder="#{lang.partner.placeholder.businessNumber}"/>
+                                        <input type="hidden" id="oldBusinessNumber" th:value="${partnerInfo.getBusinessNumber()}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 과세여부 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.taxType}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm col-5" type="text" th:value="#{lang.partner.taxType.1}" disabled/>
+                                        <input name="taxType" type="hidden" th:value="#{lang.partner.taxType.1}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 상호명 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.company.name}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="text" class="form-control form-control-sm col-5 check" name="companyName" id="companyName" maxlength="50"
+                                               th:value="${partnerInfo.getCompanyName()}" th:placeholder="#{lang.partner.placeholder.company.name}" >
+                                    </td>
+                                </tr>
+
+                                <!-- 대표 구성 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.president.type}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <div class="mt-1">
+                                            <button type="button" class="btn btn-sm btn-secondary presidentTypeBtn" id="president1" th:text="#{lang.partner.president.type.1}"/>
+                                            <button type="button" class="btn btn-sm btn-secondary presidentTypeBtn" id="president2" th:text="#{lang.partner.president.type.2}"/>
+                                            <input class="check" type="hidden" name="presidentType" id="presidentType" th:value="${partnerInfo.getPresidentType()}"/>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span id="presidentTypeText" th:text="#{lang.partner.span.president.type}" style="display: none"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 업태 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.businessType}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="text" class="form-control form-control-sm col-5 check" name="businessType" id="businessType" maxlength="50"
+                                               th:value="${partnerInfo.getBusinessType()}" th:placeholder="#{lang.partner.placeholder.businessType}" >
+                                    </td>
+                                </tr>
+
+                                <!-- 업종 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.businessItem}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="text" class="form-control form-control-sm col-5 check" name="businessItem" id="businessItem" maxlength="50"
+                                               th:value="${partnerInfo.getBusinessItem()}" th:placeholder="#{lang.partner.placeholder.businessItem}" >
+                                    </td>
+                                </tr>
+
+                                <!-- 통신판매업 신고번호 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.approvalNumber}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8 d-flex" style=" border-top: none; border-bottom: none;">
+                                        <input type="number" name="approvalNumber1" class="form-control form-control-sm col-3" id="approvalNumber1" maxlength="4"
+                                               oninput="check.maxLengthCheck(this);" th:placeholder="#{lang.partner.placeholder.partner.approval.number1}">
+                                        <p class="position-relative" style="top:5px;">&nbsp;-&nbsp;</p>
+                                        <input type="text" name="approvalNumber2" class="form-control form-control-sm col-4" id="approvalNumber2" maxlength="10"
+                                               oninput="check.approvalNumberCheck(this);"
+                                               th:placeholder="#{lang.partner.placeholder.partner.approval.number2}">
+                                        <p class="position-relative" style="top:5px;">&nbsp;-&nbsp;</p>
+                                        <input type="number" name="approvalNumber3" class="form-control form-control-sm col-3" id="approvalNumber3" maxlength="4"
+                                               oninput="check.maxLengthCheck(this);" th:placeholder="#{lang.partner.placeholder.partner.approval.number3}">
+                                    </td>
+                                </tr>
+
+                                <!-- 통신판매업 사본 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.approvalNumber.file}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8 file-label">
+                                        <label class="py-1 px-3 rounded-2">
+                                            <input type="file" name="approvalFile" class="check" accept="image/*" onchange="img.imageChange(this);" th:text="#{lang.partner.image.file}"/>
+                                        </label>
+                                        <div class="col-md-8 pt-2 preview" id="approvalPreview">
+                                        </div>
+                                        <p th:text="#{lang.partner.span.join.other.document.1}"></p>
+                                    </td>
+                                </tr>
+
+                                <!-- 사업자 유형 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.companyType}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <div class="mt-1">
+                                            <button type="button" class="btn btn-sm btn-secondary companyTypeBtn" id="companyType1" th:text="#{lang.partner.companyType.1}"/>
+                                            <button type="button" class="btn btn-sm btn-secondary companyTypeBtn" id="companyType2" th:text="#{lang.partner.companyType.2}"/>
+                                            <input class="check" type="hidden" name="companyType" id="companyType" th:value="${partnerInfo.getCompanyType()}"/>
+                                            <input class="form-control form-control-sm col-5 mt-2" name="companyNumber" id="companyNumber" style="display: none;" maxlength="30" oninput="check.maxLengthCheck(this);"
+                                                   th:placeholder="#{lang.partner.placeholder.companyNumber}" th:value="${partnerInfo.companyNumber}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 사업자 등록증사본 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.business.registration}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8 file-label">
+                                        <label class="py-1 px-3 rounded-2">
+                                            <input type="file" name="businessFile" class="check" accept="image/*" onchange="img.imageChange(this);" th:text="#{lang.partner.image.file}"/>
+                                        </label>
+                                        <div class="col-md-8 pt-2 preview" id="businessPreview">
+                                        </div>
+                                        <p th:text="#{lang.partner.span.join.other.document.1}"></p>
+                                    </td>
+                                </tr>
+
+                                <!-- 사업장 주소 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.companyAddr}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <div class="d-flex">
+                                            <input type="text" class="form-control form-control-sm col-3 mr-2 check" name="companyZipcode" id="companyZipcode" maxlength="20" th:value="${partnerInfo.getCompanyZipcode()}">
+                                            <button type="button" class="btn btn-sm btn-primary" id="searchLocationBtn"
+                                                    th:text="#{lang.partner.button.search}" onclick="partner.location();"/>
+                                        </div>
+                                        <input type="text" class="form-control form-control-sm col-5 mr-2 mt-2 check" name="companyAddr" id="companyAddr" maxlength="100" th:value="${partnerInfo.getCompanyAddr()}">
+                                        <input type="text" class="form-control form-control-sm col-5 mr-2 mt-2" name="companyAddrDetail" id="companyAddrDetail" maxlength="100" th:value="${partnerInfo.getCompanyAddrDetail()}"
+                                               th:placeholder="#{lang.partner.placeholder.companyAddr.detail}">
+                                    </td>
+                                </tr>
+
+                                <!-- 이메일 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.email}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="text" class="form-control form-control-sm col-5 check" name="email" id="email" maxlength="50"
+                                               onkeydown="check.emailCheck(this);" onkeyup="check.emailCheck(this);" onblur="check.emailCheck(this);"
+                                               th:value="${partnerInfo.getEmail()}" th:placeholder="#{lang.partner.placeholder.email}" >
+                                    </td>
+                                </tr>
+
+                                <!-- 유선 전화 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.companyTel}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="number" class="form-control form-control-sm col-5" name="companyTel" id="companyTel" maxlength="20" oninput="check.maxLengthCheck(this);"
+                                               th:value="${partnerInfo.getCompanyTel}" th:placeholder="#{lang.partner.placeholder.companyTel}">
+                                    </td>
+                                </tr>
+
+                                <!-- 파트너 홈페이지 주소 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.website}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input type="text" class="form-control form-control-sm col-5" name="website" id="website" maxlength="50"
+                                               th:value="${partnerInfo.getWebsite()}" th:placeholder="#{lang.partner.placeholder.website}" >
+                                    </td>
+                                </tr>
+
+                                <!-- 기타 서류 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.other.document}"></label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <div class="mt-1 file-label">
+                                            <label class="py-1 px-3 rounded-2">
+                                                <input type="file" name="uploadFile" multiple accept="image/*" onchange="img.imageArrayChange(this);" th:text="#{lang.partner.image.file}"/>
+                                            </label>
+                                            <div class="col-md-8 mb-2 pt-2 preview" id="uploadPreview">
+                                            </div>
+                                            <p th:text="#{lang.partner.span.join.other.document.1}"></p>
+                                            <p th:text="#{lang.partner.span.join.other.document.2}"></p>
+                                            <p th:text="#{lang.partner.span.join.other.document.3}"></p>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 거래 은행 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" for="bankIdx" th:text="#{lang.partner.bank}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-4">
+                                        <select class="form-select form-select-sm col-5" name="bankIdx" id="bankIdx">
+                                            <option th:text="#{lang.partner.select.box.bank.choose}" value="0"></option>
+                                            <th:block th:each="bank : ${bankList}">
+                                                <option  th:value="${bank.getIdx()}" th:utext="${bank.getName()}" th:selected="${partnerBankInfo.getBankIdx()} == ${bank.getIdx}"></option>
+                                            </th:block>
+                                        </select>
+                                    </td>
+                                </tr>
+
+                                <!-- 예금주 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.account.holder.2}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <input class="form-control form-control-sm col-5" type="text" name="accountHolder" id="accountHolder" maxlength="50"
+                                               th:value="${partnerBankInfo.getAccountHolder()}" th:placeholder="#{lang.partner.placeholder.account.holder}"/>
+                                    </td>
+                                </tr>
+
+                                <!-- 계좌번호 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.account.number}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8">
+                                        <div class="d-flex">
+                                            <input type="number" class="form-control form-control-sm col-5 mr-2" th:placeholder="#{lang.partner.placeholder.only.number}"
+                                                   th:value="${partnerBankInfo.getAccountNumber()}" name="accountNumber" id="accountNumber" maxlength="50"
+                                                   oninput="check.maxLengthCheck(this);">
+                                            <button type="button" class="btn btn-sm btn-primary" id="accountNumberBtn"
+                                                    th:text="#{lang.partner.button.certification}" onclick=""/>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 통장사본 -->
+                                <tr>
+                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                        <p class="text-center">
+                                            <label class="p-0" th:text="#{lang.partner.bank.file}"></label>
+                                            <label style="color: red">*</label>
+                                        </p>
+                                    </th>
+                                    <td class="col-8 file-label">
+                                        <label class="py-1 px-3 rounded-2">
+                                            <input type="file" name="accountFile" class="" accept="image/*" onchange="img.imageChange(this);" th:text="#{lang.partner.image.file}"/>
+                                        </label>
+                                        <div class="col-md-8 pt-2 preview" id="accountPreview">
+                                        </div>
+                                        <span th:text="#{lang.partner.span.join.other.document.1}"></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </container>
+                <div class="btn-group-sm d-flex justify-content-center mb-3">
+                    <button type="button" class="btn btn-warning" th:text="#{lang.partner.button.modify}" onclick="partner.modify();"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>

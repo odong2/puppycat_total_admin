@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.statistics.PetStatisticsDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="petStatisticsColumns">
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 알러지 통계 가져오기 -->
+    <select id="getAllergy" parameterType="SearchDto" resultType="PetDto">
+        SELECT
+            `pealty`.`idx`
+            ,IFNULL(`pealtyna`.`name`,`pealty`.`name`) AS `allergy_name`
+            ,COUNT(`peinal`.`allergy_type_idx`) AS total_cnt
+        FROM
+            <include refid="databaseSns"/>`pet_info_allergy` AS `peinal`
+        INNER JOIN <include refid="databaseSns"/>`pet_allergy_type` AS `pealty`
+            ON `peinal`.`allergy_type_idx` = `pealty`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_allergy_type_name` AS `pealtyna`
+            ON `pealtyna`.`pet_allergy_type_idx` = `pealty`.`idx`
+            AND `pealtyna`.`lang` = "ko"
+        INNER JOIN <include refid="databaseSns"/>`pet` AS `pe`
+            ON `pe`.`idx` = `peinal`.`pet_idx`
+        INNER JOIN `pet_breed` AS `pebr`
+            ON `pe`.`breed_idx` = `pebr`.`idx`
+        LEFT JOIN `pet_breed_name` AS `pebrna`
+            ON `pebrna`.`breed_idx` = `pebr`.`idx`
+            AND `pebrna`.`lang` = "ko"
+        WHERE
+                `pealty`.`state` = 1
+        <if test="petType != null">
+            AND `pebr`.`type_idx` = #{petType}
+        </if>
+        <if test="searchWord != '' and searchWord != null">
+            <bind name="val" value="'%' + searchWord + '%'" />
+            <choose>
+                <when test="searchType == 'breed'">
+                    AND IFNULL(`pebrna`.`name`,`pebr`.`name`) LIKE #{val}
+                </when>
+            </choose>
+        </if>
+        GROUP BY `pealty`.`idx`
+        ORDER BY `pealty`.`idx` ASC
+    </select>
+
+    <!-- 품종별 알러지 통계 가져오기 -->
+    <select id="getBreedAllergy" parameterType="SearchDto" resultType="PetDto">
+        SELECT
+            `pebr`.`idx`
+            ,IFNULL(`pebrna`.`name`,`pebr`.`name`) AS `breed_name`
+            ,IFNULL(`pealtyna`.`name`,`pealty`.`name`) AS `allergy_name`
+            ,IFNULL(`petyna`.`name`,`pety`.`name`) AS `type_name`
+            ,COUNT(`pebr`.`idx`) AS total_cnt
+        FROM
+           <include refid="databaseSns"/>`pet` AS `pe`
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pe`.`breed_idx` = `pebr`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_name` AS `pebrna`
+            ON `pebrna`.`breed_idx` = `pebr`.`idx`
+            AND `pebrna`.`lang` = "ko"
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_type_name` AS `petyna`
+            ON `petyna`.`type_idx` = `pety`.`idx`
+            AND `petyna`.`lang` = "ko"
+        INNER JOIN <include refid="databaseSns"/>`pet_info_allergy` AS `peinal`
+            ON `pe`.`idx` = `peinal`.`pet_idx`
+        INNER JOIN <include refid="databaseSns"/>`pet_allergy_type` AS `pealty`
+            ON `peinal`.`allergy_type_idx` = `pealty`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`pet_allergy_type_name` AS `pealtyna`
+            ON `pealtyna`.`pet_allergy_type_idx` = `pealty`.`idx`
+            AND `pealtyna`.`lang` = "ko"
+        WHERE `pealty`.`idx` =  #{type}
+            AND `pealty`.`state` = 1
+        <if test="petType != null">
+            AND `pebr`.`type_idx` = #{petType}
+        </if>
+        <if test="searchWord != '' and searchWord != null">
+            <bind name="val" value="'%' + searchWord + '%'" />
+            <choose>
+                <when test="searchType == 'breed'">
+                    AND IFNULL(`pebrna`.`name`,`pebr`.`name`) LIKE #{val}
+                </when>
+            </choose>
+        </if>
+        GROUP BY `pebr`.`idx`
+        ORDER BY `total_cnt` DESC
+    </select>
+
+    <!-- 품종 통계 가져오기 -->
+    <select id="getBreedStat" parameterType="SearchDto" resultType="PetDto">
+        SELECT
+             `pebr`.`name` AS `breedName`
+            , `pety`.`name` AS `typeName`
+            , COUNT(`pe`.`breed_idx`) AS `total_cnt`
+        FROM
+            <include refid="databaseSns"/>`pet` AS `pe`
+        INNER JOIN <include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pe`.`breed_idx` = `pebr`.`idx`
+        <if test="petType != null">
+            AND `pebr`.`type_idx` = #{petType}
+        </if>
+        LEFT JOIN <include refid="databaseSns"/>`pet_breed_name` AS `pebrna`
+            ON `pebrna`.`breed_idx` = `pebr`.`idx`
+            AND `pebrna`.`lang` = "ko"
+        INNER JOIN <include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pebr`.`type_idx` = `pety`.`idx`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'breed'">
+                        AND IFNULL(`pebrna`.`name`,`pebr`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+        GROUP BY `pe`.`breed_idx`
+        ORDER BY COUNT(`pe`.`breed_idx`) DESC
+    </select>
+
+</mapper>

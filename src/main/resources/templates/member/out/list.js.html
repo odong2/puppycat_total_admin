@@ -1,0 +1,93 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        outMember.list(page);
+    });
+
+    let outMember = {
+        // 조회
+        list: function (page) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/out/members/list',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // 페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount);
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${listNum}</td>
+                                    <td class="text-center">${el.id}</td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center" id="tooltip">${el.codeName}<span class="tooltip-text tooltip-right">${el.reason}</span></td>
+                                    <td class="text-center">${el.simpleType}</td>
+                                    <td class="text-center">${el.outRegDate}</td>
+                                    <td class="text-center">${el.outDate}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("outMember", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="11" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/out/members/list';
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/out/members/excel?' + $("#frm").serialize();
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

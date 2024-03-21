@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.MemberPetDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="petColumns">
+        `pe`.`name`,
+        `pe`.`uuid`,
+        `pety`.`name` AS `typeName`,
+        `pein`.`number`,
+        `pein`.`gender`,
+        `pein`.`size`,
+        `pein`.`weight`,
+        `pein`.`age`,
+        `pein`.`birth`,
+        `pepeco`.`idx` AS `personalityIdx`,
+        `pebr`.`idx`AS `breedIdx`,
+        `pebr`.`name` AS `breedName`,
+        `peprim`.`url`,
+        `peprim`.`img_width`,
+        `peprim`.`img_height`,
+        `peprim`.`sort` AS `imgSort`,
+        IFNULL(`pebr`.`name`, '') AS `breedName`,
+        IFNULL(`pebret`.`name`, '') AS `breedNameEtc`,
+        IFNULL(`pepeco`.`name`, '') AS `personality`,
+        IFNULL(`pepeet`.`personality`, '') AS `personalityEtc`
+    </sql>
+
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 펫 정보 조회 -->
+    <select id="getPetInfoList" parameterType="List" resultType="PetDto">
+        SELECT
+            DISTINCT
+            <include refid="petColumns"/>
+        FROM<include refid="databaseSns"/>`pet` AS `pe`
+        INNER JOIN<include refid="databaseSns"/>`sns_member_pet` AS `snmepe`
+            ON `snmepe`.`pet_idx` = `pe`.`idx`
+        INNER JOIN<include refid="databaseSns"/>`pet_breed` AS `pebr`
+            ON `pebr`.`idx` = `breed_idx`
+            AND `pebr`.`state` = 1
+        INNER JOIN<include refid="databaseSns"/>`pet_type` AS `pety`
+            ON `pety`.`idx` = `pebr`.`type_idx`
+            AND `pety`.`state` = 1
+        INNER JOIN<include refid="databaseSns"/>`pet_info` AS `pein`
+            ON `pein`.`pet_idx` = `pe`.`idx`
+        INNER JOIN<include refid="databaseSns"/>`pet_profile_img` AS `peprim`
+            ON `peprim`.`pet_idx` = `pe`.`idx`
+        LEFT JOIN<include refid="databaseSns"/>`pet_breed_etc` AS `pebret`
+            ON `pebret`.`pet_idx` = `pe`.`idx`
+            AND `pebret`.`state` = 1
+        LEFT JOIN<include refid="databaseSns"/>`pet_personality_code` AS `pepeco`
+            ON `pepeco`.`idx` = `pein`.`personality_idx`
+            AND `pepeco`.`state` = 1
+        LEFT JOIN<include refid="databaseSns"/>`pet_personality_etc` AS `pepeet`
+            ON `pepeet`.`pet_idx` = `pein`.`idx`
+            AND `pepeet`.`state` = 1
+        WHERE
+                `pe`.`uuid` IN
+            <foreach collection="petUuidList" item="uuid" open="(" separator="," close=")">
+                #{uuid}
+            </foreach>
+            AND `snmepe`.`state` = 1
+    </select>
+</mapper>

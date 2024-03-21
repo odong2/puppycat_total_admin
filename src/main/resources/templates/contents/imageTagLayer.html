@@ -1,0 +1,34 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.contents.image.tag.add}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="contentsImageLayer">
+        <!-- 이미지 내 태그 -->
+        <div class="col-md-12">
+            <div class="row border-bottom pb-3 pt-2">
+                <label for="tag-member" class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.contents.image.tag.target}"></label>
+                <div class="col-md-8 col-sm-9 pt-1">
+                    <form id="imgTag-frm">
+                        <input type="text" oninput="contentsImage.searchMember();" style="display: inline-block; width: 70%;" id="tag-member" name="tagMember" class="form-control form-control-sm" th:placeholder="#{lang.contents.placeholder.tag.member}"/>
+                        <input type="hidden" style="display: inline-block; width: 70%;" id="memberUuid" name="memberUuid" class="form-control form-control-sm"/>
+                        <br>
+                        <span id="search-member-result"></span>
+                    </form>
+                </div>
+            </div>
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.contents.image.location}"></label>
+                <div class="col-md-8 pt-2" id="preview"></div>
+            </div>
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.contents.image.tag.member}"></label>
+                <div class="col-md-8 pt-2" id="preview-tag-member">
+                    <span th:text="#{lang.contents.placeholder.tag.no}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

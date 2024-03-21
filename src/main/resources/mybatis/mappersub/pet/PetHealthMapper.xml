@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.pet.PetHealthDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 전체 카운트 -->
+    <select id="getHealthTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pupehety`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseMember"/>`puppycat_pet_health_type` AS `pupehety`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_health_type_name` AS `pupehetyna`
+            ON `pupehety`.`idx` = `pupehetyna`.`health_type_idx`
+            AND `pupehetyna`.`state` = 1
+            AND `pupehetyna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'health'">
+                        AND IFNULL(`pupehetyna`.`name`,`pupehety`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `pupehety`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 건강 리스트 -->
+    <select id="getHealthList" parameterType="SearchDto" resultType="HealthDto">
+        SELECT
+            `pupehety`.`idx`
+            , IFNULL(`pupehetyna`.`name`,`pupehety`.`name`) AS `health`
+            ,`pupehety`.`sort`
+            ,`pupehety`.`state`
+            , CONVERT_TZ(`pupehety`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_health_type` AS `pupehety`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_health_type_name` AS `pupehetyna`
+            ON `pupehety`.`idx` = `pupehetyna`.`health_type_idx`
+            AND `pupehetyna`.`state` = 1
+            AND `pupehetyna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'health'">
+                        AND IFNULL(`pupehetyna`.`name`,`pupehety`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `pupehety`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY `pupehety`.`state` DESC, `pupehety`.`sort` is null ASC, `pupehety`.`sort` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 건강질환 조회 -->
+    <select id="getHealthInfo" parameterType="long"  resultType="HealthDto">
+        SELECT
+            `pupehety`.`idx`
+            , IFNULL(`pupehetyna`.`name`,`pupehety`.`name`) AS `health`
+            ,`pupehety`.`sort`
+            ,`pupehety`.`state`
+            , CONVERT_TZ(`pupehety`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_health_type` AS `pupehety`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_health_type_name` AS `pupehetyna`
+            ON `pupehety`.`idx` = `pupehetyna`.`health_type_idx`
+            AND `pupehetyna`.`state` = 1
+            AND `pupehetyna`.`lang` = 'ko'
+        WHERE
+            `pupehety`.`idx` = #{idx}
+    </select>
+
+    <!-- 건강질환 전체 리스트 조회 -->
+    <select id="getAllHealthList" resultType="HealthDto">
+        SELECT
+            `pupehety`.`idx`
+            , IFNULL(`pupehetyna`.`name`,`pupehety`.`name`) AS `health`
+            ,`pupehety`.`sort`
+            ,`pupehety`.`state`
+            , CONVERT_TZ(`pupehety`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_health_type` AS `pupehety`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_health_type_name` AS `pupehetyna`
+            ON `pupehety`.`idx` = `pupehetyna`.`health_type_idx`
+            AND `pupehetyna`.`state` = 1
+            AND `pupehetyna`.`lang` = 'ko'
+    </select>
+
+</mapper>

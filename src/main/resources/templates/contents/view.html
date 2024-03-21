@@ -1,0 +1,241 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid m-0 p-0">
+        <form id="modifyForm">
+        <!-- 컨텐츠 영역 -->
+        <input type="hidden" name="idx" id="idx" th:value="${dataSet.idx}">
+        <div class="col-lg-12 mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="font-weight-bold text-primary float-left m-1"
+                        th:text="#{lang.contents.title.modify}"></h5>
+                </div>
+                <div class="card-body row">
+                    <form id="frm" accept-charset="utf-8">
+                        <div id="lay_information">
+                            <table class="table">
+                                <colgroup>
+                                    <col style="width: 20%;">
+                                </colgroup>
+                                <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="2"
+                                        th:text="#{lang.contents.title.info.regist}"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- 카테고리 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.category}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" name="category" style="display: inline-block; width: 25%;" class="form-control form-control-sm text-left" disabled />
+                                    </td>
+                                </tr>
+                                <!-- 작성자 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.writer}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" name="nick" style="display: inline-block; width: 25%;" class="form-control form-control-sm text-left" disabled />
+                                    </td>
+                                </tr>
+                                <!-- 위치 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.location}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" name="location" style="display: inline-block; width: 25%;" class="form-control form-control-sm text-left" disabled />
+                                    </td>
+                                </tr>
+                                <!-- 등록일 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.regdate}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" name="regDate" style="display: inline-block; width: 25%;" class="form-control form-control-sm text-left" disabled />
+                                    </td>
+                                </tr>
+                                <!-- 수정일 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.moddate}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <input type="text" name="modiDate" style="display: inline-block; width: 25%;" class="form-control form-control-sm text-left" disabled />
+                                    </td>
+                                </tr>
+                                <!-- 이미지 -->
+                                <tr style="display:table-row;">
+                                    <th class="text-center" th:text="#{lang.contents.image.detail}"></th>
+                                    <td class="p-0 pl-2 py-1">
+                                        <div>
+                                            <table class="table" style="margin:10px 0px;" id="sortTable">
+                                                <colgroup>
+                                                    <col style="width:20%;">
+                                                    <col style="width:50%;">
+                                                    <col style="width:20%;">
+                                                    <col style="width:10%;">
+                                                </colgroup>
+                                                <thead>
+                                                <tr>
+                                                    <th class="text-center" th:text="#{lang.contents.image.sort}"></th>
+                                                    <th class="text-center" th:text="#{lang.contents.image}"></th>
+                                                    <th class="text-center" th:text="#{lang.contents.image.tag}"></th>
+                                                    <th class="text-center" th:text="#{lang.contents.image.restrain}"></th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 내용 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label for="contentText" th:text="#{lang.contents.contents}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <textarea class="w-100 p-1 rounded-1 mt-2" maxlength="1000" rows="6" name="contents" id="contentText" disabled></textarea>
+                                    </td>
+                                </tr>
+                                <!-- 상태 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.state}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="radio" class="btn-check" name="contentsState" id="state1" th:value="1" autocomplete="off" checked="checked">
+                                            <label class="btn btn-outline-success" for="state1" th:text="#{lang.contents.state.normal}"></label>
+                                            <input type="radio" class="btn-check" name="contentsState" id="state0" th:value="0" autocomplete="off">
+                                            <label class="btn btn-outline-danger" for="state0" th:text="#{lang.contents.state.delete}"></label>
+                                            <input type="radio" class="btn-check" name="contentsState" id="state9" th:value="9" autocomplete="off">
+                                            <label class="btn btn-outline-warning" for="state9" th:text="#{lang.contents.state.restrain}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 좋아요 상태 -->
+                                <!--
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.likeState}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="radio" class="btn-check" name="isLike" id="likeState1" th:value="1" autocomplete="off" checked="checked" disabled>
+                                            <label class="btn btn-outline-success" for="likeState1" th:text="#{lang.contents.likeState.normal}"></label>
+                                            <input type="radio" class="btn-check" name="isLike" id="likeState0" th:value="0" autocomplete="off" disabled>
+                                            <label class="btn btn-outline-danger" for="likeState0" th:text="#{lang.contents.likeState.block}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                 -->
+                                <!-- 댓글 상태 -->
+                                <!--
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.commentState}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="radio" class="btn-check" name="isComment" id="commentState1" th:value="1" autocomplete="off" checked="checked" disabled>
+                                            <label class="btn btn-outline-success" for="commentState1" th:text="#{lang.contents.commentState.normal}"></label>
+                                            <input type="radio" class="btn-check" name="isComment" id="commentState0" th:value="0" autocomplete="off" disabled>
+                                            <label class="btn btn-outline-danger" for="commentState0" th:text="#{lang.contents.commentState.block}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                 -->
+                                <!-- 보관상태 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.isKeep}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="radio" class="btn-check" name="isKeep" id="keepState0" th:value="0" autocomplete="off">
+                                            <label class="btn btn-outline-success" for="keepState0" th:text="#{lang.contents.keep.state.normal}"></label>
+                                            <input type="radio" class="btn-check" name="isKeep" id="keepState1" th:value="1" autocomplete="off">
+                                            <label class="btn btn-outline-warning" for="keepState1" th:text="#{lang.contents.keep.state.keep}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- 공개범위 -->
+                                <tr>
+                                    <th class="text-center">
+                                        <label th:text="#{lang.contents.isView}"></label>
+                                    </th>
+                                    <td class="p-0 pl-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="radio" class="btn-check" name="isView" id="viewState1" th:value="1" autocomplete="off">
+                                            <label class="btn btn-outline-success" for="viewState1" th:text="#{lang.contents.view.state.all}"></label>
+                                            <input type="radio" class="btn-check" name="isView" id="viewState2" th:value="2" autocomplete="off">
+                                            <label class="btn btn-outline-warning" for="viewState2" th:text="#{lang.contents.view.state.follow}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 버튼 폼 -->
+                        <div id="btn-form" class="row">
+                            <div class="col text-center">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="self.close()"
+                                        th:text="#{lang.contents.button.close}"></button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="contents_detail.modify();"
+                                        th:text="#{lang.contents.button.modify}"></button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="image.restrain();"
+                                        th:text="#{lang.contents.button.restrain}"></button>
+                            </div>
+                        </div>
+                        <!-- Modal -->
+                        <div class="modal fade" id="restrainModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel" th:text="#{lang.contents.image.restrain.reason}"></h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <table class="table">
+                                            <tbody>
+                                                <tr>
+                                                    <th class="text-center">
+                                                        <label for="contentText" th:text="#{lang.contents.image.order}"></label>
+                                                    </th>
+                                                    <td class="p-0 pl-2" id="restrainNum">
+                                                    </td>
+                                                </tr>
+                                                </tr>
+                                                    <th class="text-center">
+                                                        <label for="contentText" th:text="#{lang.contents.contents}"></label>
+                                                    </th>
+                                                    <td class="p-0 pl-2">
+                                                        <textarea class="w-100 p-1 rounded-1 mt-2" maxlength="1000" rows="4"
+                                                                  id="reason" name="memo"></textarea>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" th:text="#{lang.contents.button.close}"></button>
+                                        <button type="button" class="btn btn-primary"  onclick="image.send()" th:text="#{lang.contents.button.restrain}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End Modal -->
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+        </form>
+    </div>
+</th:block>

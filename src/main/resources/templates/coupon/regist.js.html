@@ -1,0 +1,916 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+
+        // 발급 시작일, 사용 기간 오늘 ~ 7일 후 날짜 세팅
+        let today = new Date();
+        let afterSevenDay = new Date(today);
+        afterSevenDay.setDate(today.getDate() + 7)
+        today = today.toISOString().slice(0, 10) + 'T00:00';
+        afterSevenDay = afterSevenDay.toISOString().slice(0, 10) + 'T00:00';
+
+        $('#issueStart').val(today);
+        $('#useStart').val(today);
+        $('#issueEnd').val(afterSevenDay);
+        $('#useEnd').val(afterSevenDay);
+
+        // 현재 날짜 이전으로 선택할 수 없도록 min 속성 설정
+        document.getElementById('issueStart').min = today;
+        document.getElementById('useStart').min = today;
+        document.getElementById('issueEnd').min = today;
+        document.getElementById('useEnd').min = today;
+
+    });
+
+    let text = {
+        memberSearchTitle: "[[#{lang.coupon.target.coupon.user}]]",  // 적용 회원 선택
+        productSearchTitle: "[[#{lang.coupon.product.search}]]",     // 상품 선택
+        categorySearchTitle: "[[#{lang.coupon.category.search}]]",   // 카테고리 선택
+        brandSearchTitle: "[[#{lang.coupon.brand.search}]]",         // 브랜드 선택
+        memberSearchNameTitle: "[[#{lang.coupon.member.search}]]",            // 회원 id 검색
+        productSearchNameTitle: "[[#{lang.coupon.product.name.search}]]",     // 상품명 검색
+        categorySearchNameTitle: "[[#{lang.coupon.category.name.search}]]",   // 카테고리명 검색
+        brandSearchNameTitle: "[[#{lang.coupon.brand.name.search}]]",         // 브랜드명 검색
+        targetSearchBtn: "[[#{lang.coupon.apply.target.search}]]",            // 적용 대상 검색
+        targetRegisterBtn: "[[#{lang.coupon.button.target.search}]]",         // 적용 대상 등록
+        excelUploadBtn: "[[#{lang.coupon.button.excel.upload}]]",             // 일괄 업로드
+        excelUploadNoExtension : "[[#{lang.common.exception.image.upload.no.extension}]]",// 확장자가 없는 파일은 업로드 불가합니다.
+        excelUploadExtension : "[[#{lang.common.exception.excel.upload.extension}]]",     // xls/xlsx 확장자만 업로드 가능합니다.
+    }
+
+    // modal
+    let myModal;
+
+    let mapProductListTemp = [];       // 모달용 매핑할 배열
+    let mapProductList = [];           // 매핑할 배열
+    let mapCategoryListTemp = [];      // 모달용 매핑할 배열
+    let mapCategoryList = [];          // 매핑할 배열
+    let mapBrandListTemp = [];         // 모달용 매핑할 배열
+    let mapBrandList = [];             // 매핑할 배열
+    let mapMemberListTemp = [];        // 모달용 타겟쿠폰 매핑할 배열
+    let mapMemberList = [];            // 매핑할 타겟쿠폰 배열
+
+    let coupon = {
+        // 등록
+        regist: function() {
+
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/coupon',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        opener.location.reload();
+                        self.close();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 쿠폰 유형
+        showHideType: function(value) {
+            var targetCouponInput = document.getElementById('targetCouponInput');
+            var exchangeCouponInput = document.getElementById('exchangeCouponInput');
+            var isLimitInput = document.getElementById('isLimitInput');
+            var qtyPerPersonInput = document.getElementById('qtyPerPersonInput');
+
+            if (value == 1) { // 다운로드
+                targetCouponInput.classList.add('hidden');
+                exchangeCouponInput.classList.add('hidden');
+                isLimitInput.classList.remove('hidden');
+                coupon.showHideIsLimit();
+            } else if (value == 2) { // 타겟쿠폰
+                targetCouponInput.classList.remove('hidden');
+                exchangeCouponInput.classList.add('hidden');
+                isLimitInput.classList.add('hidden');
+                qtyPerPersonInput.classList.add('hidden');
+            } else if (value == 3) { // 교환권
+                targetCouponInput.classList.add('hidden');
+                exchangeCouponInput.classList.remove('hidden');
+                isLimitInput.classList.add('hidden');
+                qtyPerPersonInput.classList.add('hidden');
+            }
+        },
+        // 발급 건 수 제한
+        showHideIsLimit: function() {
+            var isLimit = document.getElementById('isLimit');
+            var qtyPerPersonInput = document.getElementById('qtyPerPersonInput');
+
+            if (isLimit.value == 1) { // 제한 있음
+                qtyPerPersonInput.classList.remove('hidden');
+            } else { // 제한 없음
+                qtyPerPersonInput.classList.add('hidden');
+            }
+        },
+        // 발급 조건
+        showHideIssueCondition: function(value) {
+            var useDaysInput = document.getElementById('useDaysInput');
+            var useDateInput = document.getElementById('useDateInput');
+
+            if (value == 1) { // 발급일
+                useDaysInput.classList.remove('hidden');
+                useDateInput.classList.add('hidden');
+            } else if (value == 2) { // 사용기한
+                useDaysInput.classList.add('hidden');
+                useDateInput.classList.remove('hidden');
+            }
+        },
+        // 적용 대상
+        showHideRange: function(value) {
+            let rangeType;
+
+            if (value == 1) { // 상품
+                rangeType = 'product';
+            } else if (value == 2) { // 카테고리
+                rangeType = 'category';
+            } else if (value == 3) { // 브랜드
+                rangeType = 'brand';
+            }
+
+            let html = "";
+
+            // 미리 보기 html
+            html += `
+                <th>
+                    <label for="${rangeType + 'Idx'}">${text.targetSearchBtn}</label>
+                    <label style="color: red">*</label>
+                </th>
+                <td>
+                    <button class="btn btn-sm btn-success" onClick="coupon.searchLayer('${rangeType}');" type="button">${text.targetRegisterBtn}</button>
+                `;
+
+            if (value == 1) { // 상품이면 일괄 업로드 버튼 추가
+                html += `
+                    <button class="btn btn-sm btn-info" onClick="coupon.excelUploadLayer('${rangeType}');" type="button">${text.excelUploadBtn}</button>
+                `;
+            }
+
+            html += `
+                    <div class="send-list-box" id="previewRange"></div>
+                    <input id="${rangeType + 'Idx'}" name="${rangeType + 'IdxList'}" type="hidden">
+                </td>
+                `;
+
+            $("#rangeInput").html(html);
+
+            coupon.formUpdate(rangeType);
+        },
+        // 검색 레이어 호출
+        searchLayer : function (type) {
+
+            // 등록된 값이 있다면 배열 복사
+            if (type == 'member') {
+                if (mapMemberList.length > 0) {
+                    mapMemberListTemp = mapMemberList;
+                }
+            } else if (type == 'product') {
+                if (mapProductList.length > 0) {
+                    mapProductListTemp = mapProductList;
+                }
+            } else if (type == 'category') {
+                if (mapCategoryList.length > 0) {
+                    mapCategoryListTemp = mapCategoryList;
+                }
+            } else if (type == 'brand') {
+                if (mapBrandList.length > 0) {
+                    mapBrandListTemp = mapBrandList;
+                }
+            }
+
+            myModal = new bootstrap.Modal($('#layer_dialog_lg'), {
+                keyboard: false
+            });
+
+            // load 비동기, call back 함수로 다음 작업 명시
+            $('#section_dialog_lg').load("[[${SERVER.currentDomain}]]/coupon/search", () => {
+
+                // thead
+                var theadProduct = document.getElementById('theadProduct');
+                var theadCategory = document.getElementById('theadCategory');
+                var theadBrand = document.getElementById('theadBrand');
+                var theadMember = document.getElementById('theadMember');
+
+                // selectBox
+                var selectBoxProduct = document.getElementById('selectBoxProduct');
+                var selectBoxCategory = document.getElementById('selectBoxCategory');
+                var selectBoxBrand = document.getElementById('selectBoxBrand');
+                var selectBoxMember = document.getElementById('selectBoxMember');
+
+                // 모달 업데이트
+                if (type == "product") {
+                    $(".modal-title").text(text.productSearchTitle);
+                    $("#searchName").text(text.productSearchNameTitle);
+                    theadProduct.classList.remove('hidden');
+                    selectBoxProduct.classList.remove('hidden');
+                    $("input[name=rangeType]").val('product');
+
+                } else if (type == "category") {
+                    $(".modal-title").text(text.categorySearchTitle);
+                    $("#searchName").text(text.categorySearchNameTitle);
+                    theadCategory.classList.remove('hidden');
+                    selectBoxCategory.classList.remove('hidden');
+                    $("input[name=rangeType]").val('category');
+
+                } else if (type == "brand") {
+                    $(".modal-title").text(text.brandSearchTitle);
+                    $("#searchName").text(text.brandSearchNameTitle);
+                    theadBrand.classList.remove('hidden');
+                    selectBoxBrand.classList.remove('hidden');
+                    $("input[name=rangeType]").val('brand');
+
+                } else if (type == "member") {
+                    $(".modal-title").text(text.memberSearchTitle);
+                    $("#searchName").text(text.memberSearchNameTitle);
+                    theadMember.classList.remove('hidden');
+                    selectBoxMember.classList.remove('hidden');
+                    $("input[name=rangeType]").val('member');
+
+                }
+
+                // 레이어 미리보기
+                coupon.layerPreview(type);
+
+            });
+
+            myModal.show($('#section_dialog_lg'));
+
+        },
+        // 일괄 업로드 레이어 호출
+        excelUploadLayer : function (type) {
+
+            // 등록된 값이 있다면 배열 복사
+            if (type == 'member') {
+                if (mapMemberList.length > 0) {
+                    mapMemberListTemp = mapMemberList;
+                }
+            } else if (type == 'product') {
+                if (mapProductList.length > 0) {
+                    mapProductListTemp = mapProductList;
+                }
+            }
+
+            myModal = new bootstrap.Modal($('#layer_dialog_lg'), {
+                keyboard: false
+            });
+
+            // load 비동기, call back 함수로 다음 작업 명시
+            $('#section_dialog_lg').load("[[${SERVER.currentDomain}]]/coupon/excel", () => {
+
+                // thead
+                var theadProduct = document.getElementById('theadProduct');
+                var theadMember = document.getElementById('theadMember');
+
+                // 모달 업데이트
+                if (type == "product") {
+                    theadProduct.classList.remove('hidden');
+                    $("input[name=rangeType]").val('product');
+
+                } else if (type == "member") {
+                    theadMember.classList.remove('hidden');
+                    $("input[name=rangeType]").val('member');
+
+                }
+
+                // 레이어 미리보기
+                coupon.layerPreview(type);
+
+            });
+
+            myModal.show($('#section_dialog_lg'));
+
+        },
+        // 선택 대상 미리보기
+        layerPreview : function (type) {
+
+            let html = "";
+
+            if (type == 'member') {
+                if (mapMemberListTemp.length > 0) {
+
+                    // 맵의 키가 'name' 인 값 순회
+                    for (let i = 0; i < mapMemberListTemp.length; i++) {
+                        let map = mapMemberListTemp[i];
+                        let name = map.get("name");
+                        let phone = map.get("phone");
+
+                        // 미리 보기 html
+                        html += `
+                            <div class="preview-wrap">
+                                <strong>${i+1}. </strong>
+                                <strong>${name}</strong>
+                                <span>${phone}</span>
+                                <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this),'temp','member');"></button>
+                            </div>
+                        `;
+                    }
+
+                }
+            } else if (type == 'product') {
+                if (mapProductListTemp.length > 0) {
+
+                    // 맵의 키가 'name' 인 값 순회
+                    for (let i = 0; i < mapProductListTemp.length; i++) {
+                        let map = mapProductListTemp[i];
+                        let name = map.get("name");
+
+                        // 미리 보기 html
+                        html += `
+                            <div class="preview-wrap">
+                                <strong>${i+1}. </strong>
+                                <strong>${name}</strong>
+                                <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this),'temp','product');"></button>
+                            </div>
+                        `;
+                    }
+
+
+                }
+            } else if (type == 'category') {
+                if (mapCategoryListTemp.length > 0) {
+
+                    // 맵의 키가 'name' 인 값 순회
+                    for (let i = 0; i < mapCategoryListTemp.length; i++) {
+                        let map = mapCategoryListTemp[i];
+                        let name = map.get("name");
+
+                        // 미리 보기 html
+                        html += `
+                            <div class="preview-wrap">
+                                <strong>${i+1}. </strong>
+                                <strong>${name}</strong>
+                                <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this),'temp','category');"></button>
+                            </div>
+                        `;
+                    }
+
+
+                }
+            } else if (type == 'brand') {
+                if (mapBrandListTemp.length > 0) {
+
+                    // 맵의 키가 'name' 인 값 순회
+                    for (let i = 0; i < mapBrandListTemp.length; i++) {
+                        let map = mapBrandListTemp[i];
+                        let name = map.get("name");
+
+                        // 미리 보기 html
+                        html += `
+                            <div class="preview-wrap">
+                                <strong>${i+1}. </strong>
+                                <strong>${name}</strong>
+                                <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this),'temp','brand');"></button>
+                            </div>
+                        `;
+                    }
+
+
+                }
+            }
+
+            // 모달 업데이트
+            $("#preview-modal").html(html);
+
+        },
+        // 적용 대상 검색
+        list: function (page) {
+
+            var searchTypeProduct = document.querySelector('select[name="searchTypeProduct"]').value;
+            var searchTypeCategory = document.querySelector('select[name="searchTypeCategory"]').value;
+            var searchTypeBrand = document.querySelector('select[name="searchTypeBrand"]').value;
+            var searchTypeMember = document.querySelector('select[name="searchTypeMember"]').value;
+            var searchWord = document.querySelector('input[name="searchWord"]').value;
+            var rangeType = document.querySelector('input[name="rangeType"]').value;
+            var searchType;
+
+            if (rangeType == 'product') {
+                searchType = searchTypeProduct;
+            } else if (rangeType == 'category') {
+                searchType = searchTypeCategory;
+            } else if (rangeType == 'brand') {
+                searchType = searchTypeBrand;
+            } else if (rangeType == 'member') {
+                searchType = searchTypeMember;
+            }
+
+            $.ajax({
+                url: `[[${SERVER.currentDomain}]]/v1/coupon/search?rangeType=${rangeType}&searchType=${searchType}&searchWord=${searchWord}&page=${page}`,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                data: {"searchWord": searchWord},
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    let listTbody = "";
+
+                    if (res.result) {
+
+                        if (res.data.list.length > 0) {
+
+                            if (rangeType == 'product') {
+                                $.each(res.data.list, function (index, el) {
+                                    let objectString = JSON.stringify(el);
+
+                                    listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"product");'>${el.productName}<a/></td>
+                                 </tr>`;
+
+                                });
+                            } else if (rangeType == 'category') {
+                                $.each(res.data.list, function (index, el) {
+                                    let objectString = JSON.stringify(el);
+
+                                    listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"category");'>${el.category}<a/></td>
+                                 </tr>`;
+
+                                });
+                            } else if (rangeType == 'brand') {
+                                $.each(res.data.list, function (index, el) {
+                                    let objectString = JSON.stringify(el);
+
+                                    listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"brand");'>${el.brandName}<a/></td>
+                                 </tr>`;
+
+                                });
+                            } else if (rangeType == 'member') {
+                                $.each(res.data.list, function (index, el) {
+                                    let objectString = JSON.stringify(el);
+
+                                    listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"member");'>${el.name}<a/></td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.id}</td>
+                                    <td class="text-center">${el.phone}</td>
+                                 </tr>`;
+
+                                });
+                            }
+
+                            $("#modalListLayer > tbody").html(listTbody);
+
+                            // paging - 커스텀
+                            paginationById("#modalPagination", 1, "coupon", res.data.params.page, res.data.params.pagination);
+
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="14" class="text-center">${res.message}</td></tr>`;
+                            $("#modalListLayer > tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    }
+
+
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+        },
+        // 적용 대상 선택
+        selectTarget: function (info, type) {
+            let map = new Map();
+
+            if (type == 'product') {
+                map.set("idx", info.idx);
+                map.set("name", info.productName);
+                mapProductListTemp.push(map);
+                mapProductListTemp = coupon.removeDuplicate(mapProductListTemp, type);
+            } else if (type == 'category') {
+                map.set("idx", info.idx);
+                map.set("name", info.category);
+                mapCategoryListTemp.push(map);
+                mapCategoryListTemp = coupon.removeDuplicate(mapCategoryListTemp, type);
+            } else if (type == 'brand') {
+                map.set("idx", info.idx);
+                map.set("name", info.brandName);
+                mapBrandListTemp.push(map);
+                mapBrandListTemp = coupon.removeDuplicate(mapBrandListTemp, type);
+            }  else if (type == 'member') {
+                map.set("uuid", info.uuid);
+                map.set("phone", info.phone);
+                map.set("name", info.name);
+                mapMemberListTemp.push(map);
+                mapMemberListTemp = coupon.removeDuplicate(mapMemberListTemp, type);
+            }
+
+            // 레이어 미리보기
+            coupon.layerPreview(type);
+        },
+        // 배열 중복 제거
+        removeDuplicate: function (arr, type) {
+
+            // 중복을 확인하기 위한 Set 생성
+            let uniqueIndices = new Set(); // 중복을 확인하기 위한 Set
+            // 중복을 제거한 결과를 담을 배열 생성
+            let uniqueArray = [];
+            let key;
+
+            if (type == 'member') {
+                key = "uuid";
+            } else {
+                key = "idx";
+            }
+
+            // 배열을 순회하면서 각 맵의 "idx"를 추출
+            arr.forEach(item => {
+                let idx = item.get(key);
+                uniqueIndices.add(idx);
+            });
+
+            // 배열을 순회하면서 각 맵의 "idx"를 확인
+            arr.forEach(item => {
+                let idx = item.get(key);
+                // 중복된 고유번호가 없는 경우에만 배열에 추가합니다.
+                if (uniqueIndices.has(idx)) {
+                    uniqueArray.push(item);
+                    uniqueIndices.delete(idx);
+                }
+            });
+
+            return uniqueArray;
+
+        },
+        // 선택한 데이터 삭제
+        deleteTarget: function (_this, target, type) {
+            let preview = _this.closest(".preview-wrap");
+
+            if (target == 'temp') {
+                if (type == 'member') {
+                    mapMemberListTemp.splice(preview.index(), 1);
+                } else if (type == 'product') {
+                    mapProductListTemp.splice(preview.index(), 1);
+                } else if (type == 'category') {
+                    mapCategoryListTemp.splice(preview.index(), 1);
+                } else if (type == 'brand') {
+                    mapBrandListTemp.splice(preview.index(), 1);
+                }
+            } else if (target == 'form') {
+                if (type == 'member') {
+                    mapMemberList.splice(preview.index(), 1);
+                } else if (type == 'product') {
+                    mapProductList.splice(preview.index(), 1);
+                } else if (type == 'category') {
+                    mapCategoryList.splice(preview.index(), 1);
+                } else if (type == 'brand') {
+                    mapBrandList.splice(preview.index(), 1);
+                }
+            }
+
+            // 미리보기 삭제
+            preview.remove();
+
+        },
+        // 적용 대상 등록
+        registTarget: function () {
+            const rangeType = document.querySelector('input[name="rangeType"]').value;
+
+            // 임시 배열 복사
+            if (rangeType == 'member') {
+                mapMemberList = mapMemberListTemp;
+
+                // 전달할 uuid 리스트
+                let uuidList = [];
+
+                // 맵의 키가 'uuid' 인 값 순회
+                for (let i = 0; i < mapMemberList.length; i++) {
+                    let map = mapMemberList[i];
+                    let uuid = map.get("uuid");
+
+                    uuidList.push(uuid);
+                }
+
+                $('input[name="memberUuidList"]').val(uuidList);
+
+            } else if (rangeType == 'product') {
+                mapProductList = mapProductListTemp;
+
+                // 전달할 idx 리스트
+                let idxList = [];
+
+                // 맵의 키가 'idx' 인 값 순회
+                for (let i = 0; i < mapProductList.length; i++) {
+                    let map = mapProductList[i];
+                    let idx = map.get("idx");
+
+                    idxList.push(idx);
+                }
+
+                $('input[name="productIdxList"]').val(idxList);
+
+            } else if (rangeType == 'category') {
+                mapCategoryList = mapCategoryListTemp;
+
+                // 전달할 idx 리스트
+                let idxList = [];
+
+                // 맵의 키가 'idx' 인 값 순회
+                for (let i = 0; i < mapCategoryList.length; i++) {
+                    let map = mapCategoryList[i];
+                    let idx = map.get("idx");
+
+                    idxList.push(idx);
+                }
+
+                $('input[name="categoryIdxList"]').val(idxList);
+
+            } else if (rangeType == 'brand') {
+                mapBrandList = mapBrandListTemp;
+
+                // 전달할 idx 리스트
+                let idxList = [];
+
+                // 맵의 키가 'idx' 인 값 순회
+                for (let i = 0; i < mapBrandList.length; i++) {
+                    let map = mapBrandList[i];
+                    let idx = map.get("idx");
+
+                    idxList.push(idx);
+                }
+
+                $('input[name="brandIdxList"]').val(idxList);
+            }
+
+            // 폼 업데이트
+            coupon.formUpdate(rangeType);
+
+            // 모달 닫기
+            coupon.modalCancel();
+        },
+        // 폼 업데이트
+        formUpdate: function (type) {
+
+            let html = "";
+
+            if (type == 'member') {
+
+                // 맵의 키가 'name' 인 값 순회
+                for (let i = 0; i < mapMemberList.length; i++) {
+                    let map = mapMemberList[i];
+                    let name = map.get("name");
+                    let phone = map.get("phone");
+
+                    // 미리 보기 html
+                    html += `
+                        <div class="preview-wrap">
+                            <strong>${i+1}. </strong>
+                            <strong>${name}</strong>
+                            <span>${phone}</span>
+                            <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this), 'form', 'member');"></button>
+                        </div>
+                    `;
+                }
+
+                // 폼 업데이트
+                $("#previewMember").html(html);
+
+                return true;
+            } else if (type == 'product') {
+
+                // 맵의 키가 'name' 인 값 순회
+                for (let i = 0; i < mapProductList.length; i++) {
+                    let map = mapProductList[i];
+                    let name = map.get("name");
+
+                    // 미리 보기 html
+                    html += `
+                        <div class="preview-wrap">
+                            <strong>${i+1}. </strong>
+                            <strong>${name}</strong>
+                            <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this), 'form', 'product');"></button>
+                        </div>
+                    `;
+                }
+
+            } else if (type == 'category') {
+
+                // 맵의 키가 'name' 인 값 순회
+                for (let i = 0; i < mapCategoryList.length; i++) {
+                    let map = mapCategoryList[i];
+                    let name = map.get("name");
+
+                    // 미리 보기 html
+                    html += `
+                        <div class="preview-wrap">
+                            <strong>${i+1}. </strong>
+                            <strong>${name}</strong>
+                            <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this), 'form', 'category');"></button>
+                        </div>
+                    `;
+                }
+
+            } else if (type == 'brand') {
+
+                // 맵의 키가 'name' 인 값 순회
+                for (let i = 0; i < mapBrandList.length; i++) {
+                    let map = mapBrandList[i];
+                    let name = map.get("name");
+
+                    // 미리 보기 html
+                    html += `
+                        <div class="preview-wrap">
+                            <strong>${i+1}. </strong>
+                            <strong>${name}</strong>
+                            <button type="button" class="delete" aria-label="Close" onclick="coupon.deleteTarget($(this), 'form', 'brand');"></button>
+                        </div>
+                    `;
+                }
+
+            }
+
+            // 폼 업데이트
+            $("#previewRange").html(html);
+        },
+        // 일괄 업로드 레이어 호출
+        updateFileInput : function (file) {
+            // 파일명 노출
+            document.getElementById('fileName').value = file.files[0].name;
+            // 확인 버튼 노출
+            var fileUploadBtn = document.getElementById('fileUploadBtn');
+            fileUploadBtn.classList.remove('hidden');
+        },
+        // 실패 다운로드
+        failExcelDownload : function (value) {
+            let result = value.replace(/\[|\]/g, "");
+            var rangeType = document.querySelector('input[name="rangeType"]').value;
+            location.href = `[[${SERVER.currentDomain}]]/v1/coupon/fail-excel?rangeType=${rangeType}&failIdxList=${result}`;
+        },
+        // 양식 다운로드
+        sampleExcelDownload : function () {
+            var rangeType = document.querySelector('input[name="rangeType"]').value;
+            location.href = `[[${SERVER.currentDomain}]]/v1/coupon/sample-excel?rangeType=${rangeType}`;
+        },
+        // 엑셀 업로드
+        excelUpload : function () {
+            const inputFile = document.getElementById('fileUpload');
+            const file = inputFile.files[0]; // 선택된 파일을 가져옴
+            var rangeType = document.querySelector('input[name="rangeType"]').value;
+
+            if (coupon.validation(file)) {
+
+                var formData = new FormData();
+                formData.append('excelFile', file);
+                formData.append('rangeType', rangeType);
+
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/coupon/excel-upload',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result === true) {
+
+                            if (res.data.list.length > 0) {
+                                let listTbody = "";
+
+                                if (rangeType == 'product') {
+                                    // 리스트 출력
+                                    $.each(res.data.list, function (index, el) {
+                                        let objectString = JSON.stringify(el);
+
+                                        listTbody += `
+                                                <tr>
+                                                    <td class="text-center">${el.idx}</td>
+                                                    <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"product");'>${el.productName}<a/></td>
+                                                    <td class="text-center"><span class="badge ${el.resultBg}">${el.resultText}</span></td>
+                                                </tr>
+                                                `;
+
+                                        // 배열에 담기
+                                        if (el.result == 1) {
+                                            coupon.selectTarget(el,"product");
+                                        }
+                                    });
+
+                                } else if (rangeType == 'member') {
+                                    // 리스트 출력
+                                    $.each(res.data.list, function (index, el) {
+                                        let objectString = JSON.stringify(el);
+
+                                        listTbody += `
+                                                    <tr>
+                                                        <td class="text-center">${el.idx}</td>
+                                                        <td class="text-center"><a href="javascript:void(0);" onclick='coupon.selectTarget(${objectString},"member");'>${el.name}<a/></td>
+                                                        <td class="text-center">${el.nick}</td>
+                                                        <td class="text-center">${el.id}</td>
+                                                        <td class="text-center">${el.phone}</td>
+                                                        <td class="text-center"><span class="badge ${el.resultBg}">${el.resultText}</span></td>
+                                                     </tr>
+                                                    `;
+
+                                        // 배열에 담기
+                                        if (el.result == 1) {
+                                            coupon.selectTarget(`${objectString}`,"member");
+                                        }
+                                    });
+                                }
+
+                                $("#modalListLayer > tbody").html(listTbody);
+
+                                // success/fail count
+                                $(".successCount").next().text(res.data.successCount);
+                                $(".failCount").next().text(res.data.failCount);
+
+                                // 실패 다운로드 버튼 활성화
+                                if (res.data.failCount > 0) {
+                                    var failDownloadBtn = document.getElementById('failDownloadBtn');
+                                    failDownloadBtn.classList.remove('hidden');
+                                    failDownloadBtn.value = JSON.stringify(res.data.failIdxList);
+                                }
+                            }
+
+                        } else {
+                            alert(res.message);
+                        }
+                    },
+                    error: function(request, status, error) {
+                        alert(request.responseText);
+                    }
+                });
+            }
+
+        },
+        // 첨부 파일 검증
+        validation : (file) => {
+            // 허용 가능 확장자
+            const fileTypes = ['xls', 'xlsx'];
+
+            // 확장자 없는 파일
+            if (file.name.lastIndexOf('.') == -1) {
+                alert(text.excelUploadNoExtension);
+                return false;
+            }
+
+            // 확장자 추출
+            const fileName = file.name;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+
+            // 허용하지 않는 확장자
+            if (!fileTypes.includes(fileExtension)) {
+                alert(text.excelUploadExtension);
+                return false;
+            } else {
+                return true;
+            }
+        },
+        // 모달 닫기
+        modalCancel: function () {
+            // 빈 배열로 초기화
+            mapProductListTemp = [];
+            mapCategoryListTemp = [];
+            mapBrandListTemp = [];
+            mapMemberListTemp = [];
+            // 모달 close
+            myModal.hide();
+        },
+        // 발급 시작일 자동 변경
+        changeDate: function (value) {
+            $('#issueStart').val(value);
+        },
+        // 현재 날짜 이전으로 선택할 수 없도록 min 속성 설정
+        setDateMin: function (startId, endId) {
+            let input = document.getElementById(startId);
+            document.getElementById(endId).min = input.value;
+        },
+    }
+
+    // 원단위 표시
+    function formatPrice(id) {
+        let input = document.getElementById(id);
+        let inputText = document.getElementById(id + 'Text');
+        let value = inputText.value.replace(/[^\d]/g, ''); // 숫자 이외의 문자 제거
+        input.value = value;
+        inputText.value = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); // 쉼표 추가
+    }
+
+</script>

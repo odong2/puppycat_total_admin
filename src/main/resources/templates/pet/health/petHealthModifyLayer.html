@@ -1,0 +1,44 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.pet.health.title.modify}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="memberImageLayer">
+        <form id="modifyForm">
+            <input type="hidden" name="idx" id="idx" th:value="${healthInfo.idx}">
+
+            <div class="col-md-12">
+                <div class="row border-bottom pb-3 pt-2">
+                    <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.pet.health}"></label>
+                    <div class="col-md-8 col-sm-9 pt-1">
+                        <input class="form-control form-control-sm ml-1"  autocomplete="off" th:value="${healthInfo.health}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="row border-bottom pb-3 pt-2">
+                    <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.pet.sort}"></label>
+                    <div class="col-md-8 col-sm-9 pt-1">
+                        <input class="form-control form-control-sm ml-1" autocomplete="off" th:value="${healthInfo.sort}" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="row border-bottom pb-3 pt-2">
+                    <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.pet.modiHealth}"></label>
+                    <div class="col-md-8 col-sm-9 pt-1">
+                        <input class="form-control form-control-sm ml-1" name="name" id="name" autocomplete="off" >
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="petHealth.cancel();" th:text="#{lang.pet.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="petHealth.modify();" th:text="#{lang.common.button.modify}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

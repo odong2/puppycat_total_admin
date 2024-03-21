@@ -1,0 +1,480 @@
+<script th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        btn.init();
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // 사업자 번호 체크 이벤트
+        $('#businessNumber').focusout(() => {
+            partner.checkBusinessNumber();
+        });
+    });
+
+    let text ={
+        availableIdText : "[[#{lang.partner.span.id.ok}]]", // 사용 가능한 아이디입니다.
+        idCheckText : "[[#{lang.partner.span.id.check}]]" , // 아이디 중복체크를 해주세요.
+        imageUploadNameLength : "[[#{lang.partner.exception.image.upload.name.length}]]",  // 파일명은 255자 이내만 가능합니다.
+        imageUploadMaxSize : "[[#{lang.partner.exception.image.upload.max.size}]]",        // 최대 파일 용량 5MB 초과합니다..
+        imageUploadNoExtension : "[[#{lang.partner.exception.image.upload.no.extension}]]",// 확장자가 없는 파일은 업로드 불가합니다.
+        imageUploadExtension : "[[#{lang.partner.exception.image.upload.extension}]]",     // jp/jpeg/png 확장자만 업로드 가능합니다.
+        passwordStringError : '[[#{lang.partner.exception.password.string}]]',             // 영문/숫자/특수문자를 조합하여 비밀번호를 입력해주세요
+        passwordMinError : '[[#{lang.partner.exception.password.min}]]',                   // 비밀번호는 최소 6자리 이상 입력해야합니다
+        passwordMaxError : '[[#{lang.partner.exception.join.password.max}]]',              // 비밀번호는 최대 20자까지 입력할 수 있습니다
+        passwordNotEqual : '[[#{lang.partner.placeholder.pw.confirm}]]',                   // 패스워드를 동일하게 입력해주세요
+        passwordConfirmEmpty : '[[#{lang.partner.exception.password.confirm.empty}]]',     // 비밀번호 확인란을 입력해주세요
+        businessNumberError : '[[#{lang.partner.exception.number.error}]]',                // 숫자만 입력해주세요.
+        businessNumberOk : '[[#{lang.partner.span.business.number.ok}]]',                  // 사용 가능한 사업자 번호입니다.
+        businessNumberEmpty : '[[#{lang.partner.exception.business.number.empty}]]',       // 사업자 번호를 입력해주세요.
+        registConfirm : '[[#{lang.partner.confirm.regist}]]',                              // 등록하시겠습니까?
+    }
+
+    // 영문/특수문자/숫자 모두 1자리 이상 포함하고, 6 ~ 20자리 사이
+    let reg = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{6,20}$";
+    let reg2 = "[A-Z]";
+
+    // 패스워드 체크
+    $('#password').focusout(() => {
+        let spanText = "";
+        let password = $('#password').val();
+
+        if ($('#pwSpan') != undefined) {
+            $('#pwSpan').remove();
+        }
+        if (password.length < 6) {
+            spanText = text.passwordMinError;
+        } else if (password.length > 20) {
+            spanText = text.passwordMaxError;
+        } else if (password.match(reg) == null) {
+            spanText = text.passwordStringError;
+        } else if (password.match(reg2) != null) {
+            spanText = text.passwordStringError;
+        }
+
+        $('#password').parent().append(`<span id="pwSpan" style='color:red'>${spanText}</span>`);
+    });
+
+    // 비밀번호 확인 체크
+    $('#passwordConfirm').focusout(() => {
+        let passwordConfirm = $('#passwordConfirm').val();
+        let password = $('#password').val();
+        let spanText = "";
+
+        if ($('#pwConfirmSpan') != undefined) {
+            $('#pwConfirmSpan').remove();
+        }
+
+        if (check.isEmpty(passwordConfirm)) {
+            spanText = text.passwordConfirmEmpty;
+        } else if (password != passwordConfirm) {
+            spanText = text.passwordNotEqual
+        }
+
+        $('#passwordConfirm').parent().append(`<span id="pwConfirmSpan" style='color:red'>${spanText}</span>`);
+    });
+
+    let btn = {
+        init : () => {
+            // 대표 구성
+            const presidentTypeItems = document.querySelectorAll(".presidentTypeBtn");
+
+            // 배열로 저장되기 때문에 forEach로 하나씩 이벤트를 등록해준다.
+            presidentTypeItems.forEach((item) => {
+                item.addEventListener('click', () => {
+                    presidentTypeItems.forEach((e) => {
+                        // 하나만 선택되도록 기존의 효과를 지워준다.
+                        e.classList.remove('btn-success');
+                        e.classList.add('btn-secondary');
+                    })
+
+                    if (item.id == "president2") {
+                        $("#presidentTypeText").css('display', 'block');
+                    } else {
+                        $("#presidentTypeText").css('display', 'none');
+                    }
+
+                    // 선택한 엘리먼트만 효과를 추가해준다.
+                    item.classList.add('btn-success');
+                    $('#presidentType').val(item.innerText);
+                });
+            });
+
+            // 사업자 유형
+            const companyTypeItems = document.querySelectorAll(".companyTypeBtn");
+
+            companyTypeItems.forEach((item) => {
+                item.addEventListener('click', () => {
+                    companyTypeItems.forEach((e) => {
+                        e.classList.remove('btn-success');
+                        e.classList.add('btn-secondary');
+                    });
+
+                    if (item.id == "companyType2") {
+                        $("#companyNumber").css('display', 'block');
+                    } else {
+                        $("#companyNumber").css('display', 'none');
+                    }
+                    item.classList.add('btn-success');
+                    $('#companyType').val(item.innerText);
+                })
+            });
+        }
+    }
+
+    let partner = {
+        join: function () {
+            // 등록하시겠습니까?
+            if (!confirm(text.registConfirm)) {
+                return false;
+            }
+            // 아이디 중복 체크
+            let idStatus = $('#id').attr('status');
+
+            if (idStatus == undefined || idStatus == 'no') {
+                toast.alert(text.idCheckText);
+                return;
+            }
+
+            // 가입 폼 처리
+            let form = $("#frm")[0];
+            let formData = new FormData(form);
+
+            // 삭제된 파일도 포함되어 있으므로 지움
+            formData.delete("uploadFile");
+
+            // 기타 서류
+            for (let i = 0; i < filesArr.length; i++) {
+                // 삭제되지 않은 파일만 폼데이터에 담기
+                if (!filesArr[i].is_delete) {
+                    formData.append("uploadFile", filesArr[i]);
+                }
+            }
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        setTimeout(() => {
+                            partner.list(); // 리스트 페이지 이동
+                        }, 1000);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 사업자 번호 체크
+        checkBusinessNumber : () => {
+            let businessNumber = $('#businessNumber').val(); //입력한 사업자 번호
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/partner/check/business-number?businessNumber=' + `${businessNumber}`,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        let span = $('#businessNumSpan');
+                        if (span != undefined) {
+                            span.remove();
+                        }
+                        $('#businessNumber').parent().append(`<span id="businessNumSpan" style='color:blue;'>${text.businessNumberOk}</span>`);
+                    } else {
+                        let span = $('#businessNumSpan');
+                        if (span != undefined) {
+                            span.remove();
+                        }
+                        $('#businessNumber').parent().append(`<span id="businessNumSpan" style='color:red;'>${res.message}</span>`);
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    let span = $('#businessNumSpan');
+                    if (span != undefined) {
+                        span.remove();
+                    }
+                    $('#businessNumber').parent().append(`<span id="businessNumSpan" style='color:red;'>${request.responseJSON.message}</span>`);
+                }
+            })
+        },
+        // 아이디 중복 체크
+        checkId : () => {
+            let memberId = $('#id').val(); //입력한 아이디값
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/partner/check/id?id=' + `${memberId}`,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        let idSpan = $('#idSpan');
+                        if (idSpan != undefined) {
+                            idSpan.remove();
+                        }
+                        // 사용 가능한 아이디
+                        $('#id').attr('status', 'yes');
+                        $('#id').parent().parent().append(`<span class='checkIdSpan' id="idSpan" style='color:blue'>${text.availableIdText}</span>`);
+                    } else {
+                        let idSpan = $('#idSpan');
+                        if (idSpan != undefined) {
+                            idSpan.remove();
+                        }
+                        $('#id').attr('status', 'no');
+                        $('#id').parent().parent().append(`<span class='checkIdSpan mt-2' id="idSpan" style='color:red'>${res.message}</span>`)
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            })
+        },
+        // 본인인증 팝업
+        certificate : () => {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/certification/popup',
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        js_popup(res.data.location, 'modify_password', '500', '400');
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert(request.responseJSON.message);
+                }
+            });
+        },
+        // 다음 주소 API
+        location: function () {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    // 각 주소의 노출 규칙에 따라 주소를 조합한다.
+                    // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+                    var addr = ''; // 주소 변수
+                    var extraAddr = ''; // 참고항목 변수
+
+                    //사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
+                    if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
+                        addr = data.roadAddress;
+                    } else { // 사용자가 지번 주소를 선택했을 경우(J)
+                        addr = data.jibunAddress;
+                    }
+
+                    // 사용자가 선택한 주소가 도로명 타입일때 참고항목을 조합한다.
+                    if (data.userSelectedType === 'R') {
+                        // 법정동명이 있을 경우 추가한다. (법정리는 제외)
+                        // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                            extraAddr += data.bname;
+                        }
+                        // 건물명이 있고, 공동주택일 경우 추가한다.
+                        if (data.buildingName !== '' && data.apartment === 'Y') {
+                            extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                        }
+                        // 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+                        if (extraAddr !== '') {
+                            extraAddr = ' (' + extraAddr + ')';
+                        }
+                        // 조합된 참고항목을 해당 필드에 넣는다.
+                        document.getElementById("companyAddr").value = extraAddr;
+
+                    } else {
+                        document.getElementById("companyAddr").value = '';
+                    }
+
+                    // 우편번호와 주소 정보를 해당 필드에 넣는다.
+                    document.getElementById('companyZipcode').value = data.zonecode;
+                    document.getElementById("companyAddr").value = addr;
+                    // 커서를 상세주소 필드로 이동한다.
+                    document.getElementById("companyAddrDetail").focus();
+                }
+            }).open();
+        },
+        list : () => {
+            location.href = '[[${SERVER.currentDomain}]]/partner/list';
+        },
+    }
+
+    /** 이미지 **/
+
+    // 등록할 이미지 임시 배열
+    let imageRowTemp = [];
+    let fileNo = 0;
+    let filesArr = new Array();
+    let maxFileNameLength = 255; // 파일명 최대 길이
+    let maxFileSize = 5 * 1024 * 1024; // 파일 최대 크기
+    let maxFileCnt = 5; // 첨부파일 최대 개수
+
+    /** 이미지 관련 객체 **/
+    let img = {
+        // 파일 업로드 여러건
+        imageArrayChange : (obj) => {
+            let attFileCnt = document.querySelectorAll('.filebox').length;    // 기존 추가된 첨부파일 개수
+            let remainFileCnt = maxFileCnt - attFileCnt; // 추가로 첨부가능한 개수
+            let curFileCnt = obj.files.length;  // 현재 선택된 첨부파일 개수
+
+            // 첨부파일 개수 확인
+            if (curFileCnt > remainFileCnt) {
+                alert("첨부파일은 최대 " + maxFileCnt + "개 까지 첨부 가능합니다.");
+            } else {
+                for (const file of obj.files) {
+                    // 첨부파일 검증
+                    if (img.validation(file)) {
+                        // 파일 배열에 담기
+                        let reader = new FileReader();
+                        reader.onload = function () {
+                            filesArr.push(file);
+                        };
+                        reader.readAsDataURL(file);
+
+                        // 목록 추가
+                        let imgHtml = `
+                            <div id="file` + fileNo +`" class="filebox image-preview-wrap2 bg mt-1 mb-3">
+                                <div class="preview-img">
+                                    <span>${file.name}</span>
+                                    <span onclick="img.deletePreviewArray(` + fileNo + `);" class="preview-del">
+                                        <img src="/images/btn_pop_close.gif"/>
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                        $("#preview2").append(imgHtml);
+                        fileNo++;
+                    } else {
+                        $(`input[name=${obj.name}]`).val("");
+                        continue;
+                    }
+                }
+            }
+        },
+        // 등록할 이미지 삭제
+        deletePreviewArray: function (num) {
+            document.querySelector("#file" + num).remove();
+            filesArr[num].is_delete = true;
+        },
+        // 파일 업로드 단건
+        imageChange : (obj) => {
+            const fileDom = document.querySelector(`input[name=${obj.name + ""}]`);
+
+            let imgHtml = "";
+            $.each(fileDom.files, function (idx, el) {
+                if(img.validation(fileDom.files[idx])){
+                    imgHtml += `
+                        <div class="image-wrap bg">
+                            <div class="preview-img">
+                                <span>${fileDom.files[idx].name}</span>
+                                <span onclick="img.deletePreview($(this));" class="preview-del">
+                                    <img src="/images/btn_pop_close.gif"/>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    $(obj).parent().next().html(imgHtml);
+                }
+            });
+
+        },
+        // 미리보기 삭제
+        deletePreview : (obj) => {
+            let imageWrap = obj.closest(".image-wrap");
+            let fileInput = obj.closest(".preview").prev().children('input');
+            // 파일값 제거
+            $(fileInput).val('');
+
+            // 미리보기 삭제
+            imageWrap.remove();
+        },
+
+        // 첨부 파일 검증
+        validation : (file) => {
+            const fileTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+
+            // 파일명 255자 초과
+            if (file.name.length > maxFileNameLength) {
+                alert(text.imageUploadNameLength);
+                return false;
+            }
+            // 파일 용량 5MB 초과
+            else if (file.size > (maxFileSize)) {
+                alert(text.imageUploadMaxSize);
+                return false;
+            }
+            // 확장자 없는 파일
+            else if (file.name.lastIndexOf('.') == -1) {
+                alert(text.imageUploadNoExtension);
+                return false;
+            }
+            // 허용하지 않는 확장자
+            else if (!fileTypes.includes(file.type)) {
+                alert(text.imageUploadExtension);
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    // 체크 오브젝트
+    let check = {
+        // 빈값 체크
+        isEmpty: (value) => {
+            if (
+                typeof value === 'undefined' ||
+                value === null ||
+                value.trim() === '' ||
+                value === 'null' ||
+                value.length === 0
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        // input 숫자 maxlength 지정
+        maxLengthCheck : (obj) => {
+            if (obj.value.length > obj.maxLength){
+                //object.maxLength : 매게변수 오브젝트의 maxlength 속성 값입니다.
+                obj.value = obj.value.slice(0, obj.maxLength);
+            }
+            obj.value = obj.value.replace(/[^\d]/g, ''); // 숫자 이외의 문자 제거
+        },
+        // input '@._' 제외한 특수문자 방지
+        emailCheck  : (obj) => {
+            obj.value = obj.value.replace(/\s|[ㄱ-ㅎ|ㅏ-ㅣ|가-힣\\!#$%^&*()-+=~`:;,/|?{}\]<>'"[]/g, '');
+        },
+        // 통신판매업 신고번호 입력 방지
+        approvalNumberCheck : (obj) => {
+            // 한글만 적용 가능
+            obj.value = obj.value.replace(/\s|[0-9a-zA-Z\\!#$%^&*\-()+=~`:;,/|?{}.@_\]<>'"[]/g, '');
+        },
+    }
+
+
+</script>

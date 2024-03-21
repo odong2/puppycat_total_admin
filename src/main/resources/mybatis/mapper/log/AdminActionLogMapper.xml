@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.log.AdminActionLogDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="adminActionLogColumns">
+       `snadaclo`.`idx`,
+       `snadaclo`.`id`,
+       `snadaclo`.`referrer`,
+       `snadaclo`.`class`,
+       `snadaclo`.`method`,
+       `snadaclo`.`params`,
+       `snadaclo`.`ip`,
+        CONVERT_TZ(`snadaclo`.`regDate`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 등록하기 -->
+    <insert id="regist" parameterType="AdminActionLogDto" useGeneratedKeys="true" keyProperty="insertedId">
+        INSERT INTO <include refid="databaseTotal" />`total_admin_action_log`
+        <set>
+            `id`            =  #{id},
+            `referrer`      =  #{referrer},
+            `class`         =  #{sClass},
+            `method`        =  #{method},
+            `params`        =  #{params},
+            `ip`            =  #{ip},
+            `reg_date`      =  #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+</mapper>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.pet.PetBreedDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberColumns">
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 반려동물 종류 리스트 -->
+    <select id="getPetTypeList" resultType="PetDto">
+        SELECT
+            `pupety`.`idx` AS `typeIdx`
+             ,IFNULL(`pupetyna`.`name`,`pupety`.`name`) AS `type`
+        FROM <include refid="databaseMember"/>`puppycat_pet_type` AS `pupety`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_type_name` AS `pupetyna`
+            ON `pupety`.`idx` = `pupetyna`.`type_idx`
+            AND `pupetyna`.`state` = 1
+            AND `pupetyna`.`lang` = 'ko'
+        WHERE
+            `pupety`.`state` = 1
+        ORDER BY `pupety`.`idx` ASC
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pupebr`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseMember"/>`puppycat_pet_breed` AS `pupebr`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_pet_type` AS `pupety`
+            ON `pupebr`.`type_idx` = `pupety`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_type_name` AS `pupetyna`
+            ON `pupety`.`idx` = `pupetyna`.`type_idx`
+            AND `pupetyna`.`state` = 1
+            AND `pupetyna`.`lang` = 'ko'
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_breed_name` AS `pupebrna`
+            ON `pupebr`.`idx` = `pupebrna`.`breed_idx`
+            AND `pupebrna`.`state` = 1
+            AND `pupebrna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'breed'">
+                        AND IFNULL(`pupebrna`.`name`,`pupebr`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pupebr`.`type_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pupebr`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 품종 리스트 -->
+    <select id="getList" parameterType="SearchDto" resultType="BreedDto">
+        SELECT
+            `pupebr`.`idx`
+            ,`pupebr`.`type_idx`
+            , IFNULL(`pupetyna`.`name`,`pupety`.`name`) AS `typeName`
+            , IFNULL(`pupebrna`.`name`,`pupebr`.`name`) AS `breed`
+            ,`pupebr`.`sort`
+            ,`pupebr`.`state`
+            , CONVERT_TZ(`pupebr`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="databaseMember"/>`puppycat_pet_breed` AS `pupebr`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_pet_type` AS `pupety`
+            ON `pupebr`.`type_idx` = `pupety`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_type_name` AS `pupetyna`
+            ON `pupety`.`idx` = `pupetyna`.`type_idx`
+            AND `pupetyna`.`state` = 1
+            AND `pupetyna`.`lang` = 'ko'
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_breed_name` AS `pupebrna`
+            ON `pupebr`.`idx` = `pupebrna`.`breed_idx`
+            AND `pupebrna`.`state` = 1
+            AND `pupebrna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'breed'">
+                        AND IFNULL(`pupebrna`.`name`,`pupebr`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pupebr`.`type_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pupebr`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY `pupebr`.`state` DESC, `pupebr`.`sort` is null ASC, `pupebr`.`sort` ASC, `pupebr`.`name` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 반려동물 품종 조회 -->
+    <select id="getBreedInfo" parameterType="long"  resultType="PetDto">
+        SELECT
+            `pupebr`.`idx`
+            ,`pupebr`.`type_idx`
+            , IFNULL(`pupetyna`.`name`,`pupety`.`name`) AS `type`
+            , IFNULL(`pupebrna`.`name`,`pupebr`.`name`) AS `breed`
+            ,`pupebr`.`sort`
+            ,`pupebr`.`state`
+            , CONVERT_TZ(`pupebr`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="databaseMember"/>`puppycat_pet_breed` AS `pupebr`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_pet_type` AS `pupety`
+            ON `pupebr`.`type_idx` = `pupety`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_type_name` AS `pupetyna`
+            ON `pupety`.`idx` = `pupetyna`.`type_idx`
+            AND `pupetyna`.`state` = 1
+            AND `pupetyna`.`lang` = 'ko'
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_breed_name` AS `pupebrna`
+            ON `pupebr`.`idx` = `pupebrna`.`breed_idx`
+            AND `pupebrna`.`state` = 1
+            AND `pupebrna`.`lang` = 'ko'
+        WHERE
+            `pupebr`.`idx` = #{idx}
+    </select>
+
+    <!-- 반려동물 품종 조회 -->
+    <select id="getPetBreedList" parameterType="int"  resultType="PetDto">
+        SELECT
+            `pupebr`.`idx`,
+            `pupebr`.`name` as `breed`
+        FROM
+            <include refid="databaseMember"/> `puppycat_pet_breed` as `pupebr`
+        WHERE
+                `pupebr`.`type_idx` = #{typeIdx}
+            AND `pupebr`.`state` = 1
+            AND `pupebr`.`sort` != 999
+        ORDER BY `pupebr`.`sort` ASC
+    </select>
+</mapper>

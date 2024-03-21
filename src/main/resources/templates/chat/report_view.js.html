@@ -1,0 +1,171 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let idx = "[[${dataSet.idx}]]";
+        chat_report_detail.view(idx);
+    });
+
+    let text = {
+        addBtn: "[[#{lang.contents.button.add}]]",        // 등록 버튼
+        restrainBtn: "[[#{lang.contents.button.restrain}]]", // 제재
+        deleteConfirm: "[[#{lang.contents.confirm.delete.tag}]]",  // 삭제 confirm
+        tagOverAlert: "[[#{lang.contents.exception.image.tag.limit.over}]]", // 태그 개수 초과 alert
+        imageEmptyAlert: "[[#{lang.contents.exception.image.restrain.idx.list.empty}]]", // 제재 이미지 비었음 alert
+        reasonAlert: "[[#{lang.contents.exception.image.restrain.memo.empty}]]" // 제재 사유 미입력 alert
+    }
+
+    let chat_report_detail = {
+        view:function (idx){
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/chat/report/view/' + idx,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        $("input[name=roomUuid]").val(res.data.list[0].roomUuid);
+                        $("input[name=reporterMemberNick]").val(res.data.list[0].memberNick);
+                        $("input[name=targetMemberNick]").val(res.data.list[0].targetMemberNick);
+                        $("input[name=regDate]").val(res.data.list[0].regDate);
+                        loadChatLog(res.data.log, res.data.list[0]);
+                        $(".target").focus();
+                        // sort table 초기화
+                        let sortHtml = "";
+                        let num = 1;
+
+                        $.each(res.data.imgList, function (idx, el) {
+                            sortHtml += `
+                                        <tr class="cut-tr cutnum1">
+                                            <td class="text-center">
+                                                <span>` + num +`</span>
+                                            </td>
+                                            <td class="text-center nosort">
+                                                <img src="${el.url}" onclick="image.click('${el.originUrl}',${el.imgWidth},${el.imgHeight})" style="cursor: pointer"/>
+                                            </td>
+                                            <td class="text-center nosort">`;
+
+                                // 이미지 내 태그
+                                $.each(el.imgTagList, function (idx, img_el) {
+                                    sortHtml += `<a href='/members/view/`
+                                        + img_el.memberIdx +`'">` + '@' + img_el.memberNick + `</a><br />`;
+                                });
+
+                            sortHtml += `</td>`;
+                            sortHtml += `
+                                         <td class="text-center">
+                                            <input type="checkbox" name="restrainCheck" value="${num}" data-idx="${el.idx}"/>
+                                        </td>`;
+                            sortHtml += `</tr>`;
+                            num++;
+                        })
+
+                        $("#sortTable tbody").html(sortHtml);
+
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+    // FormData를 JSON으로 변환
+    function formDataToJson(formData) {
+        let jsonObject = {};
+
+        formData.forEach(function(value, key) {
+
+            if (key == 'idxList') {
+                // 키값이 존재하지 않음
+                if (!jsonObject[key]) {
+                    jsonObject[key] = []; // 배열 생성
+                }
+                jsonObject[key].push(value); // 배열에 추가
+
+            } else {
+                jsonObject[key] = value;
+            }
+        });
+        return jsonObject;
+    }
+
+    // checked 실행
+    function checkedOnOff(target) {
+        $("input:radio[id=" + target + "]").prop('checked', true);
+    }
+
+    //log 수정
+    function loadChatLog(logData, chatInfo) {
+        var data;
+        var target;
+        for (let num = 0; num < logData.length; num++) {
+            const obj = JSON.parse(logData[num]);
+            if (chatInfo.memberUuid !== obj.senderMemberUuid) {
+                data = {
+                    "type"          : "left",
+                    "senderName"    : chatInfo.targetMemberNick,
+                    "message"       : obj.message,
+                    "target"        : chatInfo.score !== obj.score ? "" : "target",
+                    "regDate"       : obj.score
+                };
+            } else {
+                data = {
+                    "type"          : "right",
+                    "senderName"    : chatInfo.memberNick,
+                    "message"       : obj.message,
+                    "target"        : chatInfo.score !== obj.score ? "" : "target",
+                    "regDate"       : obj.score
+                };
+            }
+
+            // 통신하는 기능이 없으므로 여기서 receive
+            appendMessageTag(data.type, data.senderName, data.message, data.target, data.regDate);
+        }
+    }
+
+
+    // 메세지 태그 append
+    function appendMessageTag(LR_className, senderName, message, target, regDate) {
+        const chatLi = createMessageTag(LR_className, senderName, message, target, regDate);
+
+        $('div.chat:not(.format) ul').append(chatLi);
+
+        // 스크롤바 아래 고정
+        $('div.chat').scrollTop($('div.chat').prop('scrollHeight'));
+    }
+
+    // 메세지 태그 생성
+    function createMessageTag(LR_className, senderName, message, target, regDate) {
+        // 형식 가져오기
+        let chatLi = $('div.chat.format ul li').clone();
+
+
+        // 값 채우기
+        chatLi.addClass(LR_className);
+        chatLi.find('.sender span').text(senderName);
+        chatLi.find('.message span').text(message);
+        chatLi.find('.message > .message_date').text("[" + timestampToDate(regDate) + "]");
+        chatLi.find('.message span').addClass(target);
+
+        if (target === "target") {
+            chatLi.find('.message span').parent().parent().css("background-color", "yellowgreen");
+            chatLi.find('.message span').parent().css("background-color", "yellowgreen");
+        }
+
+        return chatLi;
+    }
+
+    function timestampToDate(regDate) {
+        var today = new Date(Number(regDate));
+        // 미국시간 기준이니까 9를 더해주면 대한민국 시간됨
+        today.setHours(today.getHours() + 9);
+        // 문자열로 바꿔주고 T를 빈칸으로 바꿔주면 yyyy-mm-dd hh:mm:ss 이런 형식 나옴
+        return today.toISOString().replace("T", " ").substring(0, 19);
+    }
+</script>

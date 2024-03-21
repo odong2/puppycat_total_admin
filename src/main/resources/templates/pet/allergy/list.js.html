@@ -1,0 +1,326 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        petAllergy.list(page);
+    });
+
+    let text = {
+        delButton: "[[#{lang.common.button.delete}]]",               // 삭제
+        canDelButton: "[[#{lang.common.button.restoration}]]",       // 복구
+        modifyButton: "[[#{lang.common.button.modify}]]",            // 수정
+        modiSortButton: "[[#{lang.common.button.modiSort}]]",        // 정렬 변경
+        delConfirm: "[[#{lang.common.confirm.delete}]]",             // 해당 품종을 삭제 하시겠습니까?
+        canDelConfirm: "[[#{lang.common.confirm.cancelDelete}]]",    // 해당 품종을 다시 적용 하시겠습니까?
+        modiSortConfirm: "[[#{lang.common.confirm.modiSort}]]",      // 정렬값을 변경하시겠습니까?
+        modifyConfirm: "[[#{lang.common.confirm.modify}]]",          // 수정하시겠습니까?
+    }
+
+    let petAllergy = {
+        // 조회
+        list:
+            function (page = 1) {
+            if (page != undefined) {``
+                $("input[name=page]").val(page);
+            }
+            if($("#type").val() =="" ){
+                $("#type").val(1);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/pet/allergy/list',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+                                // 회원 뱃지값 추가
+                                listTbody +=`
+                                    <tr>
+                                        <td class="text-center">${listNum.toLocaleString()}</td>
+                                        <td class="text-center">${el.allergy}</td>
+                                        <td class="text-left">${el.sort || '-'}</td>
+                                        <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                        <td class="text-center">${el.regDate}</td>`;
+                                        if(el.state == 1){
+                                            listTbody +=`
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-primary btn-sm" onclick="petAllergy.sortLayer(${el.idx})">${text.modiSortButton}</button>
+                                                 <button type="button" class="btn btn-sm btn-success" onclick="petAllergy.modifyLayer(${el.idx})">${text.modifyButton}</button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="petAllergy.delete(${el.idx})">${text.delButton}</button>
+                                            </td>
+                                        </tr> `;
+                                        }else{
+                                            listTbody +=`
+                                            <td class="text-center">
+                                                 <button type="button" class="btn btn-sm btn-success" onclick="petAllergy.modifyLayer(${el.idx})">${text.modifyButton}</button>
+                                                <button type="button" class="btn btn-sm btn-warning" onclick="petAllergy.deleteCancel(${el.idx})">${text.canDelButton}</button>
+                                            </td>
+                                        </tr> `;
+                                        }
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("petAllergy", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="6" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 등록 모달창 노출
+        layer:function(){
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/pet/allergy/layer");
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 정렬 수정 모달창
+        sortLayer:function(idx){
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/pet/allergy/sortLayer?idx="+idx);
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 알러지 수정 모달찰
+        modifyLayer:function(idx){
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/pet/allergy/modifyLayer?idx="+idx);
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        regist: function() {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/pet/allergy',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        location.reload();
+                        toast.alert(res.message);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 삭제
+        delete: function (idx) {
+            let formData = new FormData();
+            formData.set("idx", idx);
+
+            if (confirm(text.delConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/pet/allergy',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'DELETE',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 복구
+        deleteCancel: function (idx) {
+            let formData = new FormData();
+            formData.set("idx", idx);
+
+            if (confirm(text.canDelConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/pet/allergy/delete/cancel',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 정렬 수정
+        sortModi: function () {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+
+            if (confirm(text.modiSortConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/pet/allergy/sort',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            if (res.data != undefined) {
+                                toast.alert(res.message);
+                                location.reload();
+                            } else {
+                                // 실패
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 알러지 수정
+        modify: function () {
+            let form = $("#modifyForm")[0];
+            let formData = new FormData(form);
+
+            if (confirm(text.modifyConfirm)) {
+                let idx = formData.get('idx');
+
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/pet/allergy/' + idx,
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/pet/allergy/list';
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/pet/allergy/excel?' + $("#frm").serialize();
+        },
+    }
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

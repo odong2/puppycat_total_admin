@@ -1,0 +1,54 @@
+<div th:fragment="layerFragment" class="modal-content" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <form id="modalForm" accept-charset="utf-8">
+            <div class="row p-0">
+                <div class="col-auto input-group input-group-sm m-1 ml-3 p-0 col-3">
+                    <select id="searchType" name="searchType" class="form-control form-select">
+                        <option value="" th:text="#{lang.member.search}"></option>
+                        <option th:value="id" th:text="#{lang.member.id}"></option>
+                        <option th:value="nick" th:text="#{lang.member.nick}"></option>
+                        <option th:value="name" th:text="#{lang.member.name}"></option>
+                    </select>
+                </div>
+                <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                    <input type="text" id="searchWord" name="searchWord" class="form-control form-control-sm text-center"
+                           th:placeholder="#{lang.member.placeholder.search.word}"
+                           style="width:30%;">
+                </div>
+                <div class="col-auto btn-group btn-group-sm m-1 p-0 col-2">
+                    <!-- 검색버튼 -->
+                    <button type="button" id="searchModalBtn" th:text="#{lang.member.button.search}" class="btn btn-success pr-3 pl-3"></button>
+                    <button type="button" id="resetModalBtn" class="btn btn-outline-success"><i class="fa-solid fa-rotate-left"></i></button>
+                </div>
+            </div>
+        </form>
+        <!-- 현재 페이지 -->
+        <input type="hidden" id="page" name="page" value="1">
+        <!-- list -->
+        <table class="table table-hover" id="memberListLayer">
+            <thead class="table-active">
+            <tr class="text-center">
+                <th scope="col" th:text="#{lang.member.num}" class="text-center"></th>
+                <th scope="col" th:text="#{lang.member.id}" class="text-center"></th>
+                <th scope="col" th:text="#{lang.member.nick}" class="text-center"></th>
+                <th scope="col" th:text="#{lang.member.name}" class="text-center"></th>
+                <th scope="col" th:text="#{lang.contents.regdate}" class="text-center"></th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <th:block layout:fragment="paging">
+            <div class="col-md-12 d-flex flex-row-reverse my-3">
+                <ul id="memberPagination" class="pagination" style="font-size: 12px;">
+                </ul>
+            </div>
+        </th:block>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.wordcheck.pet.PetWordCheckDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="wordCheckColumns">
+        `pewochkr`.`idx`
+        ,`pewochkr`.`word`
+        ,`pewochkr`.`type`
+        ,`pewochkr`.`state`
+        ,`pewochkr`.`memo`
+        ,`snad`.`id` AS `adminId`
+        ,CONVERT_TZ( `pewochkr`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'word'">
+                        AND `pewochkr`.`word` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'adminId'">
+                        AND `snad`.`id` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                AND `pewochkr`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                    AND (`pewochkr`.`reg_date` >= #{searchStartDate} AND `pewochkr`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 금칙어 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="PetWordCheckDto">
+        SELECT
+            <include refid="wordCheckColumns"/>
+        FROM
+            <include refid="databaseSns"/>`pet_word_check_kr` AS `pewochkr`
+        INNER JOIN <include refid="databaseSns"/>`sns_admin` AS `snad`
+            ON `pewochkr`.`admin_idx` = `snad`.`idx`
+        <include refid="searchCondition"/>
+        ORDER BY  `pewochkr`.`idx` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pewochkr`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseSns" />`pet_word_check_kr` AS `pewochkr`
+        INNER JOIN <include refid="databaseSns"/>`sns_admin` AS `snad`
+            ON `pewochkr`.`admin_idx` = `snad`.`idx`
+        <include refid="searchCondition"/>
+    </select>
+</mapper>

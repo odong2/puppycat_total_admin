@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.menu.MenuDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="menuColumns">
+        `toadme`.*,
+	    `toadmena`.`name`,
+	    `toadmena`.`lang`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 리스트 전체 가져오기 -->
+    <select id="getList" parameterType="MenuDto" resultType="MenuDto">
+        SELECT
+            <include refid="menuColumns"/>
+        FROM
+            <include refid="databaseTotal"/>`total_admin_menu` AS `toadme`
+        INNER JOIN <include refid="databaseTotal"/>`total_admin_menu_name` AS `toadmena`
+            ON ( `toadme`.`idx` = `toadmena`.`menu_idx`  AND `toadmena`.`lang` = 'ko' )
+        <where>
+            <if test='level != null'>
+                AND `toadme`.`level` <![CDATA[ <= ]]> #{level}
+            </if>
+            <if test='lang != null and lang != ""' >
+                AND `toadmena`.`lang` = #{lang}
+            </if>
+        </where>
+        ORDER BY
+            `toadme`.`parent` ASC,
+            `toadme`.`sort` ASC,
+            `toadme`.`idx` ASC
+        LIMIT 100
+        OFFSET 0
+    </select>
+
+    <!-- 회원 등급 별 left 메뉴 가져오기 -->
+    <select id="getLeftList" parameterType="MenuDto" resultType="MenuDto">
+        SELECT
+            <include refid="menuColumns"/>
+        FROM <include refid="databaseTotal"/>`total_admin_menu` AS `toadme`
+        INNER JOIN <include refid="databaseTotal"/>`total_admin_menu_name` AS `toadmena`
+            ON ( `toadme`.`idx` = `toadmena`.`menu_idx`  AND `toadmena`.`lang` = 'ko' )
+        <where>
+            <if test='level != null'>
+                AND `toadme`.`level` <![CDATA[ <= ]]> #{level}
+            </if>
+                AND `toadmena`.`lang` = 'ko'
+                AND `toadme`.state = 1
+        </where>
+        ORDER BY
+            `toadme`.`parent` ASC,
+            `toadme`.`sort` ASC,
+            `toadme`.`idx` ASC
+        LIMIT 100
+        OFFSET 0
+    </select>
+
+    <!-- 메뉴(카테고리)별 정렬 마지막값 -->
+    <select id="getLastSort" parameterType="MenuDto" resultType="int">
+        SELECT
+            MAX(`toadme`.`sort`)
+        FROM <include refid="databaseTotal"/>`total_admin_menu` AS `toadme`
+        WHERE
+            `parent` = #{parent}
+    </select>
+
+    <!-- row 1개 가져오기 -->
+    <select id="getCateInfo" parameterType="MenuDto" resultType="MenuDto">
+        SELECT
+            <include refid="menuColumns" />
+        FROM  <include refid="databaseTotal" />`total_admin_menu` AS `toadme`
+        INNER JOIN <include refid="databaseTotal"/>`total_admin_menu_name` AS `toadmena`
+            ON ( `toadme`.`idx` = `toadmena`.`menu_idx`  AND `toadmena`.`lang` = 'ko' )
+        WHERE
+            `toadme`.`idx` = #{idx}
+        LIMIT 1
+    </select>
+
+    <!-- 현 메뉴의 다음 정렬순서 가져오기 -->
+    <select id="getNextSort" parameterType="MenuDto" resultType="int">
+        SELECT
+            `toadme`.`idx`
+        FROM <include refid="databaseTotal" />`total_admin_menu` AS `toadme`
+        WHERE
+                `toadme`.`parent` = #{parent}
+            AND `toadme`.`sort` <![CDATA[ > ]]> #{sort}
+        ORDER BY `toadme`.`sort` ASC
+        LIMIT  1
+    </select>
+
+    <!-- 현 메뉴의 이전 정렬순서 가져오기 -->
+    <select id="getPrevSort" parameterType="MenuDto" resultType="int">
+        SELECT
+            `toadme`.`idx`
+        FROM <include refid="databaseTotal" />`total_admin_menu` AS `toadme`
+        WHERE
+                `toadme`.`parent` = #{parent}
+            AND `toadme`.`sort` <![CDATA[ < ]]>#{sort}
+        ORDER BY `toadme`.`sort` DESC
+        LIMIT  1
+    </select>
+
+    <!-- 메뉴 접근 레벨 가져오기 -->
+    <select id="getMenuLevel" parameterType="MenuDto" resultType="int">
+        SELECT
+            `toadme`.`level`
+        FROM <include refid="databaseTotal" />`total_admin_menu` AS `toadme`
+        WHERE
+            `toadme`.`idx` = #{idx}
+        LIMIT  1
+    </select>
+</mapper>

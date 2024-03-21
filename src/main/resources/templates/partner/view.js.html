@@ -1,0 +1,279 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        img.init();
+        partner.init();
+    });
+
+    let text = {
+        rejectConfirm : '[[#{lang.partner.confirm.reject}]]',     // 반려 하시겠습니까?
+        approvalConfirm : '[[#{lang.partner.confirm.approval}]]', // 승인하시겠습니까?
+        judgeConfirm : '[[#{lang.partner.confirm.judge}]]',       // 심사중으로 변경하시겠습니까?
+        delRestrainConfirm: "[[#{lang.restrain.partner.confirm.delete}]]",     // 모든 제재를 중단 하시겠습니까?
+    }
+
+    // json data
+    let jsonStr = '[[${jsonData}]]';
+    let jsonObj = JSON.parse(jsonStr.replace(/&quot;/g,'"'));
+    let imgList = jsonObj.imgList;         // 파트너사 이미지 리스트
+    let managerList = jsonObj.managerList; // 매니저 리스트
+    let idx = '[[${idx}]]';
+    // 매니저
+    let csManagerObj;
+    let productManagerObj;
+    let deliverManagerObj;
+    let administrationManagerObj;
+    let caculatorManagerObj;
+
+    let partner = {
+        // 파트너 정보 초기화
+        init : () => {
+            if (!check.isEmpty(managerList)) {
+                managerList.forEach((item) => {
+                    let type = "";
+                    switch (item.type) {
+                        case 1 :
+                            type = "product";
+                            productManagerObj = item;
+                            break;
+                        case 2 :
+                            type = "cs";
+                            csManagerObj = item;
+                            break;
+                        case 3 :
+                            type = "deliver";
+                            deliverManagerObj = item;
+                            break
+                        case 4 :
+                            type = "calculator";
+                            caculatorManagerObj = item;
+                            break;
+                        case 5 :
+                            type = "administration";
+                            administrationManagerObj = item;
+                            break;
+                    }
+                    let tel1 = item.tel1 == undefined ? '' : item.tel1 + '-';
+                    let tel2 = item.tel2 == undefined ? '' : item.tel2;
+                    let tel3 = item.tel3 == undefined ? '' : '-' + item.tel3;
+                    // 매니저 정보 초기화
+                    $(`#${type + "ManagerName"}`).text(item.managerName); // 담당자 이름
+                    $(`#${type + "ManagerEmail"}`).text(item.email);      // 담당자 이메일
+                    $(`#${type + "ManagerTel"}`).text(tel1 + tel2 + tel3); // 담당자 연락처
+                    $(`#${type + "ManagerPhone"}`).text(item.phone1 + '-' + item.phone2 + '-' + item.phone3); // 담당자 휴대폰
+                });
+            }
+        },
+        // 파트너 상태 변경 [승인, 심사중, 반려]
+        modifyState : (type) => {
+            let state;
+            let reason;
+            if (type == 'approval') {
+                if (!confirm(text.approvalConfirm)) {
+                    return false;
+                }
+                state = 1; // 승인
+            } else if (type == 'judge') {
+                if (!confirm(text.judgeConfirm)) {
+                    return false;
+                }
+                state = 4; // 심사중
+            } else if (type == 'reject') {
+                if (!confirm(text.rejectConfirm)) {
+                    return false;
+                }
+                state = 5; // 반려
+                reason = $('#reason').val();
+            }
+
+            let formData = new FormData();
+            formData.append('state', state);
+            formData.append('reason', reason);
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/' + idx + '/state',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                data : formData,
+                method: 'PATCH',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 반려 버튼
+        reject : (type) => {
+
+            let result = $('#rejectWrap').hasClass('d-flex');
+
+            if (result == false) {
+                $('#rejectWrap').addClass('d-flex').removeClass('d-none');
+            }
+
+            if (type == 'nonVisible') {
+                $('#rejectWrap').addClass('d-none').removeClass('d-flex');
+            }
+        },
+        // 목록
+        list : () => {
+            location.href = '[[${SERVER.currentDomain}]]/partner/list';
+        },
+        // 수정
+        modify : () => {
+            location.href = '[[${SERVER.currentDomain}]]/partner/modify/' + idx;
+        },
+    }
+
+    /** 이미지 관련 객체 **/
+    let img = {
+        // 업로드한 이미지 UI 표시
+        init : () => {
+            imgList.forEach((item) => {
+                // 텍스트로 UI 표시
+                img.textChange(item);
+            });
+        },
+        // 이미지 파일 다운로드
+        download : (idx) => {
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/image/download/' + idx,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        let byteArray = res.data.imgByte;
+
+                        let uint8Array = new Uint8Array(byteArray.length);
+                        for(let i = 0; i < uint8Array.length; i++) {
+                            uint8Array[i] = byteArray[i];
+                        }
+
+                        const blob = new Blob([uint8Array], { type: 'image/jpg' });
+
+                        let link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+
+                        link.download = res.data.fileName;
+                        link.click();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 이미지 텍스트 변경
+        textChange : (item) => {
+            let elementId = "";
+
+            if (item.type == 0) {
+                elementId = "#businessPreview"; // 통신판매업 사본
+            } else if (item.type == 1) {
+                elementId = "#approvalPreview"; // 사업자등록증 사본
+            } else if (item.type == 2) {
+                elementId = "#uploadPreview";   // 기타 파일 사본
+            } else if (item.type == 3) {
+                elementId = "#bankPreview";     // 통장 사본
+            }
+
+            let imgHtml = "";
+                    imgHtml += `
+                        <div class="preview-img">
+                            <a onclick="img.download(${item.idx});" style="color: blue; cursor: pointer;">${item.fileName}</a>
+                        </div>
+                    `;
+
+            $(elementId).append(imgHtml);
+        },
+    }
+
+    // 체크 오브젝트
+    let check = {
+        // 빈값 체크
+        isEmpty : (value) => {
+            if (
+                typeof value === 'undefined' ||
+                value === null ||
+                value === '' ||
+                value === 'null' ||
+                value.length === 0
+            ) {
+                return true;
+            } else{
+                return false;
+            }
+        },
+    }
+
+    let restrain_partner = {
+        // 제재 리스트
+        list:function () {
+            let param = 'searchDateType=&searchStartDate=&searchEndDate=&state=&type=&searchType=idx&searchWord='+idx;
+            location.href='[[${SERVER.currentDomain}]]/restrain/partner?' + param;
+        },
+        // 파트너 제재 등록 팝업
+        regist:function(){
+            js_popup('[[${SERVER.currentDomain}]]/restrain/partner/regist/'+idx, 'restrain_regist', '600', '400');
+        },
+        // 등록 취소
+        cancel: function () {
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        // 제재 중단
+        delete: function () {
+
+            if (confirm(text.delRestrainConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/restrain/partner/' + idx,
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'DELETE',
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result === true) {
+                            toast.alert(res.message);
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+    }
+
+</script>

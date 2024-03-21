@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.category.CategoryDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="categoryColumns">
+        `shprca`.`idx`
+        , `shprca`.`parent`
+        , `shprca`.`depth`
+        , `shprca`.`code`
+        , `shprca`.`category`
+        , `shprca`.`sort`
+        , `shprca`.`state`
+        , IFNULL(CONVERT_TZ(`shprca`.`modi_date`, 'UTC', '${convertTZ}'), NULL)
+        , `shprca`.`modi_date_tz`
+        , IFNULL(CONVERT_TZ(`shprca`.`reg_date`, 'UTC', '${convertTZ}'), NULL)
+        , `shprca`.`reg_date_tz`
+    </sql>
+
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <sql id="categorySearchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'categoryIdx'">
+                        AND `shprca`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'categoryName'">
+                        AND `shprca`.`category` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- 상품 카테고리 목록 -->
+    <select id="getCategoryList" resultType="CategoryDto">
+        SELECT
+            <include refid="categoryColumns"/>
+        FROM
+            <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+        ORDER BY
+            `shprca`.`depth` ASC, `shprca`.`category` ASC
+    </select>
+
+    <!-- 상품 카테고리 하위 마지막 노드 -->
+    <select id="getCategoryLastNode" parameterType="Integer" resultType="CategoryDto">
+        SELECT
+            `shprca`.`parent`
+             , `shprca`.`depth`
+             , max(`shprca`.`code`) AS `code`
+             , max(`shprca`.`sort`) AS `sort`
+        FROM
+            <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+        WHERE
+            `shprca`.`parent` = #{categoryIdx}
+        GROUP BY
+            `shprca`.`parent`, `shprca`.`depth`
+    </select>
+
+    <!-- 카테고리 검색 카운트 -->
+    <select id="getCategorySearchCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shprca`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+        <include refid="categorySearchCondition"/>
+    </select>
+
+    <!-- 카테고리 검색 리스트 -->
+    <select id="getCategorySearchList" parameterType="SearchDto" resultType="CategoryDto">
+        SELECT
+            `shprca`.`idx`,
+            CASE
+                WHEN `shprca`.`depth` = 1 THEN `shprca1`.`category`
+                WHEN `shprca`.`depth` = 2 THEN CONCAT(`shprca1`.`category`, ' > ', `shprca2`.`category`)
+                WHEN `shprca`.`depth` = 3 THEN CONCAT(`shprca1`.`category`, ' > ', `shprca2`.`category`, ' > ', `shprca3`.`category`)
+            END AS `category`
+        FROM <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca1`
+            ON `shprca1`.`depth` = 1
+            AND `shprca`.`code` LIKE CONCAT(`shprca1`.`code`, '%')
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca2`
+            ON `shprca2`.`depth` = 2
+            AND `shprca`.`code` LIKE CONCAT(`shprca2`.`code`, '%')
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca3`
+            ON `shprca3`.`depth` = 3
+            AND `shprca`.`code` LIKE CONCAT(`shprca3`.`code`, '%')
+        <include refid="categorySearchCondition"/>
+        ORDER BY `shprca`.`idx` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

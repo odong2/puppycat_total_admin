@@ -1,0 +1,565 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    const dataTransfer = new DataTransfer();
+    let form = $("#frm")[0];
+
+    let text = {
+        addBtn: "[[#{lang.contents.button.add}]]",        // 등록 버튼
+        deleteConfirm: "[[#{lang.contents.confirm.delete.tag}]]",  // 삭제 confirm
+        tagOverAlert: "[[#{lang.contents.exception.image.tag.limit.over}]]", // 태그 개수 초과 alert
+    }
+
+    let adminContents = {
+        list: function () {
+            location.href = "[[${SERVER.currentDomain}]]/contents/list?[(${backUrl})]";
+        },
+        location: function () {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    // 각 주소의 노출 규칙에 따라 주소를 조합한다.
+                    // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+                    var addr = ''; // 주소 변수
+                    var extraAddr = ''; // 참고항목 변수
+
+                    //사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
+                    if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
+                        addr = data.roadAddress;
+                    } else { // 사용자가 지번 주소를 선택했을 경우(J)
+                        addr = data.jibunAddress;
+                    }
+
+                    // 사용자가 선택한 주소가 도로명 타입일때 참고항목을 조합한다.
+                    if (data.userSelectedType === 'R') {
+                        // 법정동명이 있을 경우 추가한다. (법정리는 제외)
+                        // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                            extraAddr += data.bname;
+                        }
+                        // 건물명이 있고, 공동주택일 경우 추가한다.
+                        if (data.buildingName !== '' && data.apartment === 'Y') {
+                            extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                        }
+                        // 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+                        if (extraAddr !== '') {
+                            extraAddr = ' (' + extraAddr + ')';
+                        }
+                        // 조합된 참고항목을 해당 필드에 넣는다.
+                        document.getElementById("contents_location").value = extraAddr;
+
+                    } else {
+                        document.getElementById("contents_location").value = '';
+                    }
+
+                    // 우편번호와 주소 정보를 해당 필드에 넣는다.
+                    document.getElementById('contents_location').value = data.zonecode;
+                    document.getElementById("contents_location").value = addr;
+                    // 커서를 상세주소 필드로 이동한다.
+                    document.getElementById("contents_location").focus();
+                }
+            }).open();
+        },
+        // 등록
+        regist: function () {
+            let formData = new FormData(form);
+
+            // 버튼 비활성화
+            $("#registBtn").attr("disabled", true);
+
+            // 이미지 row
+            if (contentsImageRow.length > 0) {
+                contentsImageRow.forEach((file, idx) => {
+                    dataTransfer.items.add(file);
+                    formData.append('uploadFile', dataTransfer.files[idx]);
+                });
+            }
+
+            // 이미지 태그 row
+            if (imageTagRow.length > 0) {
+                imageTagRow.forEach((tag, idx) => {
+                    formData.append('imgTagList', JSON.stringify(Object.fromEntries(tag)));
+                });
+            }
+
+            $.ajax({
+                url: '[[${SERVER.snsDomain}]]/v1/contents/regist',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // 성공
+                        alert(res.message);
+                        location.href = "[[${SERVER.currentDomain}]]/contents/list";
+                    } else {
+                        // 실패
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                },
+                complete: function () {
+                    // AJAX 요청 완료 후에 실행되는 코드
+                    // 버튼 활성화
+                    $("#registBtn").attr("disabled", false);
+                }
+            });
+        },
+    }
+
+
+    /** 이미지 **/
+        // modal
+    let myModal;
+    // 등록할 이미지 배열
+    let contentsImageRow = [];
+    // 등록할 이미지 임시 배열
+    let contentsImageRowTemp = [];
+
+    /** 이미지 내 태그 **/
+        // modal
+    let tagModal;
+    let map = new Map();
+    // 등록할 이미지 태그 배열
+    let imageTagRow = [];
+
+    let contentsImage = {
+        // 이미지 등록 레이어
+        layer: function (type, idx) {
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 임시 배열에 이미지 배열 넣기
+            contentsImageRowTemp = contentsImageRow.slice();
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/contents/imageLayer", function () {
+                // 레이어 미리보기
+                contentsImage.layerPreview();
+            });
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 이미지 파일 선택
+        imageChange: function () {
+            const fileDom = document.querySelector("input[name=fileData]");
+            var tmplen = $("#preview").children().length;
+            $.each(fileDom.files, function (idx, el) {
+                if (tmplen + idx < 12) {
+                    // 등록할 이미지 배열에 넣기
+                    contentsImageRowTemp.push(fileDom.files[idx]);
+                }
+                if (tmplen + idx > 11) {
+                    alert("[[#{lang.contents.exception.imgCnt}]]");
+                    return false;
+                }
+            })
+
+            // 레이어 미리보기
+            contentsImage.layerPreview();
+        },
+        // 이미지 파일 선택 미리 보기
+        layerPreview: function () {
+            if (contentsImageRowTemp.length != 0) {
+                let imgHtml = "";
+                $.each(contentsImageRowTemp, function (idx, el) {
+                    // 미리 보기용 이미지 url
+                    const imageSrc = URL.createObjectURL(el);
+
+                    // 미리 보기 html
+                    imgHtml += `
+                        <div class="image-preview-wrap mr5">
+                            <div class="bg">
+                                <a href="javascript:void(0);" onclick="contentsImage.deletePreview($(this));" class="preview-del"></a><!-- x 닫기 -->
+                                <div class="preview-img">
+                                    <a href="${imageSrc}" target="_blank">
+                                        <img src="${imageSrc}">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $("#preview span").hide();
+                    $("#preview").html(imgHtml);
+                });
+            }
+        },
+        // 레이어에서 form 으로 이미지 파일 정보 전달
+        add: function () {
+            // modal close
+            $(".btn-close").click();
+            // 이미지 배열에 등록할 임시 이미지 넣기
+            contentsImageRow = contentsImageRowTemp.slice();
+
+            // sort table 초기화
+            contentsImage.imagesPreview();
+
+            // 이미지 내 태그
+            contentsImage.tagMembersPreview();
+
+            // drag & drop
+            drag();
+        },
+        // 등록할 이미지 삭제, 미리보기 삭제
+        deletePreview: function (_this) {
+            let imageWrap = _this.closest(".image-preview-wrap");
+
+            // 배열에서 삭제
+            contentsImageRowTemp.splice(imageWrap.index(), 1);
+
+            // 미리보기 삭제
+            imageWrap.remove();
+
+            // 선택 파일 없을때 표시
+            if ($(".image-preview-wrap").length <= 0) {
+                let noFile = "<span th:text=\"#{lang.contents.placeholder.file.no}\"></span>";
+
+                $("#preview").html(noFile);
+            }
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 임시 배열 초기화
+            contentsImageRowTemp = [];
+
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        // 사진 삭제
+        delete: function (_this) {
+            let imageRow = _this.closest("tr");
+
+            // 배열에서 삭제
+            contentsImageRow.splice(imageRow.index(), 1);
+
+            // row 삭제
+            imageRow.remove();
+
+            // 태그가 있다면
+            if (imageTagRow.length > 0) {
+                let map = new Map();
+                let imgIdx;
+
+                // 태그 배열 forEach 돌려서 선택한 이미지 번호와 같으면 제거
+                $.each(imageTagRow, function (idx, el) {
+                    map = imageTagRow[idx];
+                    imgIdx = map.get("imgIdx");
+                    if (imageRow.index() === imgIdx) {
+                        imageTagRow.splice(idx, 1);
+                    }
+                })
+            }
+
+            // sort table 초기화
+            contentsImage.imagesPreview();
+
+            // 이미지 내 태그
+            contentsImage.tagMembersPreview();
+
+        },
+        // 이미지 태그 등록 레이어
+        tagLayer: function (idx) {
+            tagModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/contents/imageTagLayer", function () {
+                // 레이어 미리보기
+                contentsImage.tagLayerPreview(idx);
+                // 이미지 내 태그 목록
+                contentsImage.tagLayerMemberPreview(idx);
+            });
+            tagModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 이미지 태그 파일 미리 보기
+        tagLayerPreview: function (idx) {
+            let obj = contentsImageRow[idx];
+            let imgHtml = "";
+            // 미리 보기용 이미지 url
+            const imageSrc = URL.createObjectURL(obj);
+
+            // 미리 보기 html
+            imgHtml += `
+                <div id="tagImg" style="display: inline-block; border: 1px solid #dadada; cursor: pointer;" >
+                    <img src="${imageSrc}" onclick="contentsImage.addImgTag(${idx})" width="250px" height="250px">
+                </div>
+            `;
+
+            $("#preview").html(imgHtml);
+        },
+        // 이미지 태그된 멤버 리스트 보기 (이미지 1건)
+        tagLayerMemberPreview: function (imageIdx) {
+            let imgIdx;
+            let tagHtml = "";
+            let tagTooltipHtml = "";
+            let map = new Map();
+            // 임시 배열 초기화
+            let imageTagRowTemp = [];
+
+            if (imageTagRow.length > 0) {
+                // 태그 배열 forEach 돌려서 선택한 이미지 번호와 같으면 임시 배열에 저장
+                $.each(imageTagRow, function (idx, el) {
+                    map = imageTagRow[idx];
+                    imgIdx = map.get("imgIdx");
+                    if (imageIdx === imgIdx) {
+                        imageTagRowTemp.push(map);
+                    }
+                })
+            }
+
+            if (imageTagRowTemp.length > 0) {
+                $.each(imageTagRowTemp, function (idx, el) {
+
+                    // 미리 보기 html
+                    tagHtml += `
+                        <div class="image-tag-preview-wrap mr5">
+                            <div class="bg">
+                                <a href="javascript:void(0);" onclick="contentsImage.deleteTagPreview(${idx}, this);" class="preview-del"></a><!-- x 닫기 -->
+                                <div class="preview-img">
+                                    <span>${el.get("nick")}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $("#preview-tag-member span").hide();
+                    $("#preview-tag-member").html(tagHtml);
+
+                    tagTooltipHtml += `<button class="imgTag" id="buttonTag${idx}" onclick="contentsImage.deleteTagPreview(${idx});" type="button" style="position:absolute; top:${el.get("height")}px; left:${el.get("width")}px;">${el.get("nick")}</button>`;
+
+
+                    $("#tagImg").append(tagTooltipHtml);
+
+                });
+            }
+        },
+        // 이미지 태그된 멤버 리스트 보기 (이미지 여러건)
+        tagMembersPreview: function () {
+            let imgIdx;
+            let map = new Map();
+
+            if (contentsImageRow.length > 0) {
+                if (imageTagRow.length > 0) {
+
+                    $.each(contentsImageRow, function (imageIdx, el) {
+
+                        // 태그 배열 forEach 돌려서 이미지 번호와 같으면 태그 생성
+                        $.each(imageTagRow, function (tagIdx, el) {
+
+                            map = imageTagRow[tagIdx];
+                            imgIdx = map.get("imgIdx");
+                            if (imageIdx === imgIdx) {
+                                let tagTooltipHtml = `<button class="imgTag" type="button" style="position:absolute; top:${el.get("height")}px; left:${el.get("width")}px;">${el.get("nick")}</button>`;
+                                $("#img" + imgIdx).append(tagTooltipHtml);
+                            }
+
+                        })
+
+
+                    })
+                }
+            }
+
+        },
+        // 이미지 리스트 새로고침
+        imagesPreview: function () {
+
+            if (contentsImageRow.length > 0) {
+
+                // sort table
+                let sortHtml = "";
+                $.each(contentsImageRow, function (idx, el) {
+
+                    sortHtml += `
+                <tr class="cut-tr cutnum1">
+                    <td class="text-center">
+                        <span class="icon_move"></span>
+                    </td>
+                   <td class="text-center nosort">
+                        <div class="col-md-5">
+                            <div id="img${idx}" style="display: inline-block; border: 1px solid #dadada; cursor: pointer;">
+                                <img src="${URL.createObjectURL(el)}" onclick="contentsImage.tagLayer(${idx});" width="250px" height="250px" />
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn_minus" onclick="contentsImage.delete($(this))"></button>
+                    </td>
+                </tr>
+                `;
+
+                })
+                $("#sortTable tbody").html(sortHtml);
+
+            }
+
+        },
+        // 이미지 태그 등록
+        addImgTag: function (idx) {
+            // 한 이미지에 10 이상 태그 불가
+            if (imageTagRow.length >= 10) {
+                alert(text.tagOverAlert);
+                return false;
+            }
+
+            let map = new Map;
+
+            map.set('imgIdx', idx);
+            map.set('width', event.offsetX);
+            map.set('height', event.offsetY);
+
+            // 회원 idx 값 있는지 확인
+            let member = $("#memberUuid").val();
+            if (member === '' || member === undefined || member == null) {
+                alert("[[#{lang.contents.exception.tag.target}]]");
+                return false;
+            }
+
+            map.set('memberUuid', member);
+
+            let memberNick = $("#tag-member").val();
+            map.set('nick', memberNick);
+
+            imageTagRow.push(map);
+
+            alert(memberNick + "[[#{lang.contents.imgTag.member.success}]]");
+
+            // modal close
+            $(".btn-close").click();
+
+            // 이미지 내 태그 목록
+            contentsImage.tagMembersPreview();
+
+        },
+        // 등록할 태그 삭제
+        deleteTagPreview: function (idx, _this) {
+            let imageTagWrap = _this.closest(".image-tag-preview-wrap");
+
+            if (confirm(text.deleteConfirm)) {
+                // 배열에서 삭제
+                imageTagRow.splice(idx, 1);
+
+                // 미리보기 삭제
+                imageTagWrap.remove();
+
+                // 이미지 내 태그 삭제
+                $('#buttonTag' + idx).remove();
+            }
+
+            // 선택 파일 없을때 표시
+            if ($(".image-tag-preview-wrap").length <= 0) {
+                let noTag = "<span th:text=\"#{lang.contents.placeholder.tag.no}\"></span>";
+
+                $("#preview-tag-member").html(noTag);
+            }
+
+            // // modal close
+            // $(".btn-close").click();
+
+            // sort table 초기화
+            contentsImage.imagesPreview();
+
+            // 이미지 내 태그
+            contentsImage.tagMembersPreview();
+
+        },
+        // 닉네임 검색
+        searchMember: function () {
+            let member = $("#tag-member").val().trim();
+            if (member === "" || member == null) {
+                toast.alert('[[#{lang.contents.search.member.fail}]]');
+                return false;
+            }
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/contents/search/' + member,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                data: {"member": member},
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    let memberUuid = res.data.memberUuid;
+                    if (memberUuid !== undefined) {
+                        $("#memberUuid").val(memberUuid);
+                        $("#search-member-result").text(res.message);
+                        $("#search-member-result").css('color', 'blue');
+                    } else {
+                        $("#search-member-result").text(res.message);
+                        $("#search-member-result").css('color', 'red');
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+    /** drag & drop **/
+    function drag() {
+        // drag & drop
+        let temp = null;
+        let startOrder = null;
+        let stopOrder = null;
+        let imgIdx = null;
+        let map = new Map();
+
+        $("#sortTable tbody").sortable({
+            cancel: '.nosort',
+            start: function (event, ui) {
+                startOrder = ui.item.index();
+                // 해당 이미지 배열에서 제거 >> temp : 해당이미지
+                temp = contentsImageRow.splice(startOrder, 1);
+            },
+            stop: function (event, ui) {
+                stopOrder = ui.item.index();
+                // 바뀐 위치에 해당 이미지를 배열에 추가
+                contentsImageRow.splice(stopOrder, 0, temp[0]);
+                temp = null;
+
+                // sort table 초기화
+                contentsImage.imagesPreview();
+
+                // 태그가 존재하면 imgIdx 바꿔주기
+                if (imageTagRow.length > 0) {
+                    // 태그 배열 forEach 돌려서 선택한 이미지 번호와 같은지 확인
+                    $.each(imageTagRow, function (idx, el) {
+                        map = imageTagRow[idx];
+                        imgIdx = map.get("imgIdx");
+
+                        // 순서를 바꾸려는 이미지에 태그가 있다면 imgIdx 바꿔주기
+                        if (startOrder === imgIdx) {
+                            // 해당 태그는 태그 배열에서 제거
+                            imageTagRow.splice(idx, 1);
+                            // imgIdx가 바뀐 map 으로 다시 넣어주기 위해 data 세팅
+                            map.delete('imgIdx');
+                            map.set('imgIdx', stopOrder);
+                            // 바뀐 이미지번호를 저장한 맵을 다시 태그 배열에 추가
+                            imageTagRow.push(map);
+                        }
+                    })
+                }
+
+                // 이미지 내 태그
+                contentsImage.tagMembersPreview();
+            }
+        });
+    }
+
+</script>

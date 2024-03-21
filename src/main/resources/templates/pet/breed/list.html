@@ -1,0 +1,97 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.pet.breed.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="petBreed.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-4">
+                                            <select name="type" id="type" class="form-select form-select-sm col-3" >
+                                                <th:block th:each="petType : ${petTypeList}">
+                                                    <option th:value="${petType.typeIdx}" th:text="${petType.type}" th:selected="${search.type} == ${petType.typeIdx}"></option>
+                                                </th:block>
+                                            </select>
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.pet.button.search}" ></option>
+                                                <option th:value="breed" th:text="#{lang.pet.breed}" th:selected="${search.searchType} == 'breed'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.pet.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                            <input type="hidden" id="limit" name="limit" value="100">
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 사용 상태 -->
+                                            <select name="state" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.pet.state}"></option>
+                                                <option value="1" th:text="#{lang.pet.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                <option value="0" th:text="#{lang.pet.state.delete}" th:selected="${search.state} == '0'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.pet.button.search}" onclick="petBreed.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="petBreed.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <button type="button" id="excelBtn" onclick="petBreed.excel();"
+                                                    class="btn btn-sm btn-primary"
+                                                    th:text="#{lang.member.button.excel}"></button>
+                                            <button type="button" id="btnRegist" onclick="petBreed.layer();" class="btn btn-sm btn-warning">등록</button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.wordcheck.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.pet.num}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.pet.type}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.pet.breed}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.pet.sort}" class="text-left"></th>
+                            <th scope="col" th:text="#{lang.pet.state}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.pet.regdate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.pet.setting}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

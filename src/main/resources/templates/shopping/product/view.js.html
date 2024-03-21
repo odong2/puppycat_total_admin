@@ -1,0 +1,1182 @@
+<script th:fragment="importJsFragment">
+
+    const dataTransfer = new DataTransfer();
+
+    // json data
+    let jsonStr = '[[${jsonData}]]';
+    let jsonObject = JSON.parse(jsonStr.replace(/&quot;/g,'"'));
+
+    // 카테고리
+    let categoryList = jsonObject['categoryList'][0];
+    let categoryDepth = [];
+
+    // 브랜드
+    let brandList = jsonObject['brandList'];
+    let brandGroupList = jsonObject['brandGroupList'];
+
+    // 인증유형 리스트
+    let certificationList = jsonObject['certificationList'];
+
+    // 상품정보 제공고시
+    let attributeSetList = jsonObject['attributeSetList'];
+
+    // 구성성분(알러지)
+    let ingredientList = jsonObject['ingredientList'];
+
+    // 건강질환
+    let healthList = jsonObject['healthList'];
+
+    // 단위
+    let unitList = jsonObject['unitList'];
+
+    $(document).ready(function () {
+
+        // 상품정보 제공고시
+        selected.attributeSetNode();
+
+        // ckeditor
+        if ($("#detail").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#detail"), {
+                    language: "ko",
+                    simpleUpload: {
+                        uploadUrl: "[[${SERVER.shopDomain}]]/v1/product/mp/tempImage",
+                        // withCredentials: false,
+                        // headers: {
+                        //     'Authorization': 'Bearer ' + $.cookie('accessToken'),
+                        // },
+                    },
+                })
+                .then(newEditor => {
+                    const fileInput = newEditor.ui.view.element.querySelector('input[type="file"]');
+                    fileInput.setAttribute("accept", ".jpg,.jpeg,.png"); // jpg, jpeg, png 이미지만 허용
+                    editor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        // MP 상품
+        productMp.view();
+
+    })
+
+    let text = {
+        confirm:{
+            delete : "[[#{lang.product.confirm.delete}]]",          // 삭제 하시겠습니까?
+            modify : "[[#{lang.product.confirm.modify}]]",          // 수정 하시겠습니까?
+            add : "[[#{lang.product.confirm.add}]]",                // 추가 하시겠습니까?
+        },
+        btn: {
+            add: "[[#{lang.product.button.common.add}]]",           // 추가
+            modify: "[[#{lang.product.button.common.modify}]]",     // 수정
+            cancel: "[[#{lang.product.button.common.cancel}]]",     // 취소
+            regist: "[[#{lang.product.button.common.regist}]]",     // 등록
+            delete: "[[#{lang.product.button.common.delete}]]",     // 삭제
+        },
+        exception: {
+            manyCharacters : "[[#{lang.product.exception.characters}]]",            // 글자 수가 너무 많습니다.
+            certificationSame : "[[#{lang.product.exception.certification.same}]]", // 같은 인증유형을 선택하였습니다.
+            category : "[[#{lang.product.exception.category}]]",                    // 선택된 카테고리가 없습니다.
+            brand : "[[#{lang.product.exception.brand}]]",                          // 선택된 브랜드가 없습니다.
+            name : "[[#{lang.product.exception.name}]]",                            // 상품명을 입력해 주세요.
+            thumbnail : "[[#{lang.product.exception.thumbnail}]]",                  // 썸네일을 등록해 주세요.
+            price : "[[#{lang.product.exception.price}]]",                          // 상품가격을 입력해 주세요.
+            detail: "[[#{lang.product.exception.detail}]]",                         // 상품상세 내용을 입력해 주세요.
+            certificationType : "[[#{lang.product.exception.certification.type}]]", // 인증정보를 선택해 주세요.
+            certification: "[[#{lang.product.exception.certification}]]",           // 인증유형을 확인해 주세요.
+            attributeSet: "[[#{lang.product.exception.attribute.set}]]",            // 상품정보 제공고시를 선택해 주세요.
+        },
+        placeholder: {
+            selected: "[[#{lang.product.placeholder.select}]]",                     // 선택해주세요.
+            reference: "[[#{lang.product.placeholder.reference}]]",                 // 상품 상세설명 참조
+            referenceSet: "[[#{lang.product.placeholder.reference.setting}]]",      // '상품 상세설명 참조' 설정
+        }
+    }
+
+    let selected = {
+        // 카테고리 추가 버튼
+        categoryBtn: function (_this, _type, mode='modify') {
+            let groupNum = $(_this).parent("div").siblings("span:first-child").data("group_num");
+            let main = $(_this).parent("div").siblings("span:first-child").data("main");
+
+            // 초기화
+            $("#lay_category_select table tbody tr").html("");
+            $("#lay_category_select table thead tr:last-child").html("");
+
+            let btn = "";
+            if (_type == "add") {
+                selected.categoryNode(0, categoryList);
+
+                btn  = `
+                    <button type="button" class="btn btn-sm btn-primary py-0" onclick="productMp.modifyCategory('add');">${text.btn.regist}</button>
+                    <button type="button" class="btn btn-sm btn-secondary py-0" onclick="selected.categoryBtn(this, 'cancel', 'add')">${text.btn.cancel}</button>`;
+            } else if (_type == "modify") {
+                selected.categoryNode(0, categoryList);
+
+                btn  = `
+                    <button type="button" class="btn btn-sm btn-warning py-0" onclick="productMp.modifyCategory('modify', ${groupNum}, ${main});">${text.btn.modify}</button>
+                    <button type="button" class="btn btn-sm btn-secondary py-0" onclick="selected.categoryBtn(this, 'cancel')">${text.btn.cancel}</button>`;
+            } else if (_type == "cancel") {
+                // 수정 취소
+                btn  = `
+                    <button type="button" class="btn btn-sm btn-warning py-0" onclick="selected.categoryBtn(this, 'modify')">${text.btn.modify}</button>
+                    <button type="button" class="btn btn-sm btn-danger py-0" onclick="productMp.modifyCategory('delete', ${groupNum});">${text.btn.delete}</button>`;
+                if (mode == 'add') {
+                    // 추가 취소
+                    btn  = `<button type="button" class="btn btn-sm btn-primary py-0" onclick="selected.categoryBtn(this, 'add')">${text.btn.add}</button>`;
+                }
+            }
+
+            $(_this).parent("div").html(btn);
+        },
+        // 브랜드 추가 버튼
+        brandBtn: function (_this, _type) {
+            let btn = "";
+            if (_type == "modify") {
+                $("#lay_brand_select tbody").removeClass("d-none");
+                btn  = `
+                    <button type="button" class="btn btn-sm btn-warning py-0" onclick="productMp.modifyBrand('modify');">${text.btn.modify}</button>
+                    <button type="button" class="btn btn-sm btn-secondary py-0" onclick="selected.brandBtn(this, 'cancel')">${text.btn.cancel}</button>`;
+
+                // 브랜드 목록
+                selected.brandNode();
+            } else if (_type == "cancel") {
+                // 초기화
+                $("#lay_brand_select tbody").addClass("d-none");
+                $("#lay_brand_select table tbody").html("");
+                btn = `
+                    <button type="button" class="btn btn-sm btn-warning py-0" onclick="selected.brandBtn(this, 'modify')">${text.btn.modify}</button>
+                `;
+            }
+
+            $(_this).parent("div").html(btn);
+
+        },
+        // 카테고리 선택
+        category : function (depth, categoryIdx) {
+            $("#lay_category_select table tbody tr td").eq(depth-1).find("li").removeClass("active")
+            $("#lay_category_select table tbody tr td").eq(depth-1).find("li[data-idx="+categoryIdx+"]").addClass("active");
+
+            let index = $("#lay_category_select table tbody tr td").eq(depth-1).find("li[data-idx="+categoryIdx+"]").index();
+
+            // 하위 노드
+            categoryDepth.length = depth - 1;
+            categoryDepth.push(index);
+
+            let childrenNode = categoryList;
+            for(let i=0; i<depth; i++) {
+                childrenNode = childrenNode[categoryDepth[i]].childrenCategory;
+            }
+            selected.categoryNode(depth, childrenNode);
+        },
+        // 카테고리 생성
+        categoryNode : function (depth, childrenNode) {
+            $("#lay_category_select table thead tr th").eq(depth).nextAll().remove();
+            $("#lay_category_select table tbody tr td").eq(depth-1).nextAll().remove();
+            let headerCount = $("#lay_category_select table thead tr:last-child th").length;
+
+            if (childrenNode) {
+                if (depth >= headerCount) {
+                    let depthText = " DEPTH";
+                    let headerHtml = `<th class="border text-center table-header">${(depth+1) + depthText}</th>`;
+                    $("#lay_category_select table thead tr:last-child").append(headerHtml);
+                }
+
+                let bodyHtml = `<td><ul class="list-group">`;
+                $.each(childrenNode, function (index, value) {
+                    bodyHtml += `<li class="list-group-item" data-depth="${value.depth}" data-idx="${value.idx}" onclick="selected.category(${value.depth}, ${value.idx});">${value.category}</li>`;
+                })
+                bodyHtml += `</td></ul>`;
+
+                $("#lay_category_select table tbody tr").append(bodyHtml);
+            }
+        },
+        // 브랜드 선택
+        brand : function (key, index) {
+            $("#lay_brand_select table tbody tr li").removeClass("active");
+            $("#lay_brand_select table tbody tr").eq(key).find("li").eq(index).addClass("active");
+        },
+        // 브랜드 생성
+        brandNode : function () {
+            let brandListHtml = "";
+            brandGroupList.forEach((val, key) => {
+
+                let brand = brandList[key+1];
+                if (brand) {
+                    let liHtml = "";
+                    brand.forEach((data, i) => {
+                        liHtml += `<li class="list-group-item" data-idx="${data.idx}" onclick="selected.brand(${key}, ${i})">${data.brandName}</li>`;
+                    });
+                    brandListHtml += `
+                        <tr>
+                            <td>
+                               <!-- <h4>${val.brandGroupName}</h4> -->
+                                <ul class="list-group list-group-horizontal">
+                                    ${liHtml}
+                                </ul>
+                            </td>
+                        </tr>`;
+                }
+            });
+
+            $("#lay_brand_select table tbody").append(brandListHtml);
+        },
+        // 인증정보 생성, 삭제
+        certificationNode : function (type, _this=null) {
+            // row 삭제
+            if (type == 'delete') {
+                $(_this).parents("ul").remove();
+
+            }
+            // row 추가
+            else {
+                // selectBox option
+                let selectHtml = `<option value="0">${text.placeholder.selected}</option>`;
+                $.each(certificationList, (idx, el) => {
+                    selectHtml += `<option value="${el.idx}">${el.certificationName}</option>`;
+                })
+
+                // button html
+                let buttonHtml = `
+                    <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.certificationNode('add');">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>`;
+                if (type == 'add') {
+                    // row 삭제 버튼
+                    buttonHtml = `
+                        <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.certificationNode('delete', this);">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>`;
+                }
+
+                let certificationRow = `
+                    <ul class="row m-0">
+                        <li class="col-sm-4">
+                            <select class="form-select form-select-sm" name="certification">
+                                ${selectHtml}
+                            </select>
+                        </li>
+                        <li class="col-sm-4">
+                            <input type="text" class="form-control form-control-sm" name="certificationNum" maxlength="50">
+                        </li>
+                        <li class="col-sm-4">
+                            ${buttonHtml}
+                        </li>
+                    </ul>`;
+
+                $("#lay_main #certification").append(certificationRow);
+            }
+        },
+        // 상품정보 제공고시 선택
+        attribute : function (_this) {
+            $("#attributeName").html("");
+
+            let trHtml = ``;
+            $.each(attributeSetList[_this.value], (idx, el) => {
+                trHtml += `
+                    <tr>
+                        <th class="text-center">${el.attributeName}</th>
+                        <td class="">
+                            <input type="text" class="form-control form-control-sm" name="attributeValue" data-idx="${el.attributeIdx}" maxlength="255">
+                        </td>
+                    </tr>`;
+            })
+
+            let tableHtml = `
+                <table class="table">
+                    <colgroup>
+                        <col style="width:20%;">
+                        <col style="width:80%;">
+                    </colgroup>
+                    <tbody>
+                        ${trHtml}
+                    </tbody>
+                </table>`;
+
+            $("#attributeName").append(tableHtml);
+
+            // 상품 상세설명 참조 설정
+            $("#productReference").change();
+        },
+        // 상품정보 제공고시 option 생성
+        attributeSetNode : function () {
+            console.log("attributeSetNode");
+            // selectBox option
+            let selectHtml = `<option value="0">${text.placeholder.selected}</option>`;
+            $.each(attributeSetList, (idx, el) => {
+                selectHtml += `<option value="${el[0].idx}">${el[0].attributeSetName}</option>`;
+            })
+
+            let attributeSetRow = `
+                <select class="d-inline-block form-select form-select-sm w-25 mr-4" onchange="selected.attribute(this)">
+                    ${selectHtml}
+                </select>
+                <div class="d-inline-block form-check lh-lg">
+                    <input class="form-check-input" type="checkbox" id="productReference">
+                    <label class="form-check-label" for="productReference">
+                        ${text.placeholder.referenceSet}
+                    </label>
+                </div>
+            `;
+
+            $("#attributeSet").append(attributeSetRow);
+        },
+        // 구성성분(알러지) 생성, 삭제
+        ingredientNode : function (type, _this=null) {
+            // row 삭제
+            if (type == 'delete') {
+                $(_this).parents("ul").remove();
+
+            }
+            // row 추가
+            else {
+                // selectBox option
+                let selectHtml = `<option value="0">${text.placeholder.selected}</option>`;
+                $.each(ingredientList, (idx, el) => {
+                    selectHtml += `<option value="${el.idx}">${el.allergy}</option>`;
+                })
+
+                // selectBox option
+                let unitHtml = `<option value="0">${text.placeholder.selected}</option>`;
+                $.each(unitList, (idx, el) => {
+                    unitHtml += `<option value="${el.idx}">${el.unit}</option>`;
+                })
+
+                // button html
+                let buttonHtml = `
+                    <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.ingredientNode('add');">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>`;
+                if (type == 'add') {
+                    // row 삭제 버튼
+                    buttonHtml = `
+                        <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.ingredientNode('delete', this);">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>`;
+                }
+
+                let ingredientRow = `
+                    <ul class="row m-0">
+                        <li class="col-sm-3">
+                            <select class="form-select form-select-sm" name="ingredient">
+                                ${selectHtml}
+                            </select>
+                        </li>
+                        <li class="col-sm-2">
+                            <input type="number" step="0.0000000001" class="d-inline-block form-control form-control-sm" name="ratio" style="width: calc(100% - 30px);">
+                            <span> % </span>
+                        </li>
+                        <li class="col-sm-3">
+                            <input type="number" step="0.0000000001" class="form-control form-control-sm" name="ingredientValue">
+                        </li>
+                        <li class="col-sm-2">
+                            <select class="form-select form-select-sm" name="unit">
+                                ${unitHtml}
+                            </select>
+                        </li>
+                        <li class="col-sm-2">
+                            ${buttonHtml}
+                        </li>
+                    </ul>`;
+
+                $("#lay_main #ingredient").append(ingredientRow);
+            }
+        },
+        // 건강질환 선택
+        health : function (_this) {
+            if ($(_this).hasClass("active")) {
+                $(_this).removeClass("active");
+            } else {
+                $(_this).addClass("active");
+            }
+        },
+
+        // 건강질환 생성, 삭제
+        /*healthNode : function (type, _this=null) {
+            console.log("health node", type, _this);
+            // 건강질환 row 삭제
+            if (type == 'delete') {
+                $(_this).parents("ul").remove();
+            }
+            // 건강질환 row 추가
+            else {
+                // selectBox option
+                let selectHtml = `<option value="0">${text.placeholder.selected}</option>`;
+                $.each(healthList, (idx, el) => {
+                    selectHtml += `<option value="${el.idx}">${el.health}</option>`;
+                })
+
+                // button html
+                let buttonHtml = `
+                    <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.healthNode('add');">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>`;
+                if (type == 'add') {
+                    // row 삭제 버튼
+                    buttonHtml = `
+                        <button class="btn btn-primary btn-sm" id="btnAdd" onclick="selected.healthNode('delete', this);">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>`;
+                }
+
+                let healthRow = `
+                    <ul class="row m-0">
+                        <li class="col-sm-3">
+                            <select class="form-select form-select-sm" name="health">
+                                ${selectHtml}
+                            </select>
+                        </li>
+                        <li class="col-sm-2">
+                            <input type="number" step="0.0000000001" class="d-inline-block form-control form-control-sm" name="healthRatio" style="width: calc(100% - 30px);">
+                            <span> % </span>
+                        </li>
+                        <li class="col-sm-2">
+                            ${buttonHtml}
+                        </li>
+                    </ul>`;
+
+                $("#lay_main #health").append(healthRow);
+            }
+        },*/
+    }
+
+    let productMp = {
+        view: function () {
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/product/mp/view/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        let productMp = res.data.productMp;
+
+                        // 카테고리
+                        let categoryName = "";
+                        if (productMp.categoryList != undefined && productMp.categoryList.length > 0) {
+                            let groupNum = "";
+
+                            categoryName += "<div class='my-2'>";
+                            $.each(productMp.categoryList, function (idx, categoryEl) {
+                                let division = "";
+                                if (groupNum == categoryEl.groupNum) {
+                                    division = "<span> > </span>";
+                                } else {
+                                    groupNum = categoryEl.groupNum;
+                                    if (idx != 0) {
+                                        division = "";
+                                        categoryName += "</div><div class='my-2'>";
+                                    }
+                                }
+                                categoryName += division + `<span class="mx-2" data-idx="${categoryEl.idx}" data-depth="${categoryEl.depth}" data-group_num="${categoryEl.groupNum}" data-main="${categoryEl.main}" data-code="${categoryEl.code}">${categoryEl.category}</span>`
+
+                                if (productMp.categoryList.length == (idx + 1) || categoryEl.groupNum != productMp.categoryList[idx + 1].groupNum) {
+                                    categoryName += `
+                                        <div class="d-inline-block">
+                                            <button type="button" class="btn btn-sm btn-warning py-0" onclick="selected.categoryBtn(this, 'modify')">${text.btn.modify}</button>
+                                            <button type="button" class="btn btn-sm btn-danger py-0" onclick="productMp.modifyCategory('delete', ${groupNum});">${text.btn.delete}</button>
+                                        </div>`;
+                                }
+                            })
+                            categoryName += "</div>";
+                        }
+                        categoryName += `<div><button type="button" class="btn btn-sm btn-primary py-0" onclick="selected.categoryBtn(this, 'add')">${text.btn.add}</button></div>`;
+
+                        $("#category_div").html(categoryName);
+
+                        // 브랜드
+                        let brandName = "";
+                        if (productMp.brandName != undefined) {
+                            brandName += `<span class="mx-2" data-idx="${productMp.brandIdx}">${productMp.brandName}</span>`;
+                        }
+                        brandName += `
+                            <div class="d-inline-block">
+                                <button type="button" class="btn btn-sm btn-warning py-0" onclick="selected.brandBtn(this, 'modify')">${text.btn.modify}</button>
+                            </div>`;
+
+                        $("#brand_div").html(brandName);
+
+                        // 상품명
+                        $("#lay_information input[name=productName]").val(productMp.productName);
+                        $(".fncut_info .current_cnt").text(productMp.productName.length);
+
+                        // 상품 가격
+                        let price = (productMp.price) ? addComma(productMp.price) : 0;
+                        $("#lay_information input[name=price]").val(price);
+
+                        // 썸네일
+                        let thumbnailHtml = "";
+                        productMp.thumbnailList.forEach(data => {
+                            thumbnailHtml += previewHtml(data.url, data.uploadName, data.idx);
+                            thumbnailRow.push(data);
+                        });
+                        $("#thumbnail").html(thumbnailHtml);
+
+                        // 상품 상세
+                        if (productMp.detail != undefined) {
+                            editor.setData(productMp.detail);
+                        }
+
+                        // 인증정보
+                        $("input[name=certificationType]").radioSelect(productMp.certificationType);
+                        // 인증유형
+                        if (productMp.certificationType == 1) {
+                            $(".certification-wrapper").removeClass("d-none");
+                            if (productMp.certificationList.length > 0) {
+                                // 인증 유형 목록
+                                $.each(productMp.certificationList, function (idx, certificationEl) {
+                                    let type = (idx > 0) ? 'add' : null;
+                                    selected.certificationNode(type);
+                                    $("#certification ul").eq(idx).find("select[name=certification]").val(certificationEl.certificationIdx);
+                                    $("#certification ul").eq(idx).find("select[name=certification]").data("idx", certificationEl.idx);
+                                    $("#certification ul").eq(idx).find("input[name=certificationNum]").val(certificationEl.certificationNum);
+                                });
+                            } else {
+                                selected.certificationNode(null);
+                            }
+                        }
+
+                        // 상품정보 제공고시
+                        if (productMp.attributeList != undefined && productMp.attributeList.length > 0) {
+                            $("#attributeSet select").val(productMp.attributeList[0].idx).change();
+                            $.each($("input[name=attributeValue]"), function (idx, el) {
+                                let dataIdx = $(el).data("idx");
+                                let attribute = productMp.attributeList.filter(function (obj) {
+                                    return obj["attributeIdx"] === dataIdx;
+                                })
+                                $(el).val(attribute[0].attributeValue);
+                            })
+                        }
+
+                        // 구성성분 (알러지)
+                        if (productMp.ingredientList.length > 0) {
+                            $.each(productMp.ingredientList, function (idx, ingredientEl) {
+                                let type = (idx > 0) ? 'add' : null;
+                                selected.ingredientNode(type);
+
+                                let unitIdx = (ingredientEl.unitIdx != undefined) ? ingredientEl.unitIdx : 0;
+                                $("#ingredient ul").eq(idx).find("select[name=ingredient]").val(ingredientEl.allergyTypeIdx);
+                                $("#ingredient ul").eq(idx).find("select[name=ingredient]").data("idx", ingredientEl.idx);
+                                $("#ingredient ul").eq(idx).find("input[name=ratio]").val(ingredientEl.ratio);
+                                $("#ingredient ul").eq(idx).find("input[name=ingredientValue]").val(ingredientEl.ingredientValue);
+                                $("#ingredient ul").eq(idx).find("select[name=unit]").val(unitIdx);
+                            })
+                        } else {
+                            selected.ingredientNode(null);
+                        }
+
+                        // 건강질환
+                        if (productMp.healthList != null && productMp.healthList.length > 0) {
+                            $.each(productMp.healthList, function (idx, healthEl) {
+                                $("#lay_main #health li").filter("[data-idx='" + healthEl.healthTypeIdx + "']").addClass("active");
+                            })
+                        }
+
+                        // 용량
+                        $("input[name=volume]").val(productMp.volume);
+                        $("select[name=volumeUnit]").val(productMp.volumeUnit);
+                        $("input[name=standard]").val(productMp.standard);
+                        $("select[name=standardUnit]").val(productMp.standardUnit);
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        list: function () {
+            location.href = "/shop/product/mp/list";
+        },
+        modify: function () {
+            let productIdx = "[[${idx}]]";
+
+            // 인증정보 배열
+            let certification = new Array();
+            $("select[name='certification']").each(function (idx, el) {
+                let obj = new Object();
+                obj.idx = $(el).data("idx");
+                obj.certificationIdx = $(el).val();
+                obj.certificationNum = $("input[name='certificationNum']").eq(idx).val().trim();
+                obj.state = 1;
+                if (obj.certificationIdx != 0) {
+                    certification.push(obj);
+                }
+            });
+
+            // 상품정보 제공고시 배열
+            let attribute = new Array();
+            $("input[name=attributeValue]").each(function (idx, el) {
+                let obj = new Object();
+                obj.idx = $("#attributeSet select").val();      // 상품 정보 고시 표기내용(attribute_name.idx)
+                obj.attributeIdx = $(el).data("idx");           // 상품 정보 고시 표기명(attribute_name.attribute_name)
+                obj.attributeValue = $(el).val().trim();        // 상품 정보 고시 값(attribute_mapping.attribute_value)
+                attribute.push(obj);
+            });
+
+            // 구성성분(알러지) 배열
+            let ingredient = new Array();
+            $("select[name='ingredient']").each(function (idx, el) {
+                let obj = new Object();
+                obj.idx = $(el).data("idx");    // 매핑 idx
+                obj.allergyTypeIdx = $(el).val();
+                obj.ingredientValue = $("input[name='ingredientValue']").eq(idx).val().trim();
+                obj.unitIdx = $("select[name=unit]").eq(idx).val();
+                obj.ratio = $("input[name=ratio]").eq(idx).val();
+                obj.state = 1;
+                if (obj.allergyTypeIdx != 0) {
+                    ingredient.push(obj);
+                }
+            });
+
+            // 건강질환
+            let health = new Array();
+            $("#health ul li.active").each(function (idx, el) {
+                let obj = new Object();
+                obj.healthTypeIdx = $(el).val();
+
+                health.push(obj);
+            })
+
+            // 상품 가격(정가) 콤마 제거
+            let price = Number($("input[name=price]").val().replaceAll(',', ''));
+
+            // validation
+            let validateObj = {
+                certification : certification,
+                attribute : attribute,
+                price : price
+            };
+            let validate = productMp.validate(validateObj);
+            if (!validate) {
+                return false;
+            }
+
+            let form = $("#frm")[0];
+            let formData = new FormData(form);
+            formData.set("idx", productIdx);
+            formData.set("certificationListStr", JSON.stringify(certification));
+            formData.set("attributeListStr", JSON.stringify(attribute));
+            formData.set("ingredientListStr", JSON.stringify(ingredient));
+            formData.set("healthListStr", JSON.stringify(health));
+            formData.set("detail", editor.getData());
+            formData.set("price", price);
+
+            // 썸네일
+            let thumbnail = new Array();
+            if (thumbnailRow.length > 0) {
+                const dataTransfer = new DataTransfer();
+                let index = 0;
+                thumbnailRow.forEach((file, idx) => {
+                    let data = new Object();
+                    if (file.size != undefined) {
+                        // 추가 이미지
+                        dataTransfer.items.add(file);
+                        formData.append("uploadFile", dataTransfer.files[index]);
+                        index++;
+
+                        data.idx = null;
+                        data.type = "file";
+                        data.fileName = String(file.name);
+                    } else {
+                        // 기존 이미지
+                        data.idx = file.idx;
+                        data.type = "data"
+                        data.fileName = String(file.url);
+                    }
+                    data.sort = idx;
+
+                    thumbnail.push(data);
+                });
+
+                formData.append("thumbnail", JSON.stringify(thumbnail));
+            }
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/product/mp',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PUT',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.result) {
+                            toast.alert(res.message);
+
+                            // 상세 페이지 이동
+                            location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    } else {
+                        toast.alert(res.message);
+                    }
+
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        delete: function () {
+          if (confirm(text.confirm.delete)) {
+
+              let formData = new FormData();
+              formData.set("productIdx", "[[${idx}]]");
+
+              $.ajax({
+                  url: '[[${SERVER.shopDomain}]]/v1/product/mp/' + "[[${idx}]]",
+                  headers: {
+                      'Authorization': `Bearer `+$.cookie('accessToken'),
+                  },
+                  method: 'DELETE',
+                  enctype: 'multipart/form-data',
+                  data: formData,
+                  dataType: 'json',
+                  processData: false,
+                  contentType: false,
+                  success: function (res) {
+                      if (res.result) {
+                          if (res.result) {
+                              toast.alert(res.message);
+
+                              // 상세 페이지 이동
+                              location.href = "/shop/product/mp/list";
+                          } else {
+                              // ajax exception error
+                              toast.alert(res.message);
+                          }
+                      } else {
+                          toast.alert(res.message);
+                      }
+
+                  },
+                  error: function (request, status, error) {
+                      // filter error
+                      toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                  }
+              });
+          }
+        },
+        // 카테고리 추가 및 수정
+        modifyCategory: function (_type, groupNum = 1, main = 0) {
+            // 카테고리 배열
+            let category = new Array();
+            $("#lay_category_select li.active").each(function (idx, el) {
+                let obj = new Object();
+                obj.idx = $(el).data('idx');
+                obj.depth = $(el).data('depth');
+                obj.category = $(el).text().trim();
+                obj.groupNum = groupNum;
+                obj.main = main;
+                category.push(obj);
+            });
+
+            let confirmText = "";
+            let method = "";
+            if (_type == "add") {
+                // 카테고리 추가
+                method = 'POST';
+                confirmText = text.confirm.add;
+            } else if (_type == "modify") {
+                // 카테고리 수정
+                method = 'PUT';
+                confirmText = text.confirm.modify;
+            } else if (_type == "delete") {
+                // 카테고리 삭제
+                method = "DELETE";
+                confirmText = text.confirm.delete;
+
+                let obj = new Object();
+                obj.groupNum = groupNum;
+                category.push(obj);
+            }
+
+            let formData = new FormData();
+            formData.set("idx", "[[${idx}]]");
+            formData.set("categoryListStr", JSON.stringify(category));
+            if (confirm(confirmText)) {
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/product/mp/category',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: method,
+                    enctype: 'multipart/form-data',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        // productMpIdx
+                        if (res.result) {
+                            if (res.result) {
+                                toast.alert(res.message);
+
+                                location.reload();
+                            } else {
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 브랜드 수정
+        modifyBrand: function (_type) {
+            let brandIdx = $("#lay_brand_select li.active").data('idx');
+
+            if (brandIdx == undefined) {
+                alert(text.exception.brand);
+                return false;
+            }
+
+            let formData = new FormData();
+            formData.set("idx", "[[${idx}]]");
+            formData.set("brand", brandIdx);
+
+            if (confirm(text.confirm.modify)) {
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/product/mp/brand',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    enctype: 'multipart/form-data',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            if (res.result) {
+                                toast.alert(res.message);
+
+                                location.reload();
+                            } else {
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            toast.alert(res.message);
+                        }
+
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        validate: function (_validateObj) {
+            // 상품명
+            if ($("input[name=productName]").val().trim() == "") {
+                alert(text.exception.name);
+                $("input[name=productName]").val("").focus();
+                return false;
+            }
+            // 가격
+            else if (_validateObj.price < 10) {
+                alert(text.exception.price);
+                $("input[name=price]").val("").focus();
+                return false;
+            }
+            // 썸네일
+            else if (!thumbnailRow.length) {
+                alert(text.exception.thumbnail);
+                return false;
+            }
+            // 상세
+            else if (editor.getData().trim() == '') {
+                alert(text.exception.detail);
+                return false;
+            }
+            // 인증정보
+            else if ($("input[name=certificationType]:checked").val() == undefined) {
+                alert(text.exception.certificationType);
+                return false;
+            }
+
+            return true;
+        },
+    }
+
+    /**
+     * 썸네일 관리
+     */
+    // 등록할 이미지 임시 배열
+    let thumbnailRow = [];
+    let image = {
+        // 이미지 추가
+        add : function (_this) {
+            let _imageRowAdd = [];
+            let _imageSelector = "";
+
+            _imageRowAdd = thumbnailRow;
+            _imageSelector = $("#thumbnail");
+
+            // 이미지 배열에 파일 추가
+            $.each(_this.files, function (idx, el) {
+                // 등록할 이미지 배열에 넣기
+                _imageRowAdd.push(_this.files[idx]);
+
+                // 이미지 미리보기
+                let imageSrc = "";
+                let name = "";
+                if (el.size != undefined) {
+                    imageSrc = URL.createObjectURL(el);
+                    name = el.name;
+                } else {
+                    imageSrc = el.url;
+                    name = el.filename;
+                }
+
+                let html = previewHtml(imageSrc, name, null);
+                _imageSelector.append(html);
+            });
+        },
+        // 미리보기 삭제
+        previewDelete : function (_this) {
+            let imageWrap = $(_this).closest(".image-preview-wrap");
+
+            // 미리보기 삭제
+            imageWrap.remove();
+
+            // 선택 파일 없을때 표시
+            if ($(".image-preview-wrap").length <= 0) {
+                let noFile = "<span th:text=\"#{lang.product.placeholder.file.no}\"></span>";
+
+                $("#preview").html(noFile);
+            }
+        },
+        // 이미지 삭제
+        delete : function (_this, idx) {
+            if (confirm(text.confirm.delete)) {
+                let _imageRowDelete = [];
+                let row = "";
+                _imageRowDelete = thumbnailRow;
+                row = $(_this).closest("#thumbnail .image-preview-wrap");
+
+                // 추가 이미지
+                if (_imageRowDelete[row.prevAll().length].idx == undefined) {
+
+                    // 배열에서 삭제
+                    _imageRowDelete.splice(row.prevAll().length, 1);
+
+                    // 미리 보기 삭제
+                    image.previewDelete(_this);
+
+                } else { // 기존 이미지
+
+                    // 이미지 삭제
+                    $.ajax({
+                        url: '[[${SERVER.shopDomain}]]/v1/product/mp/thumb/'+idx,
+                        headers: {
+                            'Authorization': `Bearer `+$.cookie('accessToken'),
+                        },
+                        method: 'DELETE',
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.result) {
+                                // 배열에서 삭제
+                                _imageRowDelete.splice(row.prevAll().length, 1);
+
+                                // 미리 보기 삭제
+                                image.previewDelete(_this);
+
+                                toast.alert(res.message);
+                            } else {
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        },
+                        error: function (request, status, error) {
+                            // filter error
+                            toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 미리 보기 html
+     * @param imageSrc
+     * @param name
+     * @param idx
+     * @returns {string}
+     */
+    function previewHtml(imageSrc, name, idx) {
+        let imgHtml = `
+            <div class="image-preview-wrap">
+                <div>
+                    <input class="preview-data" type="hidden" name="image_path" value="">
+                    <a href="javascript:void(0);" onclick="image.delete(this, ${idx});" class="preview-del"></a>
+                    <div>
+                        <a href="${imageSrc}" target="_blank">
+                            <img src="${imageSrc}" style="width:100%; max-width: 300px;">
+                        </a>
+                    </div>
+                </div>
+                <div class="file-name">${name}</div>
+            </div>
+        `;
+        return imgHtml;
+    }
+
+
+    $(document).ready(function () {
+        /**
+         * 인증정보 선택
+         */
+        $("input[name=certificationType]").on("change", function () {
+            if (this.value == 1) {
+                $(".certification-wrapper").removeClass("d-none");
+
+                // 인증 유형 초기화
+                $("#certification").html("");
+                selected.certificationNode(null);
+            } else {
+                $(".certification-wrapper").addClass("d-none");
+            }
+        })
+
+        /**
+         * 상품 상세설명 참조 입력
+         */
+        $("#productReference").on("change", function () {
+            if ($("#productReference").is(':checked')) {
+                $("input[name=attributeValue]").val(text.placeholder.reference).attr("readonly", true);
+            } else {
+                $("input[name=attributeValue]").attr("readonly", false);
+
+                if ($("input[name=attributeValue]").val() == text.placeholder.reference) {
+                    $("input[name=attributeValue]").val("")
+                }
+            }
+        })
+    })
+
+    /**
+     * 상품명 글자수 체크(100자)
+     */
+    $("input[name=productName]").keyup(function () {
+        if ($(this).val().length >= 250) {
+            $(this).val($(this).val().substring(0, 250));
+            $(this).next().children('.current_cnt').text($(this).val().length);
+            toast.alert(text.exception.manyCharacters);
+            return false;
+        }
+        $(this).next().children('.current_cnt').text($(this).val().length);
+    })
+
+    /**
+     * 상품 가격 자릿수 체크 (천만 단위까지 적용)
+     */
+    $("input[name=price]").keyup(function () {
+        // 숫자만 입력
+        let value = $(this).val();
+        value = value.replace(/[^,0-9]/g,'');
+
+        // 자릿수 체크
+        if (value.length >= 10) {
+            value = value.substring(0,10);
+        }
+
+        if (value.length) {
+            // 천 단위 ',' 적용
+            value = Number(value.replaceAll(',', ''));
+            const formatValue = value.toLocaleString('ko-KR'); //[5]
+            $(this).val(formatValue);
+        } else {
+            $(this).val("");
+        }
+
+        return false;
+    })
+
+    /**
+     * 인증 유형 중복 확인
+     */
+    /*let certificationChange = function (_this) {
+        $("select[name=certification]").each((idx, _select) => {
+
+            if ($(_this).parents("ul").index() != idx && $(_this).val() == $(_select).val() && $(_select).val() != 0) {
+                // 같은 인증유형을 선택하였습니다.
+                alert(text.exception.certificationSame);
+                $(_this).val(0).prop("selected", true);
+            }
+        })
+    }*/
+
+    /**
+     * 상품 성분 중복 확인
+     * @param _this
+     */
+    /*let ingredientChange = function (_this) {
+        $("select[name=ingredient]").each((idx, _select) => {
+            if ($(_this).parents("ul").index() != idx && $(_this).val() == $(_select).val() && $(_select).val() != 0) {
+                // 같은 성분을 선택하였습니다.
+                alert(text.exception.ingredientSame);
+                $(_this).val(0).prop("selected", true);
+            }
+        })
+    }*/
+
+    /**
+     * 라디오 버튼 checked
+     * @param val
+     * @returns {$}
+     */
+    $.fn.radioSelect = function(val) {
+        this.each(function() {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+</script>

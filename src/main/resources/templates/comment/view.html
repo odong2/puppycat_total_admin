@@ -1,0 +1,64 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid" layout:fragment="content">
+        <form id="modifyForm">
+            <input type="hidden" name="idx" id="idx" th:value="${dataSet.idx}">
+            <input type="hidden" name="memberIdx" id="memberIdx">
+            <table class="table">
+                <thead>
+                <colgroup>
+                    <col style="min-width: 20px;" />
+                </colgroup>
+                <tr>
+                    <th class="table-primary" colspan="2" th:text="#{lang.comment.title.modify}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th class="text-center"><label for="id" th:text="#{lang.comment.memberId}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm ml-1" name="id" autocomplete="off" disabled>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="nick" th:text="#{lang.comment.memberNick}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm ml-1" name="nick" autocomplete="off" disabled>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="contents" th:text="#{lang.comment.contents}"></label></th>
+                    <td class="p-0 pl-2">
+                        <textarea class="form-control form-control-sm ml-1" id="contents" rows="3" name="contents" disabled></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="stateRadio" th:text="#{lang.comment.state}"></label></th>
+                    <td class="p-0 pl-2">
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group" name="stateRadio" id="stateRadio">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="modiDate" th:text="#{lang.comment.modify.date}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm ml-1" name="modiDate" id="modiDate" autocomplete="off" disabled>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="regDate" th:text="#{lang.comment.regdate}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm ml-1" name="regDate" id="regDate" autocomplete="off" disabled>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="form-group row">
+                <div class="col text-center">
+                    <button type="button" class="btn btn-secondary" th:onclick="|self.close()|" th:text="#{lang.comment.button.cancel}"></button>
+                    <button type="button" class="btn btn-primary" onclick="comment_view.modify();" th:text="#{lang.comment.button.modify}"></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</th:block>

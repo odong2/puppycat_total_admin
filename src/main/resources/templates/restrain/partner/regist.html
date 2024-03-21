@@ -1,0 +1,62 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid" layout:fragment="content">
+        <form id="registForm">
+            <input type="hidden" name="partnerIdx" id="partnerIdx" th:value="${dataSet.idx}">
+            <table class="table">
+                <thead>
+                <colgroup>
+                    <col style="min-width: 20px;" />
+                </colgroup>
+                <tr>
+                    <th class="table-primary" colspan="2" th:text="#{lang.restrain.partner.title.regist}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th class="text-center"><label for="startDate" th:text="#{lang.restrain.partner.start_date}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input type="date" class="form-control form-control-sm col-7" name="startDate" id="startDate" autocomplete="off">
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="date" th:text="#{lang.restrain.partner.date}"></label></th>
+                    <td class="p-0 pl-2">
+                        <select name="date" id="date" class="form-select form-select-sm col-7">
+                            <option th:value="1" th:text="#{lang.restrain.partner.1days}"></option>
+                            <option th:value="3" th:text="#{lang.restrain.partner.3days}"></option>
+                            <option th:value="7" th:text="#{lang.restrain.partner.7days}"></option>
+                            <option th:value="15" th:text="#{lang.restrain.partner.15days}"></option>
+                            <option th:value="30" th:text="#{lang.restrain.partner.30days}"></option>
+                            <option th:value="90" th:text="#{lang.restrain.partner.3month}"></option>
+                            <option th:value="180" th:text="#{lang.restrain.partner.6month}"></option>
+                            <option th:value="999" th:text="#{lang.restrain.partner.infinite}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="info" th:text="#{lang.restrain.partner.code}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm col-10" type="text" id="info" name="info">
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="typeIdx" th:text="#{lang.restrain.partner.type}"></label></th>
+                    <td class="p-0 pl-2">
+                        <div th:each="val : ${dataSet.typeList}" style="padding: 5px 0;">
+                            <input class="for" type="checkbox" name="typeIdxList" th:id="'type' + ${val.idx}" th:value="${val.idx}" id="typeIdx">
+                            <label th:value="${val.idx}" th:for="'type' + ${val.idx}" th:text="${val.type}"></label>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="form-group row">
+                <div class="col text-center">
+                    <button type="button" class="btn btn-secondary" th:onclick="|self.close()|" th:text="#{lang.member.button.cancel}"></button>
+                    <button type="button" class="btn btn-primary" onclick="restrain_regist.regist();" th:text="#{lang.member.button.regist}"></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</th:block>

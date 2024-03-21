@@ -1,0 +1,30 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.member.image.regist}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="memberImageLayer">
+        <div class="col-md-12">
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.member.image.regist}"></label>
+                <div class="col-md-8 col-sm-9 pt-1">
+                    <label class="py-1 px-3 rounded-2">
+                        <input type="file" name="fileData" accept="image/*" onchange="member.imageChange();" th:text="#{lang.member.image.file}">
+                    </label>
+                </div>
+            </div>
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.member.image.preview}"></label>
+                <div class="col-md-8 pt-2" id="preview">
+                    <span th:text="#{lang.member.placeholder.file.no}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="member.cancel();" th:text="#{lang.member.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="member.registImage();" th:text="#{lang.member.button.regist}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

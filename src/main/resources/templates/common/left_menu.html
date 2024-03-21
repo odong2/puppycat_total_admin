@@ -1,0 +1,28 @@
+<div id="layoutSidenav_nav" th:fragment="leftMenuFragment">
+    <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+        <div class="sb-sidenav-menu">
+            <div class="nav">
+                <!-- 대메뉴 -->
+                <th:block  th:each="list, l : ${dataSet.menulist}" th:if="${list.parent} == '0'">
+                    <a class="nav-link collapsed"    th:href="'#collapseExample'+${list.idx}"  data-bs-toggle="collapse" aria-expanded="false"
+                       th:aria-controls="'collapseExample' + ${list.idx}" >
+                        <span th:text="${list.name}"></span>
+                        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                    </a>
+                    <div class="collapse multi-collapse" th:id="'collapseExample'+${list.idx}">
+                        <nav class="sb-sidenav-menu-nested nav">
+                            <!-- 소메뉴 -->
+                            <div class="mb-2" th:each="sublist : ${dataSet.menulist}"  th:if="(${list.idx} == ${sublist.parent})">
+                                <input type="hidden" name="sel_admin_leftmenu" th:value="'collapseExample'+${list.idx}"  th:if="(${SERVER.requestUri} == ${sublist.link})"/>
+                                <a th:href="|${SERVER.currentDomain}${sublist.link}|" th:text="${sublist.name}" class="text-decoration-none text-warning" th:if="(${SERVER.requestUri} == ${sublist.link})"></a>
+                                <a th:href="|${SERVER.currentDomain}${sublist.link}|" th:text="${sublist.name}" class="text-decoration-none text-secondary" th:unless="(${SERVER.requestUri} == ${sublist.link})"></a>
+                            </div>
+                        </nav>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+
+        <input type="hidden" name="sel_admin_leftmenu" value="test"/>
+    </nav>
+</div>

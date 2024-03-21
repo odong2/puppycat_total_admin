@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.certification.CertificationDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="certificationColumns">
+    </sql>
+
+    <!--  -->
+    <select id="getCertificationList" resultType="CertificationDto">
+        SELECT
+            `shprce`.`idx`
+            , `shprce`.`certification_name`
+            , `shprce`.`state`
+            , IFNULL(CONVERT_TZ(`shprce`.`reg_date`, 'UTC', '${convertTZ}'), NULL)
+            , `shprce`.`reg_date_tz`
+        FROM
+            <include refid="databaseShop"/>`shop_product_certification` AS `shprce`
+        ORDER BY `shprce`.`idx` ASC
+    </select>
+</mapper>

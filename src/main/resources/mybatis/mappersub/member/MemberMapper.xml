@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.MemberDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberColumns">
+        `pume`.`idx`
+        ,`pume`.`id`
+        ,`pume`.`uuid`
+        ,`pume`.`nick`
+        ,IFNULL(`pume`.`partner`, '') AS `partner`
+        ,`pume`.`lang`
+        ,`pume`.`is_simple`
+        ,`pume`.`login_ip`
+        ,`pume`.`join_ip`
+        ,`pume`.`state`
+        ,`pume`.`is_del`
+        ,`snmefocn`.`follower_cnt`
+        ,`snmefocn`.`follow_cnt`
+        ,CONVERT_TZ(`pume`.`last_login`, 'UTC', '${convertTZ}')  AS `last_login`
+        ,CONVERT_TZ(`pume`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`
+        ,IFNULL(`pumein`.`name`,"") AS `name`
+        ,IFNULL(`pumein`.`phone`,"") AS `phone`
+        ,IFNULL(`pumein`.`gender`,"") AS `gender`
+        ,IFNULL(`pumein`.`birth`,"") AS `birth`
+        ,IFNULL(`pumein`.`modi_date`, "") AS `modiDate`
+        ,`pumesi`.`simple_id`
+        ,`pumesi`.`simple_type`
+        ,`pumesi`.`auth_token`
+    </sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `pumein`.`name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'loginIp'">
+                        AND `pume`.`login_ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'joinIp'">
+                        AND `pume`.`join_ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'phone'">
+                        AND `pumein`.`phone` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='isDel != null'>
+                AND `pume`.`is_del` <![CDATA[ = ]]> #{isDel}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <choose>
+                    <when test="searchDateType.equals('lastLogin')">
+                        <![CDATA[
+                        AND (`pume`.`last_login` >= #{searchStartDate} AND `pume`.`last_login` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('regDate')">
+                        <![CDATA[
+                        AND (`pume`.`reg_date` >= #{searchStartDate} AND `pume`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <sql id="memberSearchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'memberIdx'">
+                        AND `pume`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'memberNick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'phoneNumber'">
+                        AND `pumein`.`phone` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memberName'">
+                        AND `pumein`.`name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memberEmail'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            AND `pume`.`state` = 1
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 회원 목록 -->
+    <select id="getListMember" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            <include refid="memberColumns"/>
+        FROM
+            <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        INNER JOIN  <include refid="databaseSns"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `pume`.`uuid` = `snmefocn`.`member_uuid`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_simple` AS `pumesi`
+            ON `pume`.`uuid` = `pumesi`.`member_uuid`
+            AND `pume`.`is_simple` = 1
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_access` AS `pumeac`
+            ON `pume`.`uuid` = `pumeac`.`member_uuid`
+        <include refid="searchCondition"/>
+        ORDER BY  `pume`.`reg_date` DESC
+        <if test="pagination != null">
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pume`.`id`) AS iTotalCount
+        FROM
+            <include refid="databaseMember" />`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        INNER JOIN  <include refid="databaseSns"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `pume`.`uuid` = `snmefocn`.`member_uuid`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_simple` AS `pumesi`
+            ON `pume`.`uuid` = `pumesi`.`member_uuid`
+            AND `pume`.`is_simple` = 1
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_access` AS `pumeac`
+            ON `pume`.`uuid` = `pumeac`.`member_uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 회원 상세 -->
+    <select id="getViewMember" parameterType="long" resultMap="rmGetViewMember">
+        SELECT
+            <include refid="memberColumns"/>
+            ,`pumenose`.`state` AS `marketingState`
+            ,CONVERT_TZ(`pumenose`.`reg_date`, 'UTC', '${convertTZ}') AS `marketingRegDate`
+            ,`pumeprin`.`intro`
+            ,`pumeprim`.`url`
+            ,`pumeprim`.`img_width`
+            ,`pumeprim`.`img_height`
+            ,`pumeprim`.`idx` AS `imgIdx`
+        FROM
+        <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        INNER JOIN  <include refid="databaseSns"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `pume`.`uuid` = `snmefocn`.`member_uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_profile_intro` AS `pumeprin`
+            ON `pumeprin`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_profile_img` AS `pumeprim`
+            ON `pumeprim`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_notification_setting` AS `pumenose`
+            ON `pume`.`uuid` = `pumenose`.`member_uuid`
+            AND `pumenose`.`type` = 2
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_access` AS `pumeac`
+            ON `pume`.`uuid` = `pumeac`.`member_uuid`
+        LEFT JOIN  <include refid="databaseMember"/>`puppycat_member_simple` AS `pumesi`
+            ON `pume`.`uuid` = `pumesi`.`member_uuid` AND `pume`.`is_simple` = 1
+        WHERE
+            `pume`.`idx` = #{memberIdx}
+    </select>
+
+    <!-- 프로필 resultMap -->
+    <resultMap id="rmGetViewMember" type="MemberDto">
+        <id property="idx" column="idx" />
+        <result property="id" column="id" />
+        <result property="uuid" column="uuid" />
+        <result property="nick" column="nick" />
+        <result property="partner" column="partner" />
+        <result property="lang" column="lang" />
+        <result property="isSimple" column="is_simple" />
+        <result property="loginIp" column="login_ip" />
+        <result property="joinIp" column="join_ip" />
+        <result property="state" column="state" />
+        <result property="isDel" column="is_del" />
+        <result property="lastLogin" column="last_login" />
+        <result property="lastLoginTz" column="last_login_tz" />
+        <result property="regDate" column="regDate" />
+        <result property="regDateTz" column="regDate_tz" />
+        <result property="modiDate" column="modiDate" />
+        <result property="name" column="name" />
+        <result property="birth" column="birth" />
+        <result property="gender" column="gender" />
+        <result property="phone" column="phone" />
+        <result property="simpleId" column="simple_id" />
+        <result property="simpleType" column="simple_type" />
+        <result property="authToken" column="auth_token" />
+        <result property="followCnt" column="follow_cnt" />
+        <result property="followerCnt" column="follower_cnt" />
+        <result property="intro" column="intro" />
+        <result property="marketingState" column="marketingState" />
+        <result property="marketingRegDate" column="marketingRegDate" />
+
+
+        <!-- 프로필 이미지 호출 -->
+        <association property="memberImg" javaType="MemberImageDto">
+            <result property="idx" column="imgIdx"/>
+            <result property="imgWidth" column="img_width"/>
+            <result property="imgHeight" column="img_height"/>
+            <result property="url" column="url"/>
+        </association>
+    </resultMap>
+
+    <!-- 회원 닉네임 중복체크 -->
+    <select id="getCountByNick" parameterType="MemberDto" resultType="int">
+        SELECT
+            COUNT(`pume`.`uuid`) AS `cnt`
+        FROM
+            <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        WHERE
+            `pume`.`nick` = #{nick}
+    </select>
+
+    <!-- 최근 교류많은 회원 20명 목록 by memberUuid -->
+    <select id="getInteractiveLastTwentyCasesList" parameterType="MemberDto" resultType="MemberDto">
+        SELECT
+            `pume`.`idx`,
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            `pume`.`is_del` AS `isDel`,
+            `snfocolicn`.`like_cnt` AS `likeCnt`
+        FROM
+            <include refid="databaseSns" />`sns_follow_contents_like_cnt` as `snfocolicn`
+        INNER JOIN <include refid="databaseSns" />`sns_member_follow` AS `snmefo`
+            ON `snfocolicn`.`follow_idx` =  `snmefo`.`idx`
+        INNER JOIN <include refid="databaseMember" />`puppycat_member` AS `pume`
+            ON `snmefo`.`follow_uuid` = `pume`.`uuid`
+            AND `snmefo`.`state`= 1
+        WHERE
+                `snmefo`.`member_uuid` = #{uuid}
+            AND `snfocolicn`.`like_cnt` >= 2
+        ORDER BY `snfocolicn`.`like_cnt`  DESC, `snfocolicn`.`reg_date` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 회원 닉네임 가져오기 -->
+    <select id="getMemberNickByUuid" parameterType="String" resultType="String">
+        SELECT
+            `pume`.`nick`
+        FROM
+            <include refid="databaseMember" />`puppycat_member` AS `pume`
+        WHERE
+            `pume`.`uuid` = #{uuid}
+        limit 1
+    </select>
+
+    <!-- 탈퇴 회원 닉네임 가져오기 -->
+    <select id="getOutMemberNickByUuid" parameterType="String" resultType="String">
+        SELECT
+            `pumeou`.`nick`
+        FROM
+            <include refid="databaseMember" />`puppycat_member_out` AS `pumeou`
+        WHERE
+            `pumeou`.`uuid` = #{uuid}
+        limit 1
+    </select>
+
+    <!-- 유효 회원 cnt -->
+    <select id="getCountByIdx" parameterType="MemberDto" resultType="int">
+        SELECT
+            COUNT(`pume`.`uuid`) AS `iTotalCount`
+        FROM
+            <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        WHERE
+                `pume`.`idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 회원 idx 조회하기 -->
+    <select id="getMemberUuidByNick" parameterType="String" resultType="String">
+        SELECT
+            `pume`.`uuid` AS `memberUuid`
+        FROM
+            <include refid="databaseMember" />`puppycat_member` AS `pume`
+        WHERE
+            `pume`.`nick` = #{nick}
+    </select>
+
+    <!-- 회원 idx 조회하기 -->
+    <select id="getMemberUuidByIdx" parameterType="Long" resultType="String">
+        SELECT
+            `pume`.`uuid` AS `memberUuid`
+        FROM
+            <include refid="databaseMember" />`puppycat_member` AS `pume`
+        WHERE
+            `pume`.`idx` = #{memberIdx}
+    </select>
+
+    <!-- 회원테이블 가져오기 by Nick-->
+    <select id="getMemberByNick" parameterType="String" resultType="MemberDto">
+        SELECT
+            `pume`.*
+        FROM
+            <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        WHERE
+            BINARY `pume`.`nick` = #{nick}
+        LIMIT 1
+    </select>
+
+    <!-- 회원 uuid 조회 -->
+    <select id="getUuidList" parameterType="SearchDto" resultType="String">
+        SELECT
+            `pume`.`uuid` AS `uuid`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'"/>
+                <choose>
+                    <when test="searchType == 'id'">
+                        `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        `pume`.`nick` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <!-- 회원 정보 -->
+    <select id="getMemberInfoByUuidList" parameterType="List" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`nick`,
+            `pume`.`id`,
+            `pume`.`uuid`
+        FROM<include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN<include refid="databaseMember"/>`puppycat_member_profile_img` AS `pumeprim`
+            ON `pumeprim`.`member_uuid` = `pume`.`uuid`
+            AND `pumeprim`.`sort` = 1
+        WHERE
+            `pume`.`uuid` IN
+            <foreach collection="memberUuidList" item="uuid" open="(" separator="," close=")">
+                #{uuid}
+            </foreach>
+    </select>
+
+    <!-- 회원 정보 리스트 by uuid -->
+    <select id="getMemberInfoListByUuid" parameterType="List" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid` AS `idx`,
+            `pume`.`uuid` AS `uuid`,
+            `pume`.`nick` AS `nick`,
+            `pume`.`id` AS `id`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        WHERE
+            `pume`.`uuid` IN
+            <foreach collection="memberUuidList" item="uuid" open="(" separator="," close=")">
+                #{uuid}
+            </foreach>
+    </select>
+
+    <!-- 팔로워 랭킹 리스트 -->
+    <select id="getRankList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`idx`,
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            `pume`.`state`,
+            `pume`.`is_del`,
+            `pumein`.`name`,
+            `snmefocn`.`follower_cnt`,
+            `snmefocn`.`follow_cnt`
+        FROM <include refid="databaseSns"/>`sns_member_follow_cnt` AS `snmefocn`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `snmefocn`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        <where>
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    AND `snmefocn`.`follow_cnt`!= 0
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    AND `snmefocn`.`follower_cnt`!= 0
+                </when>
+            </choose>
+        </where>
+        ORDER BY
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    `snmefocn`.`follow_cnt` DESC
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    `snmefocn`.`follower_cnt` DESC
+                </when>
+            </choose>
+        LIMIT 100
+    </select>
+
+    <!-- 고유 아이디 카운트 가져오기 -->
+    <select id="getCountByUuid" parameterType="String" resultType="int">
+        SELECT
+            COUNT(`pume`.`idx`) AS `cnt`
+        FROM
+            <include refid="databaseMember" />`puppycat_member` AS `pume`
+        WHERE
+                `pume`.`uuid` = #{uuid}
+            AND `pume`.`state` = 1
+    </select>
+
+    <!-- 회원 검색 카운트 -->
+    <select id="getMemberSearchCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pume`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        <include refid="memberSearchCondition"/>
+    </select>
+
+    <!-- 회원 검색 리스트 -->
+    <select id="getMemberSearchList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`idx`,
+            `pume`.`uuid`,
+            `pumein`.`name`,
+            `pumein`.`phone`,
+            `pume`.`id`,
+            `pume`.`nick`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        <include refid="memberSearchCondition"/>
+        ORDER BY `pume`.`idx` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 회원 포인트 조회 -->
+    <select id="getMemberPoint" parameterType="String" resultType="MemberPointDto">
+        SELECT
+            `pumepo`.`point`,
+            `pumepo`.`save_point`,
+            `pumepo`.`use_point`,
+            `pumepo`.`expire_point`
+        FROM <include refid="databaseMember"/>`puppycat_member_point` AS `pumepo`
+        WHERE
+            `pumepo`.`member_uuid` = #{memberUuid}
+    </select>
+
+</mapper>

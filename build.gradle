@@ -1,0 +1,133 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.3'
+	id 'io.spring.dependency-management' version '1.0.13.RELEASE'
+	id "org.sonarqube" version "3.4.0.2513"
+	id 'java'
+}
+
+group = 'com.architecture'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+tasks.register("incrementVersion") {
+	doLast{
+		def ver = version
+		String lastNumber = ver.substring(ver.lastIndexOf('.') + 1)
+		int increment = lastNumber.toInteger() + 1
+		String firstNumber = ver.substring(0, ver.lastIndexOf("."))
+		String result = buildFile.getText().replaceFirst("version='$version'", "version='" + firstNumber + "." + increment + "'")
+		buildFile.setText(result, "UTF-8") // 파일 인코딩 UTF-8 설정
+	}
+}
+
+jar {
+	enabled = false
+}
+
+bootJar {
+	archiveBaseName = 'PET-TOTAL-ADMIN' //베이스 네임
+	//archiveFileName = "PET-TOTAL-ADMIN-" + version+ ".jar"
+	archiveFileName = "PET-TOTAL-ADMIN.jar"
+}
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+	}
+}
+
+dependencies {
+	// 기본
+	implementation 'org.springframework.boot:spring-boot-starter'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// 내장 톰캣
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	// 뷰 템플릿
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+	// Java 라이브러리로 반복되는 getter, setter, toString 등의 메서드 작성 코드를 줄여주는 코드 다이어트 라이브러리
+	implementation 'org.projectlombok:lombok:1.18.24'
+	annotationProcessor 'org.projectlombok:lombok'
+	// validation 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// 디비 연결 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
+	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+	runtimeOnly 'mysql:mysql-connector-java'
+	// 로그 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	// redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.session:spring-session-data-redis'
+	// s3 업로드
+	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.2'
+	// image resize
+	implementation 'com.github.downgoon:marvin:1.5.5'
+	implementation 'com.github.downgoon:MarvinPlugins:1.5.5'
+
+	// 이미지 리사이징중 ImageIO에서 webp 지원을 안함
+	// WebP image-io for Java
+	implementation group: 'org.sejda.imageio', name: 'webp-imageio', version: '0.1.6'
+	// excel 다운로드
+	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
+	//Json
+	implementation group: 'org.json', name: 'json', version: '20220924'
+
+	// javax.annotation.meta.When warning 관련 추가
+	implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
+	// devtool
+	implementation 'org.springframework.boot:spring-boot-devtools'
+
+	// gson
+	implementation 'com.google.code.gson:gson:2.9.0'
+
+	//json web token(JWT)
+	implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+	implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime'
+
+	//thumbor upload
+	implementation 'com.squareup:pollexor:3.0.0'
+
+	//sns+sqs
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-messaging', version: '2.2.3.RELEASE'
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-autoconfigure', version: '2.2.3.RELEASE'
+	implementation 'software.amazon.awssdk:sns'
+	implementation 'software.amazon.awssdk:sqs'
+	implementation 'software.amazon.awssdk:codegen'
+	implementation platform('software.amazon.awssdk:bom:2.20.0')
+
+	// fcm push
+	implementation 'com.google.firebase:firebase-admin:9.1.1'
+
+	// curl
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '3.1.7'
+
+
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+sonarqube {
+    properties {
+        property 'sonar.host.url', project.properties['sonar.host.url']
+        property 'sonar.login', project.properties['sonar.user.token']
+        property 'sonar.sources', 'src/main/java'
+        property 'sonar.java.binaries', 'build/classes'
+        property 'sonar.exclusions', '**/test/**, **/Q*.java, **/*Doc*.java, **/resources/**'
+        property 'sonar.profile', 'Backend way'
+    }
+}

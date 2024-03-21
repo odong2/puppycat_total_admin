@@ -1,0 +1,739 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid p-3" layout:fragment="content">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.partner.title.view}"></h5>
+            </div>
+
+            <!-- 탭 메뉴 -->
+            <ul class="nav nav-pills nav-tabs nav-justified mt-3 ml-3 mr-3" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="userInfoTab" data-bs-toggle="tab"
+                            data-bs-target="#userInfo" type="button" role="tab" aria-controls="userInfo"
+                            aria-selected="true" th:text="#{lang.partner.title.partner.info}"></a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="javascript:void(0);" class="nav-link" id="bankAndManagerTab" data-bs-toggle="tab"
+                            data-bs-target="#bankAndManager" type="button" role="tab"
+                            aria-controls="bankAndManager" aria-selected="false" th:text="#{lang.partner.title.bank.manager.info}"></a>
+                </li>
+            </ul>
+
+            <!-- 폼 태그 -->
+            <!-- 회원 정보 입력 -->
+            <container class="tab-content">
+                <div class="tab-pane fade show active" id="userInfo" role="tabpanel"
+                     aria-labelledby="userInfoTab">
+                    <div class="card-body row">
+                        <!-- 리스트 -->
+                        <div class="col-12">
+                                <h6 class="mt-2 mb-3" th:text="#{lang.partner.title.join.member.info}"></h6>
+
+                                <table class="table">
+                                    <tbody>
+
+                                    <!-- 아이디 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.id}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" id="id" th:text="${partnerInfo.id}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 상태 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.state}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p th:class="${'badge ' + partnerInfo.stateBg}" th:text="${partnerInfo.stateText}"></p>
+                                            <button class="btn btn-primary btn-sm" th:if="${partnerInfo.state == 9}" th:text="#{lang.restrain.partner.button.restrain.history}" onclick="restrain_partner.list();"></button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 반려 사유 -->
+                                    <th:block th:if="${partnerInfo.state == 5}">
+                                        <tr>
+                                            <th class="col-2" style="background-color: #e9e9e9;">
+                                                <p class="text-center">
+                                                    <label class="p-0" th:text="#{lang.partner.reject.reason}"></label>
+                                                </p>
+                                            </th>
+                                            <td class="col-8">
+                                                <p th:text="${partnerInfo.reason}"></p>
+                                            </td>
+                                        </tr>
+                                    </th:block>
+
+                                    <!-- 파트너 코드 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.partner.code}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.partnerCode}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 대표자명 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.president.name}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.president}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 대표자 연락처 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.president.tel}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.presidentTel}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 휴대폰 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.phone}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.phone}"/>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
+                                <h6 class="mt-2 mb-3" th:text="#{lang.partner.title.join.partner.info}"></h6>
+
+                                <table class="table">
+                                    <tbody>
+                                    <!-- 사업자 번호 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.businessNumber}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.businessNumber}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 과세여부 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.taxType}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" type="text" th:text="#{lang.partner.taxType.1}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 상호명 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.company.name}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p type="text" class="text-left col-5 p-0" th:text="${partnerInfo.companyName}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 대표 구성 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.president.type}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.presidentType}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 업태 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.businessType}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.businessType}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 업종 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.businessItem}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p type="text" class="text-left col-5 p-0" th:text="${partnerInfo.businessItem}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 통신판매업 신고번호 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.approvalNumber}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerInfo.approvalNumber}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 통신판매업 사본 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.approvalNumber.file}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8 file-label">
+                                            <div class="col-md-8 p-0 preview" id="approvalPreview">
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 사업자 유형 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.companyType}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0"  th:text="${partnerInfo.companyType}"></p>
+                                            <th:block th:if="${partnerInfo.companyType == '법인'}">
+                                                <p class="text-left col-5 p-0"  th:text="${partnerInfo.companyNumber}"></p>
+                                            </th:block>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 사업자 등록증사본 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.business.registration}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8 file-label">
+                                            <div class="col-md-8 p-0 preview" id="businessPreview">
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 사업장 주소 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.companyAddr}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <div class="d-flex">
+                                                <p class="text-left p-0 mb-1" th:text="${partnerInfo.companyZipcode}"></p>
+                                            </div>
+                                            <p class="text-left p-0 mb-1" th:text="${partnerInfo.companyAddr}"></p>
+                                            <p class="text-left p-0" th:text="${partnerInfo.companyAddrDetail}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 이메일 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.email}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0"th:text="${partnerInfo.email}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 유선 전화 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.companyTel}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:if="${partnerInfo.companyTel != ''}" th:text="${partnerInfo.companyTel}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 파트너 홈페이지 주소 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.website}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:if="${partnerInfo.website != ''}" th:text="${partnerInfo.website}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 기타서류 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.other.document}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8 file-label">
+                                            <div class="col-md-8 p-0 preview" id="uploadPreview">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
+                                    </tbody>
+                                </table>
+                        </div>
+                    </div>
+                </div>
+            </container>
+
+            <!-- 커래은행정보 / 담당자 정보 입력 -->
+            <container class="tab-content">
+                <div class="tab-pane fade show" id="bankAndManager" role="tabpanel"
+                     aria-labelledby="bankAndManagerTab">
+                    <div class="card-body row">
+                        <!-- 리스트 -->
+                        <div class="col-12">
+
+                            <!-- 부제 -->
+                            <div class="d-flex mt-2 mb-3">
+                                <h6 class="mr-1" th:text="#{lang.partner.title.bank.info}"/>
+                            </div>
+
+                            <!-- 거래은행 -->
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.bank}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-4">
+                                            <p class="text-left col-5 p-0" th:text="${partnerBankInfo.bankName}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 예금주 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.account.holder.2}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerBankInfo.accountHolder}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 계좌번호 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.account.number}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8">
+                                            <p class="text-left col-5 p-0" th:text="${partnerBankInfo.accountNumber}"></p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 통장사본 -->
+                                    <tr>
+                                        <th class="col-2" style="background-color: #e9e9e9;">
+                                            <p class="text-center">
+                                                <label class="p-0" th:text="#{lang.partner.bank.file}"></label>
+                                            </p>
+                                        </th>
+                                        <td class="col-8 file-label">
+                                            <div class="col-md-8 pt-2 preview" id="bankPreview">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- 파트별 담당자 정보 -->
+                            <!-- CS 담당자 정보 accordion -->
+                            <div id="accordionOne" class="accordion mt-5">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header d-flex position-relative" id="headingOne">
+                                        <button class="accordion-button btn-sm collapsed show" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false">
+                                            <span class="col-2" th:text="#{lang.partner.manager.cs.info}" style="color: blue;"></span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionOne">
+                                        <div class="accordion-body">
+                                            <!-- 파트별 담당자 정보 -->
+                                            <table class="table" data-toggle="collapse" >
+                                                <tbody>
+                                                <tr>
+                                                    <!-- 담당자 이름 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.name}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="csManagerName"></p>
+                                                    </td>
+                                                    <!-- 담당자 이메일 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.email}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="csManagerEmail"></p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <!-- 담당자 연락처 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.tel}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="csManagerTel"></p>
+                                                    </td>
+                                                    <!-- 담당자 휴대폰 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.phone}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="csManagerPhone"></p>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end of accordionOne -->
+
+                            <!-- 배송 담당자 정보 accordion -->
+                            <div id="accordionTwo" class="accordion mt-3">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header d-flex position-relative" id="headingTwo">
+                                        <button class="accordion-button collapsed btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false">
+                                            <span class="col-2" th:text="#{lang.partner.manager.deliver.info}" style="color: blue;"></span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#collapseTwo">
+                                        <div class="accordion-body">
+                                            <!-- 파트별 담당자 정보 -->
+                                            <table class="table" data-toggle="collapse" >
+                                                <tbody>
+                                                <tr>
+                                                    <!-- 담당자 이름 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.name}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="deliverManagerName"></p>
+                                                    </td>
+                                                    <!-- 담당자 이메일 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.email}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="deliverManagerEmail"></p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <!-- 담당자 연락처 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.tel}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="deliverManagerTel"></p>
+                                                    </td>
+                                                    <!-- 담당자 휴대폰 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.phone}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="deliverManagerPhone"></p>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end of 배송 담당자 정보 -->
+
+                            <!-- 정산 담당자 정보 accordion -->
+                            <div id="accordionThree" class="accordion mt-3">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header d-flex position-relative" id="headingThree">
+                                        <button class="accordion-button collapsed btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false">
+                                            <span class="col-2" th:text="#{lang.partner.manager.calculator.info}" style="color: blue;"></span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingThree" data-bs-parent="#accordionThree">
+                                        <div class="accordion-body">
+                                            <!-- 파트별 담당자 정보 -->
+                                            <table class="table" data-toggle="collapse" >
+                                                <tbody>
+                                                <tr>
+                                                    <!-- 담당자 이름 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.name}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="calculatorManagerName"></p>
+                                                    </td>
+                                                    <!-- 담당자 이메일 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.email}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="calculatorManagerEmail"></p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <!-- 담당자 연락처 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.tel}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="calculatorManagerTel"></p>
+                                                    </td>
+                                                    <!-- 담당자 휴대폰 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.phone}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="calculatorManagerPhone"></p>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end of 정산 담당자 정보 -->
+
+
+                            <!-- 운영 담당자 정보 accordion -->
+                            <div id="accordionFour" class="accordion mt-3">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header d-flex position-relative" id="headingFour">
+                                        <button class="accordion-button collapsed btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false">
+                                            <span class="col-2" th:text="#{lang.partner.manager.administration.info}" style="color: blue;"></span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="collapseFour" class="accordion-collapse collapse show" aria-labelledby="headingFour" data-bs-parent="#accordionFour">
+                                        <div class="accordion-body">
+                                            <!-- 파트별 담당자 정보 -->
+                                            <table class="table" data-toggle="collapse" >
+                                                <tbody>
+                                                <tr>
+                                                    <!-- 담당자 이름 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.name}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="administrationManagerName"></p>
+                                                    </td>
+                                                    <!-- 담당자 이메일 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.email}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="administrationManagerEmail"></p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <!-- 담당자 연락처 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.tel}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="administrationManagerTel"></p>
+                                                    </td>
+                                                    <!-- 담당자 휴대폰 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.phone}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="administrationManagerPhone"></p>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- end of 운영 담당자 정보 -->
+
+                            <!-- 상품 담당자 정보 accordion -->
+                            <div id="accordionFive" class="accordion mt-3">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header d-flex position-relative" id="headingFive">
+                                        <button class="accordion-button collapsed btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false">
+                                            <span class="col-2" th:text="#{lang.partner.manager.product.info}" style="color: blue;"></span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="collapseFive" class="accordion-collapse collapse show" aria-labelledby="headingFive" data-bs-parent="#accordionFive">
+                                        <div class="accordion-body">
+                                            <!-- 파트별 담당자 정보 -->
+                                            <table class="table" data-toggle="collapse">
+                                                <tbody>
+                                                <tr>
+                                                    <!-- 담당자 이름 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.name}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="productManagerName"></p>
+                                                    </td>
+                                                    <!-- 담당자 이메일 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.email}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="productManagerEmail"></p>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <!-- 담당자 연락처 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.tel}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="productManagerTel"></p>
+                                                    </td>
+                                                    <!-- 담당자 휴대폰 -->
+                                                    <th class="col-2" style="background-color: #e9e9e9;">
+                                                        <p class="text-center">
+                                                            <label class="p-0" th:text="#{lang.partner.manager.phone}"></label>
+                                                        </p>
+                                                    </th>
+                                                    <td class="col-4">
+                                                        <p class="text-left col-5 p-0" id="productManagerPhone"></p>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end of body-row -->
+                </div>
+            </container>
+            <div class="btn-group-sm d-flex justify-content-center mb-2">
+                <button class="btn mr-2" th:if="${partnerInfo.state == 3}" onclick="partner.modifyState('judge');" style="background-color: #1c7430; color: white" th:text="#{lang.partner.button.judge}"></button>
+                <button class="btn btn-primary mr-2" th:if="${partnerInfo.state == 4}" onclick="partner.modifyState('approval');" th:text="#{lang.partner.button.approval}"></button>
+                <button class="btn mr-2" th:if="${partnerInfo.state == 4}" th:text="#{lang.partner.button.reject}" style="background-color: #1c7430; color: white;" onclick="partner.reject('visible');"></button>
+                <button class="btn btn-warning mr-2" th:text="#{lang.partner.button.modify}" onclick="partner.modify();"></button>
+                <button class="btn btn-danger mr-2" th:text="#{lang.partner.button.delete}"></button>
+                <button class="btn btn-secondary mr-2" th:text="#{lang.partner.button.list}" onclick="partner.list();"></button>
+                <button class="btn btn-dark mr-2" th:text="#{lang.restrain.partner.button.restrain}" onclick="restrain_partner.regist();"></button>
+                <button class="btn btn-primary" th:if="${partnerInfo.state == 9}" th:text="#{lang.restrain.partner.button.restrain.stop}" onclick="restrain_partner.delete();"></button>
+            </div>
+            <!-- 반려 사유 입력란 -->
+            <div id="rejectWrap" class="justify-content-center mt-3 mb-3 d-none">
+                <input class="form-control form-control-sm col-5" name="reason" id="reason" th:placeholder="#{lang.partner.placeholder.reject}">
+                <button class="btn btn-sm btn-secondary mr-2 ml-2" onclick="partner.modifyState('reject');"
+                        style="background-color: #1c7430; color: white;" th:text="#{lang.partner.button.reject}"></button>
+                <button class="btn btn-sm btn-secondary" onclick="partner.reject('nonVisible');" th:text="#{lang.partner.button.cancel}"></button>
+            </div>
+        </div>
+    </div>
+</th:block>

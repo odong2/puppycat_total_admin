@@ -1,0 +1,315 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid m-0 p-0">
+        <!-- 컨텐츠 영역 -->
+        <div class="col-lg-12 mt-3">
+            <form id="frm" accept-charset="utf-8">
+            <!-- 현재 페이지 -->
+            <input type="hidden" id="page" name="page" value="1">
+            <!-- 상태 -->
+            <input type="hidden" id="state" name="state" value="">
+            <!-- 정렬 -->
+            <input type="hidden" id="sort" name="sort" value="">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="font-weight-bold text-primary float-left m-1" th:text="#{lang.product.partner.title.management}"></h5>
+                </div>
+                <div class="card-body row">
+                    <!-- 검색 폼 -->
+                    <table class="table m-0">
+                        <tbody>
+                        <tr>
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.regdate}"></label>
+                            </th>
+                            <td colspan="12">
+                                <div class="row p-0">
+                                    <!-- 상품 등록일 -->
+                                    <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                        <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" id="searchStartDate" th:value="${param.searchStartDate}">
+                                        &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                        <input  type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" id="searchEndDate" th:value="${param.searchEndDate}">
+                                    </div>
+                                    <div class="col-auto input-group input-group-sm m-1 p-0 col-5">
+                                        <button type="button" id="todayBtn" th:text="#{lang.product.partner.today}" onclick="partner_product.searchDate('today');" class="btn btn-info pr-3 pl-3"></button>
+                                        <button type="button" id="weekBtn" th:text="#{lang.product.partner.one.week}" onclick="partner_product.searchDate('week');" class="btn btn-info pr-3 pl-3"></button>
+                                        <button type="button" id="monthBtn" th:text="#{lang.product.partner.one.month}" onclick="partner_product.searchDate('oneMonth');" class="btn btn-info pr-3 pl-3"></button>
+                                        <button type="button" id="threeMonthBtn" th:text="#{lang.product.partner.three.month}" onclick="partner_product.searchDate('threeMonths');" class="btn btn-info pr-3 pl-3"></button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <!--파트너사 목록-->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner}"></label>
+                            </th>
+                            <td style="width:200px">
+                                <div class="row p-0">
+                                    <div class="col-auto input-group input-group-sm m-1 p-0">
+                                        <select name="mainIdx" class="form-control form-select">
+                                            <option value="" th:text="#{lang.product.partner.all}"></option>
+                                            <option th:each="partnerList : ${partnerList}"
+                                                    th:value="${partnerList.mainIdx}"
+                                                    th:text="${partnerList.companyName + ' [' + partnerList.partnerCode + ']'}"
+                                                    th:selected="${param.mainIdx == partnerList.mainIdx}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <!--공개 여부-->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.open.state}"></label>
+                            </th>
+                            <td style="width:200px">
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0">
+                                        <select name="open" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="1" th:text="#{lang.product.partner.public}" th:selected="${param.open} == '1'"></option>
+                                            <option th:value="0" th:text="#{lang.product.partner.private}" th:selected="${param.open} == '0'"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <!--노출여부-->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.show.state}"></label>
+                            </th>
+                            <td style="width:200px">
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0">
+                                       <select name="minPrice" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="1" th:text="#{lang.product.partner.state.y}" th:selected="${param.minPrice} == '1'"></option>
+                                            <option th:value="0" th:text="#{lang.product.partner.state.n}" th:selected="${param.minPrice} == '0'"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                            <!--포인트 지급 설정-->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.benefit.setting}"></label>
+                            </th>
+                            <td>
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0">
+                                       <select name="benefit" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="1" th:text="#{lang.product.partner.state.use}" th:selected="${param.benefit} == '1'"></option>
+                                            <option th:value="0" th:text="#{lang.product.partner.state.unused}" th:selected="${param.benefit} == '0'"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <!--최저가 설정-->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.lowest.price.linked}"></label>
+                            </th>
+                            <td>
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0">
+                                       <select name="sync" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="1" th:text="#{lang.product.partner.state.use}" th:selected="${param.sync} == '1'"></option>
+                                            <option th:value="0" th:text="#{lang.product.partner.state.unused}" th:selected="${param.sync} == '0'"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- 배송비 조건 -->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.delivery.fee.type}"></label>
+                            </th>
+                            <td style="width:200px">
+                                <div class="row p-0">
+                                    <div class="col-auto input-group input-group-sm m-1 p-0">
+                                        <label>
+                                            <input type="checkbox" name="deliveryType" id="deliveryFee_1" value="1">
+                                            <span th:text="#{lang.product.partner.cost.free}"></span>
+                                        </label>
+                                        &nbsp
+                                        <label>
+                                            <input type="checkbox" name="deliveryType" id="deliveryFee_2" value="3">
+                                            <span th:text="#{lang.product.partner.cost.conditional.free}"></span>
+                                        </label>
+                                        &nbsp;
+                                        <label>
+                                            <input type="checkbox" name="deliveryType" id="deliveryFee_3" value="2">
+                                            <span th:text="#{lang.product.partner.cost.pay}"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                            <!-- 묶음배송 -->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.combined.shipping}"></label>
+                            </th>
+                            <td>
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0">
+                                       <select name="deliveryCombine" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="1" th:text="#{lang.product.partner.state.possible}" th:selected="${param.deliveryCombine} == '1'"></option>
+                                            <option th:value="0" th:text="#{lang.product.partner.state.impossible}" th:selected="${param.deliveryCombine} == '0'"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- 재고 수량 -->
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.stock.count}"></label>
+                            </th>
+                            <td>
+                                <div class="row p-0">
+                                    <div class="col-auto input-group input-group-sm m-1 p-0">
+                                        <input class="form-control form-control-sm ml-1"  name="searchStartStock" th:value="${param.searchStartStock}" autocomplete="off" th:placeholder="#{lang.product.partner.placeholder.min.stock}">
+                                        &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                        <input class="form-control form-control-sm ml-1" name="searchEndStock" th:value="${param.searchEndStock}" autocomplete="off" th:placeholder="#{lang.product.partner.placeholder.max.stock}">
+                                    </div>
+                                    <label>
+                                        <input type="checkbox" name="unlimit" id="unlimit" value="1">
+                                        <span th:text="#{lang.product.partner.placeholder.purchase.restrictions}"></span>
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" style="width:200px">
+                                <label th:text="#{lang.product.partner.name}"></label>
+                            </th>
+                            <td colspan="12">
+                                <div class="row p-0">
+                                     <div class="col-auto input-group input-group-sm m-1 p-0 col-8">
+                                        <!-- 상품검색 -->
+                                        <select name="searchType" class="form-control form-select" >
+                                            <option value="" th:text="#{lang.product.partner.all}" ></option>
+                                            <option th:value="idx" th:text="#{lang.product.partner.idx}" th:selected="${search.searchType} == 'idx'"></option>
+                                            <option th:value="name" th:text="#{lang.product.partner.name}" th:selected="${search.searchType} == 'name'"></option>
+                                        </select>
+                                        <!-- 검색어 -->
+                                        <input type="text" name="searchWord" class="form-control form-control-sm ml-1 text-center" th:value="${search.searchWord}" th:placeholder="#{lang.product.partner.placeholder.search.word}" style="width:50%" autocomplete="off">
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.product.partner.button.search}" onclick="partner_product.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="partner_product.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 탭 영역 -->
+                <div class="custom-tabs">
+                    <div class="custom-tab active-tab"  data-value="" th:text="#{lang.product.partner.tab.all.management}"></div>
+                    <div class="custom-tab" data-value="1" th:text="#{lang.product.partner.tab.approved}"></div>
+                    <div class="custom-tab" data-value="2" th:text="#{lang.product.partner.tab.approved.request}"></div>
+                    <div class="custom-tab" data-value="9" th:text="#{lang.product.partner.tab.approved.reject}"></div>
+                    <div class="custom-tab" data-value="99" th:text="#{lang.product.partner.tab.sanctions}"></div>
+                    <div class="custom-tab" data-value="10" th:text="#{lang.product.partner.tab.temporary.storage}"></div>
+                    <div class="custom-tab" data-value="0" th:text="#{lang.product.partner.tab.delete}"></div>
+                </div>
+            </div>
+            <table class="table m-0">
+            <tbody>
+            <tr>
+                <td>
+                    <div class="d-inline p-0">
+                        <div class="float-left form-control-sm">
+                            <strong class="totalCount" th:text="#{lang.product.partner.search.result} + ' : ' "></strong><span></span><span th:text="#{lang.product.partner.cases}"></span>
+                        </div>
+                        <div class="float-left form-control-sm">
+                            <select name="recordSize" class="form-select form-select-sm" style="width:150px">
+                                <option value="10" th:text="#{lang.common.view.ten}" th:selected="${search.recordSize} == 10"></option>
+                                <option value="30" th:text="#{lang.common.view.thirty}" th:selected="${search.recordSize} == 30"></option>
+                                <option value="50" th:text="#{lang.common.view.fifty}" th:selected="${search.recordSize} == 50"></option>
+                                <option value="100" th:text="#{lang.common.view.hundred}" th:selected="${search.recordSize} == 100"></option>
+                            </select>
+                        </div>
+                        <div class="float-right form-control-sm">
+                            <!-- 버튼 -->
+                            <!--<button type="button" id="searchBtn" th:text="#{lang.product.partner.regdate}" onclick="partner_product.list(1);" class="btn btn-success btn-sm"></button>
+                            <button type="button" id="searchBtn" th:text="#{lang.product.partner.regdate}" onclick="partner_product.list(1);" class="btn btn-success btn-sm"></button>-->
+                            <button type="button" id="ExcelBtn" th:text="#{lang.product.partner.button.excel}" onclick="partner_product.excel();" class="btn btn-primary btn-sm"></button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </form>
+        <!-- //검색 폼 -->
+        <!--<table class="table m-0">
+        <tbody>
+        <tr>
+            <td>
+                <div class="d-inline p-0">
+                    <div class="float-right form-control-sm">
+                        <button type="button" id="btnRegist" onclick="partner_product.regist();" class="btn btn-sm btn-primary" th:text="#{lang.product.partner.button.regist}"></button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+        </table>-->
+            <!-- list -->
+            <table class="table table-hover" id="lists">
+                <thead class="table-dark">
+                <tr class="text-center">
+                    <th scope="col" th:text="#{lang.product.partner.no} " class="text-center" style="width:3%;"></th>
+                    <th scope="col" th:text="#{lang.product.partner.idx}" class="text-center" style="width:3%;"></th>
+                    <th scope="col" class="text-center" style="width:20%;">
+                        <span th:text="#{lang.product.partner.name}"></span>
+                        <button class="arrowButton" onclick="sort('productName')" data-column="productName" data-sort-order="desc">▼</button>
+                    </th>
+                    <th scope="col" th:text="#{lang.product.partner.state}" class="text-center" style="width:3%;"></th>
+                    <th scope="col" class="text-center" style="width:3%;">
+                        <span th:text="#{lang.product.partner.open.state}"></span>
+                        <span th:data-tooltip-text="#{lang.product.partner.tooltip.open}"><i class="fa-solid fa-circle-question"></i></span>
+                    </th>
+                    <th scope="col"  class="text-center" style="width:3%;">
+                        <span th:text="#{lang.product.partner.show.state}"></span>
+                        <span th:data-tooltip-text="#{lang.product.partner.tooltip.show}"><i class="fa-solid fa-circle-question"></i></span>
+                    </th>
+                    <th scope="col" th:text="#{lang.product.partner.benefit.setting}" class="text-center" style="width:5%;"></th>
+                    <th scope="col" th:text="#{lang.product.partner.lowest.price.linked}" class="text-center" style="width:5%;"></th>
+                    <th scope="col" class="text-center" style="width:4%;">
+                        <span th:text="#{lang.product.partner.stock.count}"></span>
+                        <button class="arrowButton" onclick="sort('stock')"  data-column="stock" data-sort-order="desc">▼</button>
+                    </th>
+                    <th scope="col" class="text-center" style="width:7%;">
+                        <span th:text="#{lang.product.partner.stock.alarm.alarm.cnt}"></span>
+                        <button class="arrowButton" onclick="sort('alarm')" data-column="alarm" data-sort-order="desc">▼</button>
+                    </th>
+                    <th scope="col" th:text="#{lang.product.partner.delivery.fee.type}" class="text-center"></th>
+                    <th scope="col" th:text="#{lang.product.partner.combined.shipping}" class="text-center"></th>
+                    <th scope="col" th:text="#{lang.product.partner.price}" class="text-center"></th>
+                    <th scope="col" class="text-center" style="width:7%;">
+                        <span th:text="#{lang.product.partner.set.min.price}"></span>
+                        <button class="arrowButton" onclick="sort('minPrice')" data-column="minPrice" data-sort-order="desc">▼</button>
+                    </th>
+                    <th scope="col" th:text="#{lang.product.partner.regdate}" class="text-center" style="width:8%;"></th>
+                    <th scope="col" th:text="#{lang.product.partner}" class="text-center" style="width:8%;"></th>
+                    <th scope="col" th:text="#{lang.product.partner.approvaldate}" class="text-center" style="width:8%;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <th:block layout:fragment="paging">
+                <div class="col-md-12 d-flex flex-row-reverse my-3">
+                    <ul class="pagination" style="font-size: 12px;">
+                    </ul>
+                </div>
+            </th:block>
+        </div>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</th:block>

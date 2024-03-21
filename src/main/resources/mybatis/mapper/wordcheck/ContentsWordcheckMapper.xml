@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.wordcheck.contents.ContentsWordCheckDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- Contents 금칙어 등록하기 -->
+    <insert id="insert" parameterType="ContentsWordCheckDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseSns" />`sns_contents_word_check_kr`
+        <set>
+            `word`              = #{word}
+            ,`change_word`      = #{changeWord}
+            <if test='memo != null'>
+            ,`memo`             = #{memo}
+            </if>
+            ,`state`            = 1
+            ,`type`             = #{type}
+            ,`admin_idx`        = #{adminIdx}
+            ,`reg_date`         = #{regDate}
+            ,`reg_date_tz`      = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 금칙어 삭제 취소 -->
+    <update id="deleteCancel" parameterType="_int">
+        UPDATE
+            <include refid="databaseSns" />`sns_contents_word_check_kr` AS `sncowoch`
+        SET
+            `sncowoch`.`state` = 1
+        WHERE
+            `sncowoch`.`idx` = #{idx}
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+    <!-- 금칙어 삭제 -->
+    <update id="delete" parameterType="_int">
+        UPDATE
+            <include refid="databaseSns" />`sns_contents_word_check_kr` AS `sncowoch`
+        SET
+            `sncowoch`.`state` = 0
+        WHERE
+            `sncowoch`.`idx` = #{idx}
+    </update>
+</mapper>

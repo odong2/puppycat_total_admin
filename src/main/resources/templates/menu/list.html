@@ -1,0 +1,43 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid mt-4">
+        <div class="container-fluid p-3">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.menu.title.management}"></h5>
+                            <button type="button" onclick="menu.cateRegist();" class="btn btn-primary btn-sm float-right"  th:text="#{lang.menu.button.cateadd}"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+        <div class="admin_wrap form-inline">
+            <div id="js_sortTable" class="admin_wrap_inner" style="border-bottom: 1px solid #eee;">
+                <form th:id="'modifySortForm_'+${list.idx}" th:each="list, l : ${dataSet.list}" th:if="${list.parent} == '0'" >
+                <div class="unit" >
+                    <p class="title">
+                        <span class="btn_menu_sort pointer" th:data-idx="${list.idx}" data-sort="prev" th:if="${l.index} > '0'" ><i class="fa-solid fa-circle-chevron-left"></i></span>
+                        <span th:onclick="|menu.cateModify('${list.idx}')|"  class="pointer" th:text="'[' + ${list.name} + ']'" ></span>
+                        <span class="btn_menu_sort pointer" th:data-idx="${list.idx}" data-sort="next"><i class="fa-solid fa-circle-chevron-right"></i></span>
+                    </p>
+                    <div class="column" th:each="sublist : ${dataSet.list}"  th:if="(${list.idx} == ${sublist.parent})">
+                        <input type="hidden" name="idx[]" th:value="|${sublist.idx}|">
+                        <div class="check">
+                            <input type="checkbox" class="input_check" name="chk_idx[]" th:id="|${sublist.idx}|" th:value="|${sublist.idx}|" th:checked="${sublist.state != 0}" onclick="javascript: return false;">
+                        </div>
+                        <p class="text"  th:title="|${sublist.name}|">
+                            <a href="#" class="btn_menu_modi"  th:rel="|${sublist.idx}|" th:text="|${sublist.name}|"  th:onclick="|menu.menuModify('${sublist.idx}')|"></a></p>
+                        <div class="btn_Sortable"><a href="#"><span></span></a></div>
+                    </div>
+                    <div class="p-1">
+                        <button class="btn btn-primary btn-sm btn_menu_regist" th:onclick="|menu.menuRegist('${list.idx}')|" type="button" ><i class="fa-solid fa-plus"></i></button>
+                        <button class="btn btn-success btn-sm btn_list_sort" type="button" th:onclick="|menu.sortModifyProc('${list.idx}')|" ><i class="fa-solid fa-floppy-disk"></i></button>
+                    </div>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>

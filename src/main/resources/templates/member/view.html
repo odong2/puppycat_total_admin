@@ -1,0 +1,455 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.member.title.view}"></h5>
+            </div>
+
+            <div class="card-body row">
+                <form id="frm" accept-charset="utf-8">
+                    <div class="col-lg-4 float-left">
+                    <table class="table">
+                        <thead></thead>
+                        <tbody>
+                        <tr style="border:solid currentColor; border-width:2px 0px;">
+                            <th class="table-primary" colspan="2" th:text="#{lang.member.img}"></th>
+                            <th class="table-primary text-right py-0">
+                                <!-- 이미지 수정 버튼 -->
+                                <button type="button" class="btn btn-sm btn-warning" onclick="member.layer();" th:text="#{lang.member.button.modify}"></button>
+                            </th>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class='row mb-4' id="imageMember"></div>
+                    </div>
+                    <div class="col-lg-8 float-left">
+                    <table class="table">
+                        <thead></thead>
+                        <tbody>
+                        <tr style="border:solid currentColor; border-width:2px 0px;">
+                            <th class="table-primary" colspan="2"  th:text="#{lang.member.intro}"></th>
+                            <th class="table-primary text-right py-0">
+                                <!-- 소개 수정 버튼 -->
+                                <button type="button" class="btn btn-sm btn-warning" onclick="member.registIntro();" th:text="#{lang.member.button.modify}"></button>
+                            </th>
+                        </tr>
+                        </tbody>
+                        <tbody>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.intro}"></th>
+                            <td class="p-0 pl-2">
+                                <textarea type="text" class="form-control form-control-sm" name="intro" style="height:115px; width:450px;"></textarea>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                    <table class="table">
+                        <thead></thead>
+                        <colgroup>
+                            <col style="width: 20%;">
+                        </colgroup>
+                        <tbody>
+                        <tr style="border:solid currentColor; border-width:2px 0px;">
+                            <th class="table-primary" colspan="2" th:text="#{lang.member.information}"></th>
+                        </tr>
+                        </tbody>
+                        <tbody>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.idx}"></th>
+                            <td class="p-0 pl-2" name="idx" id="idx"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.id}"></th>
+                            <td class="p-0 pl-2" name="id" id="id"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.nick}"></th>
+                            <td class="p-0 pl-2">
+                                <input type="text" style="display: inline-block;" class="form-control form-control-sm" name="nick" id="nick" readonly>
+                                <!--<button id="chechNickBtn" type="button" class="btn btn-sm btn-success" onclick="member.nickCheck();">닉네임확인</button>-->
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.name}"></th>
+                            <td class="p-0 pl-2" name="name" id="name"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.phone}"></th>
+                            <td class="p-0 pl-2" name="phone" id="phone"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.phone.modi.date}"></th>
+                            <td class="p-0 pl-2" name="modiDate" id="modiDate"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.birth}"></th>
+                            <td class="p-0 pl-2" name="birth" id="birth"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.lang}"></th>
+                            <td class="p-0 pl-2">
+                                <select class="form-select" name="lang" id="lang">
+                                    <option value="ko" th:text="#{lang.member.lang.ko}"></option>
+                                    <option value="en" th:text="#{lang.member.lang.en}"></option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.gender}"></th>
+                            <td class="p-0 pl-2">
+                                <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                    <input type="radio" class="btn-check" name="gender" id="gender1" value="M" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-primary" for="gender1" th:text="#{lang.member.gender.male}"></label>
+                                    <input type="radio" class="btn-check" name="gender" id="gender2" value="F" autocomplete="off">
+                                    <label class="btn btn-sm btn-outline-danger" for="gender2" th:text="#{lang.member.gender.female}"></label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.state}"></th>
+                            <td class="p-0 pl-2" name="state" id="state"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.simplejoin}"></th>
+                            <td class="p-0 pl-2" name="simpletype" id="simpletype"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.loginIp}"></th>
+                            <td class="p-0 pl-2" name="loginIp" id="loginIp"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.lastLogin}"></th>
+                            <td class="p-0 pl-2" name="lastLogin" id="lastLogin"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.joinIp}"></th>
+                            <td class="p-0 pl-2" name="joinIp" id="joinIp"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.regDate}"></th>
+                            <td class="p-0 pl-2" name="regDate" id="regDate"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.marketing.agree}"></th>
+                            <td class="p-0 pl-2" name="marketingState" id="marketingState"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.member.marketing.agree.date}"></th>
+                            <td class="p-0 pl-2" name="marketingAgreeDate" id="marketingAgreeDate"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="form-group row" id="btnGroup">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="member.list();" th:text="#{lang.member.button.list}"></button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="member.modify();" th:text="#{lang.member.button.modify}"></button>
+                            <span id="deleteBtn" th:if="(${dataSet.adminLevel} >= 6 )"></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+        <br>
+        <div class="card">
+            <!-- 회원 포인트 -->
+            <div class="row mt-3">
+                <div class="col-lg-6">
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold w-75 float-left" th:text="#{lang.point.title.info}"></h6>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 600px;">
+                            <!-- 회원 포인트 -->
+                            <table class="table table-bordered" id="pointTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th th:text="#{lang.point.save.point}" class="text-center"></th>
+                                        <th th:text="#{lang.point.use.point}" class="text-center"></th>
+                                        <th th:text="#{lang.point.rest.point}" class="text-center"></th>
+                                        <th th:text="#{lang.point.expire.point}" class="text-center"></th>
+                                        <th th:text="#{lang.point.button}" class="text-center" colspan="1"></th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                </tbody>
+                            </table>
+
+                                <!-- 관리자 코인 지급 & 차감 -->
+                            <form id="pointFrm">
+                                <table  class="table table-bordered">
+                                    <tbody id="payActionBody" style="display: none">
+                                        <input type="hidden" name="actionType"/>
+                                        <tr>
+                                            <td class="text-center fw-bold" colspan="6" id="pointTitle"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center" th:text="#{lang.point.point}"></td>
+                                            <td class="text-center" colspan="2" th:text="#{lang.point.pay.subtraction.position}"></td>
+                                            <td class="text-center" th:text="#{lang.point.expireDate}"></td>
+                                            <td class="text-center" th:text="#{lang.point.product.order.id}"></td>
+                                            <td class="text-center" th:text="#{lang.point.button}"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center" id="paymentPrice">
+                                                <input type="text" class="form-control form-control-sm" name="pointText" oninput="member_point.numberComma(this);" autocomplete="off"/>
+                                            </td>
+                                            <td class="text-center" colspan="2">
+                                                <input type="text" name="position" class="form-control form-control-sm" maxlength="100" autocomplete="off"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="datetime-local" name="expireDate" class="form-control form-control-sm" autocomplete="off"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="text" name="productOrderId" class="form-control form-control-sm" maxlength="50" autocomplete="off"/>
+                                            </td>
+                                            <td class="text-center" rowspan="2">
+                                                <button type="button" class="btn btn-sm mb-1 btn-primary col" id="payOrSubtractBtn" onclick="member_point.payOrSubtract();"/>
+                                                <button tpye="button" class="btn btn-sm btn-secondary submit-no-btn col" id="cancelBtn" onclick="member_point.cancelBtn();" th:text="#{lang.point.button.cancel}"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="5">
+                                                <input type="text" name="title" maxlength="255" class="form-control form-control-sm"/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </form>
+                        </div> <!--end card body-->
+                    </div> <!-- end card-->
+                </div> <!-- end float-left -->
+
+            <div class="row mt-3">
+                <!-- 회원 활동 내역 -->
+                <div class="col-lg-6 float-right">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="actionLogBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.member.login.log.title}"></h6>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="memberLoginLogList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.member.action.log.id}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.nick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.ip}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 회원 활동 내역 -->
+                <div class="col-lg-6 float-right">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="actionLogBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.member.action.log.title}"></h6>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="memberAccessLogList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.member.action.log.id}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.nick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.domain}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.ip}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.action.log.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제재 내역 -->
+                <div class="col-lg-6 float-left">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="restrainBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.restrain.member.title.restrain}"></h6>
+                            <span class="small float-left"  th:text="#{lang.member.info.data}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="restrainList">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" th:text="#{lang.restrain.member.type}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.date}" class="text-center" ></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.startDate}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.endDate}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.code}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.state.date}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.state}" class="text-center"></th>
+                                        <th scope="col" th:text="#{lang.restrain.member.regdate}" class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 팔로잉 리스트 -->
+                <div class="col-lg-6 float-left">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="followingBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.follow.title.following}"></h6>
+                            <span class="small float-left"  th:text="#{lang.member.info.data}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="followingList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.follow.followId}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.followNick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.followOut}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 팔로워 리스트 -->
+                <div class="col-lg-6 float-right">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="followerBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.follow.title.follower}"></h6>
+                            <span class="small float-left"  th:text="#{lang.member.info.data}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="followerList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.follow.memberId}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.memberNick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.out}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.follow.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 댓글 리스트 -->
+                <div class="col-lg-6 float-right">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="commentBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.comment.history.title}"></h6>
+                            <span class="small float-left" th:text="#{lang.comment.data.twenty.cases}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="commentList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.comment.memberId}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.comment.memberNick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.comment.contents}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.comment.state}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.comment.modify.date}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.comment.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 차단 리스트 -->
+                <div class="col-lg-6 float-left">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="blockBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.block.title.block}"></h6>
+                            <span class="small float-left" th:text="#{lang.block.data.twenty.cases}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="blockList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.block.member.blocked.id}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.block.member.blocked.nick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.block.member.blocked.state}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.block.member.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 교류많은 유저 리스트 -->
+                <div class="col-lg-6 float-right">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="interactiveBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.member.title.interactive.user.list}"></h6>
+                            <span class="small float-left" th:text="#{lang.member.info.data}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="interactiveList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.member.id}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.nick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.state}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.member.interactive.user.like.cnt}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- 컨텐츠 리스트 -->
+                <div class="col-lg-12 float-left">
+                    <div class="card mt-4 ">
+                        <div class="card-header" id="contentsBtn">
+                            <h6 class="m-0 font-weight-bold float-left" th:text="#{lang.contents.title}"></h6>
+                            <span class="small float-left" th:text="#{lang.contents.data.twenty.cases}"></span>
+                        </div>
+                        <div class="card-body overflow-auto" style="max-height: 235px;">
+                            <table class="table table-striped" id="contentsList">
+                                <thead>
+                                <tr>
+                                    <th scope="col" th:text="#{lang.contents.memberId}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.memberNick}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.contents}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.state}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.img.count}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.like.count}" class="text-center"></th>
+                                    <th scope="col" th:text="#{lang.contents.regdate}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br>
+        </div>
+        <br><br>
+    </div>
+</th:block>

@@ -1,0 +1,92 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.admin.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="admin.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="row p-0">
+                                            <div class="col-auto input-group input-group-sm m-1 p-0 col-2">
+                                                <!-- 아이디/이름 -->
+                                                <select name="searchType" class="form-select form-select-sm col-5">
+                                                    <option value=""  th:text="#{lang.admin.search}"></option>
+                                                    <option value="name" th:text="#{lang.admin.name}" th:selected="${search.searchType} == 'name'"></option>
+                                                    <option value="id" th:text="#{lang.admin.id}" th:selected="${search.searchType} == 'id'"></option>
+                                                </select>
+                                                <!-- 검색어 -->
+                                                <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:placeholder="#{lang.admin.placeholder.search.word}">
+                                            </div>
+                                            <div class="col-auto input-group input-group-sm m-1 p-0 col-4">
+                                                <!-- 계정 상태 -->
+                                                <select name="state" class="form-select form-select-sm col-3">
+                                                    <option value=""  th:text="#{lang.admin.state}"></option>
+                                                    <option value="1" th:text="#{lang.admin.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                    <option value="2" th:text="#{lang.admin.state.wait}" th:selected="${search.state} == '2'"></option>
+                                                    <option value="0" th:text="#{lang.admin.state.out}" th:selected="${search.state} == '0'"></option>
+                                                    <option value="3" th:text="#{lang.admin.state.block}" th:selected="${search.state} == '3'"></option>
+                                                </select>
+                                                <!-- 현재 페이지 -->
+                                                <input type="hidden" id="page" name="page">
+                                            </div>
+
+                                            <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                                <!-- 검색버튼 -->
+                                                <button type="button" id="searchBtn" th:text="#{lang.admin.button.search}" onclick="admin.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                                <button type="button" class="btn btn-outline-success" onclick="admin.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-inline p-0">
+                                            <div class="float-left form-control-sm">
+                                                <strong class="totalCount" th:text="#{lang.admin.search.result} + ' : ' "></strong> <span></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                            <tr class="text-center">
+                                <th scope="col" th:text="#{lang.admin.idx}" class="text-center" style="width:50px;"></th>
+                                <th scope="col" th:text="#{lang.admin.state}" class="text-center" style="width:150px;"></th>
+                                <th scope="col" th:text="#{lang.admin.id}" class="text-center" style="width:250px;"></th>
+                                <th scope="col" th:text="#{lang.admin.name}" class="text-center" style="width:150px;"></th>
+                                <th scope="col" th:text="#{lang.admin.level}" class="text-center" style="width:120px;"></th>
+                                <th scope="col" th:text="#{lang.admin.login_ip}" class="text-center" style="width:150px;"></th>
+                                <th scope="col" th:text="#{lang.admin.login_date}" class="text-center" style="width:180px;"></th>
+                                <th scope="col" th:text="#{lang.admin.join_ip}" class="text-center" style="width:150px;"></th>
+                                <th scope="col" th:text="#{lang.admin.regdate}" class="text-center" style="width:180px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

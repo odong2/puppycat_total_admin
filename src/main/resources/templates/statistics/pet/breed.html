@@ -1,0 +1,67 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.statistics.pet.breed.title}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="pet_breed.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-5">
+                                            <select name="petType" id="petType" class="form-select form-select-sm col-3" >
+                                                <option value=""  th:text="#{lang.pet.type}"></option>
+                                                <th:block th:each="petType : ${petTypeList}">
+                                                    <option th:value="${petType.idx}" th:text="${petType.type}" th:selected="${search.petType} == ${petType.idx}"></option>
+                                                </th:block>
+                                            </select>
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.pet.button.search}" ></option>
+                                                <option th:value="breed" th:text="#{lang.pet.breed}" th:selected="${search.searchType} == 'breed'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.pet.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.pet.button.search}" onclick="pet_breed.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="pet_breed.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <div class="col-lg-4 float-md-left">
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.statistics.pet.type}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.statistics.breed}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.statistics.totalCnt}" class="text-center"></th>
+                         </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

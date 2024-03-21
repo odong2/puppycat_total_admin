@@ -1,0 +1,83 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        inspect_update.list();
+    });
+
+    let inspect_update = {
+        // 조회
+        list: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/inspect/update/list',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.code === "1000") {
+                            // list
+                            let listTbody = "";
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${res.data.list.currentBuildNumber}</td>
+                                    <td class="text-center">${res.data.list.minBuildNumber}</td>
+                                    <td class="text-center">${res.data.list.recommendBuildNumber}</td>
+                                    <td class="text-center">${res.data.list.majorNumber}</td>
+                                    <td class="text-center">${res.data.list.minorNumber}</td>
+                                    <td class="text-center">${res.data.list.patchNumber}</td>
+                                    <td class="text-center">${text_replace(res.data.list.forceTitle)}</td>
+                                    <td class="text-center">${text_replace(res.data.list.forceContents)}</td>
+                                    <td class="text-center">${text_replace(res.data.list.forcePatchNote)}</td>
+                                    <td class="text-center">${text_replace(res.data.list.title)}</td>
+                                    <td class="text-center">${text_replace(res.data.list.contents)}</td>
+                                    <td class="text-center">${text_replace(res.data.list.patchNote)}</td>
+                                    <td class="text-center">${res.data.list.updateDate}</td>
+                                </tr>
+                            `;
+
+                            $("#lists tbody").html(listTbody);
+                            // paging - common.js
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="13" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        regist: function () {
+            location.href = '[[${SERVER.currentDomain}]]/inspect/update/regist';
+        }
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+
+    function text_replace(text) {
+        let replace_text = text.replace(/(<([^>]+)>)/ig, "");
+
+        if(replace_text.length > 10) {
+            replace_text = text.substring(0,10) + "...";
+        }
+
+        return replace_text;
+    }
+</script>

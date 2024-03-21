@@ -1,0 +1,256 @@
+<script th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        contents.list(page);
+    });
+
+    let text = {
+        likeTitle : "[[#{lang.contents.title.like.list}]]",         // 좋아요 한 회원 리스트 제목
+        saveTitle : "[[#{lang.contents.title.save.list}]]",         // 저장한 회원 리스트 제목
+        commentsTitle : "[[#{lang.contents.title.comments.list}]]", // 댓글 단 회원 리스트 제목
+        reportTitle : "[[#{lang.contents.title.report.list}]]",     // 신고한 회원 리스트 제목
+        memberId : "[[#{lang.member.id}]]",                         // 아이디
+        memberNick : "[[#{lang.member.nick}]]",                     // 닉네임
+        contents : "[[#{lang.contents.contents}]]",                 // 내용
+        contentsRegDate: "[[#{lang.contents.regdate}]]",            // 등록일
+    }
+
+    var contents = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/contents',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.view(${el.memberIdx});">${el.memberId}</a></td>
+                                    <td class="text-center">${el.memberNick}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.modify(${el.idx});"><img src="${el.thumbnailUrl}" style="max-height:100px; max-width:200px"></a></td>
+                                    <td class="text-center inline-block text-truncate" style="max-width: 100px;"><a href="javascript:void(0);" onclick="contents.modify(${el.idx});">${cleanXSS(el.contents)}</a></td>
+                                    <td class="text-center">${el.imgCnt}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.layer(${el.idx},'likeMembers')">${el.likeCnt}</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.layer(${el.idx},'saveMembers')">${el.saveCnt}</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.layer(${el.idx},'commentsMembers')">${el.commentCnt}</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.layer(${el.idx},'reportMembers')">${el.reportCnt}</a></td>
+                                    <td class="text-center">${el.modiDate}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                 </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("contents", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="13" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 상세
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/members/view/' + idx ;
+        },
+        modify: function (idx) {
+            js_popup('[[${SERVER.currentDomain}]]/contents/view/' + idx, 'contents_view', '1200', '1000');
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/contents/list';
+        },
+        // 모달창 노출
+        layer:function(idx, searchType){
+            myModal = new bootstrap.Modal($('#layer_dialog_lg'), {
+                keyboard: false
+            });
+            // load 비동기, call back 함수로 다음 작업 명시
+            $('#section_dialog_lg').load("[[${SERVER.currentDomain}]]/contents/member-layer", () =>{
+
+                if (searchType == "likeMembers") {
+                    $(".modal-title").text(text.likeTitle);
+                    likeMembers.list(1, idx);
+                } else if (searchType == "saveMembers") {
+                    $(".modal-title").text(text.saveTitle);
+                    saveMembers.list(1, idx);
+                } else if(searchType == "commentsMembers"){
+                    $(".modal-title").text(text.commentsTitle);
+
+                    let thead = `
+                        <th scope="col" class="text-center">${text.memberId}</th>
+                        <th scope="col" class="text-center">${text.memberNick}</th>
+                        <th scope="col" class="text-center">${text.contents}</th>
+                        <th scope="col" class="text-center">${text.contentsRegDate}</th>`
+
+                    $("#memberListLayer thead tr").html(thead);
+                    commentsMembers.list(1, idx);
+                } else if (searchType == "reportMembers") {
+                    $(".modal-title").text(text.reportTitle);
+                    reportMembers.list(1, idx);
+                }
+
+            });
+            myModal.show($('#section_dialog_lg'));
+        },
+    }
+
+    // 좋아요 한 회원 리스트 모달
+    let likeMembers ={
+        list : (page, idx) =>{
+            memberList(page, idx, "likeMembers");
+        }
+    }
+    // 저장한 회원 리스트 모달
+    let saveMembers = {
+        list : (page, idx) =>{
+            memberList(page, idx, "saveMembers");
+        }
+    }
+    // 댓글 작성한 회원 리스트 모달
+    let commentsMembers = {
+        list : (page, idx) =>{
+            memberList(page, idx, "commentsMembers");
+        }
+    }
+    // 신고한 회원 리스트 모달
+    let reportMembers = {
+        list : (page, idx) => {
+            memberList(page, idx, "reportMembers");
+        },
+        // 신고 페이지 이동
+        view: function (memberId) {
+            location.href = `[[${SERVER.currentDomain}]]/report/contents/list?searchTargetType=reporter&searchType=id&searchWord=${memberId}`;
+        },
+    }
+
+    // 회원 리스트 공통 함수
+    let memberList = (page, idx, type) =>{
+
+        $.ajax({
+            url: `[[${SERVER.currentDomain}]]/v1/contents/${idx}/members?searchType=${type}&page=${page}`,
+            headers: {
+                'Authorization': `Bearer `+$.cookie('accessToken'),
+            },
+            cache: true,
+            method: 'GET',
+            dataType: 'json',
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                if (res.result) {
+
+                    if (res.data.list.length > 0) {
+                        let listTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            if (type === "commentsMembers") {
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.view('${el.uuid}');">${el.id}<a/></td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.contents}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                 </tr>`;
+                            } else if (type == "reportMembers") {
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="reportMembers.view('${el.id}');">${el.id}<a/></td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                 </tr>`;
+                            } else {
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="contents.view('${el.uuid}');">${el.id}<a/></td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                 </tr>`;
+                            }
+
+                        });
+
+                        $("#memberListLayer > tbody").html(listTbody);
+
+                        // paging - 커스텀
+                        paginationById("#memberPagination", idx, type, res.data.params.page, res.data.params.pagination);
+                    } else {
+                        // 결과 없음
+                        let listTbody = `<tr><td colspan="9" class="text-center">${res.message}</td></tr>`;
+                        $("#memberListLayer tbody").html(listTbody);
+                        $("#memberPagination").html("");
+                    }
+                }
+            },
+            error: function (request, status, error) {
+                // filter error
+                toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+            }
+        });
+    }
+
+    // XSS 공격 방지 - html 태그 이스케이프 처리
+    function cleanXSS(content) {
+
+        let convertText = content
+            .replace(/</g, "&lt;") // 꺽새 변환
+            .replace(/>/g, "&gt;") // 꺽새 변환
+            .replace("\\(", "&#40;") // 괄호 변환
+            .replace("\\)", "&#41;") // 괄호 변환
+            .replace(/\"/g, "&quot;") // 큰따옴표 변환
+            .replace(/\'/g, "&#39;") // 작은따옴표 변환
+            .replace(/\n/g, "<br />"); // <br> 태그 변환
+
+        return convertText;
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+
+</script>

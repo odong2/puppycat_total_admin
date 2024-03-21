@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.notice.NoticeDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="noticeColumns">
+        `pubono`.`idx`
+        ,`pubono`.`menu_idx`
+        ,IFNULL(`pubonomena`.`name`,`pubonome`.`name`) AS `menu_name`
+        ,`pubono`.`is_top`
+        ,IFNULL(`pubonoti`.`title`,`pubono`.`title`) AS `title`
+        ,`pubonoco`.`contents`
+        ,`pubono`.`admin_id`
+        ,`pubono`.`state`
+        ,CONVERT_TZ(`pubono`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 공지사항 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="NoticeDto">
+        SELECT
+            <include refid="noticeColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_notice` AS `pubono`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu` AS `pubonome`
+            ON `pubono`.`menu_idx` = `pubonome`.`idx`
+            AND `pubonome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu_name` AS `pubonomena`
+            ON `pubonome`.`idx` = `pubonomena`.`menu_idx`
+            AND `pubonomena`.`lang` = 'ko'
+            AND  `pubonomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_title` AS `pubonoti`
+            ON `pubono`.`idx` = `pubonoti`.`notice_idx`
+            AND `pubonoti`.`state` = 1
+            AND `pubonoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_contents` AS `pubonoco`
+            ON `pubono`.`idx` = `pubonoco`.`notice_idx`
+            AND `pubonoco`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubonoti`.`title`,`pubono`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubonoco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubono`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubono`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY  `pubono`.`is_top` DESC,
+                  `pubono`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pubono`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_notice` AS `pubono`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu` AS `pubonome`
+            ON `pubono`.`menu_idx` = `pubonome`.`idx`
+            AND `pubonome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu_name` AS `pubonomena`
+            ON `pubonome`.`idx` = `pubonomena`.`menu_idx`
+            AND `pubonomena`.`lang` = 'ko'
+            AND  `pubonomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_title` AS `pubonoti`
+            ON `pubono`.`idx` = `pubonoti`.`notice_idx`
+            AND `pubonoti`.`state` = 1
+            AND `pubonoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_contents` AS `pubonoco`
+            ON `pubono`.`idx` = `pubonoco`.`notice_idx`
+            AND `pubonoco`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubonoti`.`title`,`pubono`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubonoco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubono`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubono`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 공지 상세 -->
+    <select id="getViewNotice" parameterType="_int" resultType="NoticeDto">
+        SELECT
+            <include refid="noticeColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_notice` AS `pubono`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu` AS `pubonome`
+            ON `pubono`.`menu_idx` = `pubonome`.`idx`
+            AND `pubonome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_menu_name` AS `pubonomena`
+            ON `pubonome`.`idx` = `pubonomena`.`menu_idx`
+            AND `pubonomena`.`lang` = 'ko'
+            AND  `pubonomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_notice_title` AS `pubonoti`
+            ON `pubono`.`idx` = `pubonoti`.`notice_idx`
+            AND `pubonoti`.`state` = 1
+            AND `pubonoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_notice_contents` AS `pubonoco`
+            ON `pubono`.`idx` = `pubonoco`.`notice_idx`
+            AND `pubonoco`.`lang` = 'ko'
+        WHERE
+            `pubono`.`idx` = #{idx}
+    </select>
+
+    <!-- 공지 메뉴 리스트 가져오기 -->
+    <select id="getMenuList" parameterType="NoticeDto" resultType="NoticeDto">
+        SELECT
+            `pubonome`.`idx`
+            ,IFNULL(`pubonomena`.`name`,`pubonome`.`name`) AS `menu_name`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_notice_menu`AS `pubonome`
+        LEFT JOIN  <include refid="databaseCommon"/>`puppycat_board_notice_menu_name` AS `pubonomena`
+            ON `pubonome`.`idx` = `pubonomena`.`menu_idx`
+            AND `pubonomena`.`lang` = 'ko'
+            AND  `pubonomena`.`state` = 1
+        WHERE `pubonome`.`state` = '1'
+        ORDER BY `pubonome`.`idx` ASC
+    </select>
+
+</mapper>

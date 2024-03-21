@@ -1,0 +1,118 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.partner.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="partner.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-5">
+                                            <!-- 날짜 검색 -->
+                                            <select name="searchDateType" class="form-control form-select" style="width:80px;">
+                                                <option value="" th:text="#{lang.member.date}" ></option>
+                                                <option th:value="regDate" th:text="#{lang.partner.regdate}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="lastLogin" th:text="#{lang.partner.last.login.date}" th:selected="${search.searchType} == 'id'"></option>
+                                            </select>
+                                            <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" th:value="${param.searchStartDate}">
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}">
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-5">
+                                            <select name="state" class="form-control form-select">
+                                                <option value="" th:text="#{lang.partner.state}" ></option>
+                                                <option th:value="0" th:text="#{lang.partner.state.0}" th:selected="${search.searchType} == 0"></option>
+                                                <option th:value="1" th:text="#{lang.partner.state.1}" th:selected="${search.searchType} == 1"></option>
+                                                <option th:value="2" th:text="#{lang.partner.state.2}" th:selected="${search.searchType} == 2"></option>
+                                                <option th:value="3" th:text="#{lang.partner.state.3}" th:selected="${search.searchType} == 3"></option>
+                                                <option th:value="4" th:text="#{lang.partner.state.4}" th:selected="${search.searchType} == 4"></option>
+                                                <option th:value="5" th:text="#{lang.partner.state.5}" th:selected="${search.searchType} == 5"></option>
+                                                <option th:value="6" th:text="#{lang.partner.state.6}" th:selected="${search.searchType} == 6"></option>
+                                            </select>
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.common.search.all}" ></option>
+                                                <option th:value="id" th:text="#{lang.partner.id}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="name" th:text="#{lang.partner.president.name}" th:selected="${search.searchType} == 'name'"></option>
+                                                <option th:value="companyName" th:text="#{lang.partner.company.name}" th:selected="${search.searchType} == 'companyName'"></option>
+                                                <option th:value="businessType" th:text="#{lang.partner.businessType}" th:selected="${search.searchType} == 'businessType'"></option>
+                                                <option th:value="businessItem" th:text="#{lang.partner.businessItem}" th:selected="${search.searchType} == 'businessItem'"></option>
+                                                <option th:value="phone" th:text="#{lang.partner.phone}" th:selected="${search.searchType} == 'phone'"></option>
+                                            </select>
+
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" autocomplete="off" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.common.placeholder.search.word}" style="width:30%;">
+
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.common.button.search}" onclick="partner.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="partner.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <!-- 엑셀버튼 -->
+                                            <button type="button" id="btnRegist" onclick="partner.excel();" class="btn btn-sm btn-primary" th:text="#{lang.member.button.excel}"></button>
+                                            <!-- 등록버튼 -->
+                                            <button type="button" class="btn btn-sm btn-success" onclick="partner.regist()" th:text="#{lang.partner.button.regist}"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.common.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.partner.idx}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.state}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.id}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.president.name}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.company.name}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.businessType}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.businessItem}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.email}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.companyTel}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.phone}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.regdate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.partner.last.login.date}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

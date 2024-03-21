@@ -1,0 +1,183 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        member.list(page);
+    });
+
+    let text = {
+        followListTitle: "[[#{lang.follow.title.list}]]",     // 팔로우 리스트
+        followerListTitle: "[[#{lang.follower.title.list}]]", // 팔로워 리스트
+    }
+
+    var member = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/member/rank',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                cache: true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if (window.location.search !== "?" + $("#frm").serialize()) {
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+
+                        if (res.data.list.length > 0) {
+                            // list
+                            let listTbody = "";
+                            let num = 0;
+                            $.each(res.data.list, function (index, el) {
+                                num += 1;
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center">${num}</td>
+                                    <td class="text-center"><span class="badge ${el.isDelBg}">${el.isDelText}</span></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="member.view(${el.idx});">${el.id}</a></td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.name}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="member.layer('${el.uuid}','follower')">${el.followerCnt}</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="member.layer('${el.uuid}','follow')">${el.followCnt}</a></td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="12" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 상세
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/members/view/' + idx;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/members/rank/list';
+        },
+        // 모달창 노출
+        layer: function (uuid, searchType) {
+            myModal = new bootstrap.Modal($('#layer_dialog_lg'), {
+                keyboard: false
+            });
+            // load 비동기, call back 함수로 다음 작업 명시
+            $('#section_dialog_lg').load("[[${SERVER.currentDomain}]]/members/rank/member-layer", () => {
+                // 모달창 불러올 시점에 최초 한번만 실행
+                if (searchType == "follower") {
+                    // 모달 제목
+                    $(".modal-title").text(text.followerListTitle);
+                    modalEvent(uuid, follower);
+                } else if (searchType == "follow") {
+                    $(".modal-title").text(text.followListTitle);
+                    modalEvent(uuid, follow);
+                }
+
+            });
+            myModal.show($('#section_dialog_lg'));
+        },
+        // 팔로우/팔로워 회원 리스트
+        followList: function (page, uuid, type) {
+            $.ajax({
+                url: `[[${SERVER.currentDomain}]]/v1/member/${uuid}/follow/list?searchTargetType=${type}&page=${page}`,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                cache: true,
+                method: 'GET',
+                data: $("#modalForm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.data.list.length > 0) {
+                        let listTbody = "";
+                        let num = 0;
+
+                        $.each(res.data.list, function (index, el) {
+                            num += 1;
+                            listTbody += `
+                            <tr>
+                                <td class="text-center">${num}</td>
+                                <td class="text-center"><a href="javascript:void(0);" onclick="member.view('${el.uuid}');">${el.id}</a></td>
+                                <td class="text-center">${el.nick}</td>
+                                <td class="text-center">${el.name}</td>
+                                <td class="text-center">${el.regDate}</td>
+                            </tr>`
+                        })
+                        $("#memberListLayer > tbody").html(listTbody);
+                        // paging - 커스텀
+                        paginationById("#memberPagination", idx, type, res.data.params.page, res.data.params.pagination);
+
+                    } else {
+                        // 결과 없음
+                        let listTbody = `<tr><td colspan="9" class="text-center">${res.message}</td></tr>`;
+                        $("#memberListLayer tbody").html(listTbody);
+                        $("#memberPagination").html("");
+                    }
+                }
+            })
+        }
+    }
+    let modalEvent = (uuid, target) => {
+        // 모달 정보 리스트 호출
+        target.list(1, uuid);
+        // 모달 검색 이벤트
+        $('#searchModalBtn').on('click', () => {
+            target.list(1, uuid);
+        })
+        // 모달 리셋 이벤트
+        $('#resetModalBtn').on('click', () => {
+            $("#modalForm #searchType").val("");
+            $("#modalForm #searchWord").val("");
+            target.list(1, uuid);
+        });
+        // 모달 엔터 이벤트
+        $('#modalForm').submit((evt) => {
+            evt.preventDefault();
+            target.list(1, uuid);
+        });
+    }
+
+    // 팔로워 모달 정보(member.followList 의 3번쨰 인자값과 이름이 같아야함)
+    let follower = {
+        list: (page, uuid) => {
+            member.followList(page, uuid, "follower")
+        }
+    }
+    // 팔로우 모달 정보
+    let follow = {
+        list: (page, uuid) => {
+            member.followList(page, uuid, "follow");
+        }
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function (event) {
+        window.location = document.location.href;
+    });
+</script>

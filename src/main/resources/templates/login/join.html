@@ -1,0 +1,41 @@
+<th:block layout:decorate="~{common/layout_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid mt-4">
+        <!-- 컨텐츠 영역 -->
+        <h4 th:text="#{lang.admin.title.join}"></h4>
+        <hr>
+
+        <form id="frm" onsubmit="return admin.join();">
+            <div class="mb-3">
+                <label for="id" class="form-label" th:text="#{lang.admin.id}"></label>
+                <input type="text" class="form-control" name="id" id="id" th:placeholder="#{lang.admin.placeholder.id}"
+                       >
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label" th:text="#{lang.admin.pw}"></label>
+                <input type="password" class="form-control" name="password" id="password"
+                       th:placeholder="#{lang.admin.placeholder.pw}" >
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordConfirm" class="form-label" th:text="#{lang.admin.pw.confirm}"></label>
+                <input type="password" class="form-control" name="passwordConfirm" id="passwordConfirm"
+                       th:placeholder="#{lang.admin.placeholder.pw.confirm}" >
+            </div>
+
+            <div class="mb-3">
+                <label for="name" class="form-label" th:text="#{lang.admin.name}"></label>
+                <input type="name" class="form-control" name="name" id="name"
+                       th:placeholder="#{lang.admin.placeholder.name}" >
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" th:text="#{lang.admin.button.join}"></button>
+            </div>
+            <div class="d-grid gap-2">
+                <a href="/login" class="btn btn-success" th:text="#{lang.admin.button.login}"></a>
+            </div>
+        </form>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

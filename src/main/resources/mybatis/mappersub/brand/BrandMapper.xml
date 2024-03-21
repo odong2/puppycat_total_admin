@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.brand.BrandDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="categoryColumns">
+        `shprbr`.`idx`
+        , `shprbr`.`brand_name`
+        , `shprbr`.`state`
+        , IFNULL(CONVERT_TZ(`shprbr`.`reg_date`, 'UTC', '${convertTZ}'), NULL)
+        , `shprbr`.`reg_date_tz`
+        , `shbrgr`.`type`
+        , `shbrgr`.`idx` AS `brandGroupIdx`
+        , `shbrgr`.`brand_group_name`
+    </sql>
+
+    <sql id="brandSearchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'brandIdx'">
+                        AND `shprbr`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'brandName'">
+                        AND `shprbr`.`brand_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 상품 브랜드 목록 -->
+    <select id="getBrandList" resultType="BrandDto">
+        SELECT
+            <include refid="categoryColumns"/>
+        FROM
+            <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+        JOIN
+            <include refid="databaseShop"/>`shop_brand_group_mapping` AS `shbrgrma`
+                ON `shprbr`.`idx` = `shbrgrma`.`brand_idx`
+        JOIN
+            <include refid="databaseShop"/>`shop_brand_group` AS `shbrgr`
+                ON `shbrgrma`.`brand_group_idx` = `shbrgr`.`idx`
+                AND `shbrgr`.`type` = 0
+        ORDER BY
+            `shprbr`.`brand_name` ASC
+    </select>
+
+    <!-- 브랜드 그룹(초성) 목록 -->
+    <select id="getBrandGroupList" resultType="BrandDto">
+        SELECT
+            `shbrgr`.`idx`,
+            `shbrgr`.`brand_group_name`,
+            `shbrgr`.`type`,
+            `shbrgr`.`state`,
+            `shbrgr`.`reg_date`,
+            `shbrgr`.`reg_date_tz`
+        FROM
+            <include refid="databaseShop"/>shop_brand_group AS `shbrgr`
+        WHERE
+            `shbrgr`.`type` = 0
+        ORDER BY
+            ( CASE WHEN `shbrgr`.`brand_group_name` = '#' THEN 1 ELSE 0 END ),
+            `shbrgr`.`brand_group_name` ASC
+    </select>
+
+    <!-- 브랜드 검색 카운트 -->
+    <select id="getBrandSearchCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shprbr`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+        <include refid="brandSearchCondition"/>
+    </select>
+
+    <!-- 브랜드 검색 리스트 -->
+    <select id="getBrandSearchList" parameterType="SearchDto" resultType="BrandDto">
+        SELECT
+            `shprbr`.`idx`,
+            `shprbr`.`brand_name`
+        FROM <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+        <include refid="brandSearchCondition"/>
+        ORDER BY `shprbr`.`idx` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

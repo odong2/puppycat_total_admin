@@ -1,0 +1,413 @@
+<script th:fragment="importJsFragment">
+    var menu = {
+        cateRegist: function () {
+            js_popup('[[${SERVER.currentDomain}]]/menu/category/regist', 'category_regist', '1050', '350');
+        },
+        cateModify: function(idx) {
+            js_popup('[[${SERVER.currentDomain}]]/menu/category/modify/'+idx, 'category_modify', '1050', '350');
+        },
+        menuRegist: function (idx) {
+            js_popup('[[${SERVER.currentDomain}]]/menu/regist/'+idx, 'menu_regist', '1050', '450');
+        },
+        menuModify: function (idx) {
+            js_popup('[[${SERVER.currentDomain}]]/menu/modify/'+idx, 'menu_modify', '1050', '450');
+        },
+         cateRegistProc: function() {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+             if($("input:checkbox[name='state']:checked").val()== null) {
+                 formData.append("state", 0);
+             }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu/category',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        opener.location.reload();
+                        self.close();
+                        //location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        cateModifyProc: function(idx) {
+            var form = $("#modifyForm")[0];
+            var formData = new FormData(form);
+            formData.append("idx", idx);
+            if($("input:checkbox[name='state']:checked").val()== null) {
+                formData.append("state", 0);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        opener.location.reload();
+                        self.close();
+                        //location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        registProc: function(idx) {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+            formData.append("parent", idx);
+            if($("input:checkbox[name='state']:checked").val()== null) {
+                formData.append("state", 0);
+            }
+
+            if(registForm.state.checked == null) {
+                formData.append("state", 0);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        opener.location.reload();
+                        self.close();
+                        //location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        modifyProc: function(idx) {
+            var form = $("#modifyForm")[0];
+            var formData = new FormData(form);
+            formData.append("idx", idx);
+            if($("input:checkbox[name='state']:checked").val()== null) {
+                formData.append("state", 0);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        opener.location.reload();
+                        self.close();
+                        //location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        sortModifyProc: function(idx) {
+           var form = $("#modifySortForm_"+idx)[0];
+           var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu/sort',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PATCH',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        }
+    }
+
+    $(document).ready(function() {
+        $(".btn_menu_sort").on("click", function(e) {
+            let idx  = $(this).attr('data-idx'),
+                sort = $(this).attr('data-sort')
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/menu/swap/'+ idx + '/' + sort,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        });
+        /*
+        $(".btn_list_sort").on("click", function(e) {
+            var form = $("#modifySortForm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/api/menu/v1/sort',
+                method: 'PATCH',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        });
+        */
+
+        // 목록 드래그 기능
+        $.fn.sortTable = function(option){
+            // option
+            let options = $.extend({}, $.fn.sortTable.default, option);
+
+            return this.each(function(){
+                let $this = $(this)
+                    , $listNode = $this.find(".column")
+                    , $listButton = $this.find(".btn_Sortable a")
+                    , $etcNode = ( options.etcNode ) ? $this.find(options.etcNode) : null
+                    , value = options.value
+                    , resultPos = null
+                    , $test = $this.find(".test");
+
+                // 리스트별 idx 정렬
+                $listNode.each(function(i){
+                    $(this).attr({ value : i+1 });
+                });
+
+                $test.each(function(i){
+                    $(this).attr({ value : i+1 });
+                });
+
+                // 마우스 다운
+                $listButton.bind("mousedown", function(e){
+                    let that = this
+                        , downPosX = e.clientX
+                        , downPosY = e.clientY
+                        , thisDownPosY = downPosY - $this.offset().top
+                        , nodePosY = downPosY - $(this).closest(".column").offset().top
+                        , resetPosY = thisDownPosY - nodePosY
+                        , listPosSort = null
+                        , oldListPosSort = null;
+
+                    // 선택한 리스트 Css 및 Class 적용
+                    $(this).closest(".column").css({ position : "absolute", left : 0, top : resetPosY, zIndex : 100 }).addClass("column_active");
+
+                    // 선택된 노드 제외한 나머지 .column 리스트
+                    let $columns = $this.find(".column").not(".column_active");
+
+                    // 복사 엘리먼트 생성 및
+                    let $createList = createListCopy({ text : $(this).closest(".column").find(".btn_menu_modi").text() });
+                    $this.append( $createList );
+                    $createList.show();
+
+                    // 리스트별 사이 체크(Index)
+                    listPosSort = listScopePos({ posX : resetPosY });
+                    // 복사된 엘리먼트 이동
+                    $columns.eq(listPosSort).before( $createList );
+
+                    // 마우스 이동
+                    $(window).bind("mousemove", function(e){
+                        let movePosX = e.clientX
+                            , movePosY = e.clientY
+                            , thisMovePosY = movePosY - $this.offset().top;
+
+                        // 리스트 이동 영역 체크
+                        let allDragScope = allScope({ posY : thisMovePosY - nodePosY })
+                        if( allDragScope ){
+                            $(that).closest(".column").css({ top : thisMovePosY - nodePosY });
+
+                            // 리스트별 사이 체크(Index)
+                            listPosSort = listScopePos({ posX : thisMovePosY - nodePosY });
+
+                            // listPosSort Index가 변경될경우만 실행
+                            if( listPosSort != oldListPosSort ){
+                                if( listPosSort == $columns.length ){
+                                    $columns.eq($columns.length-1).after( $createList );
+                                } else {
+                                    $columns.eq(listPosSort).before( $createList );
+                                }
+                            }
+
+                            oldListPosSort = listPosSort;
+                        }
+                    });
+                    // 마우스 업
+                    $(window).bind("mouseup", function(){
+                        $(window).unbind("mousemove");
+                        $(this).unbind("mouseup");
+
+                        // 복사된 엘리먼트 삭제
+                        $createList.remove();
+
+                        // 노드 비활성화
+                        $(that).closest(".column").removeClass("column_active").removeAttr("style");
+
+                        // 변경된 노드 한번 실행
+                        if( listPosSort == $columns.length ){
+                            $columns.eq($columns.length-1).after( $(that).closest(".column") );
+                        } else {
+                            $columns.eq(listPosSort).before( $(that).closest(".column") );
+                        }
+
+                        // 기존 column으로 적용
+                        $listNode = $this.find(".column");
+                        $listButton = $listNode.find(".text");
+                        $test = $this.find(".test");
+
+                        // 리스트별 idx 정렬
+                        $listNode.each(function(i){
+                            $(this).attr({ value : i+1 });
+                        });
+
+                        $test.each(function(i){
+                            $(this).attr({ value : i+1 });
+                        });
+                    });
+
+                    return false;
+                });
+
+                // 전체 영역 범위
+                function allScope(m){
+                    let listHeight = $listNode.outerHeight()
+                        , scopePosY = (listHeight * $listNode.length) + (( $etcNode && $etcNode.length ) ? $etcNode.outerHeight() : 0)
+                        , totalPosY = scopePosY - $listNode.outerHeight();
+
+                    if( $etcNode && $etcNode.length ){
+                        resultPos = !(m.posY < $etcNode.outerHeight() || m.posY >= totalPosY);
+                    } else {
+                        resultPos = !(m.posY <= 0 || m.posY >= totalPosY);
+                    }
+
+                    return resultPos;
+                }
+
+                // 리스트와의 사이 영역
+                function listScopePos(m){
+                    let $columnList = $this.find(".column").not(".column_active")
+                        , columnHeight = $this.find(".column").outerHeight()
+                        , currentPosY = m.posX
+                        , listSortPos = null;
+
+                    for( let i=0; i<=$columnList.length; i++ ){
+                        if( $etcNode ){
+                            if( currentPosY > $etcNode.outerHeight()+((columnHeight*i)-(columnHeight/2)) && currentPosY <= $etcNode.outerHeight()+((columnHeight*i)+(columnHeight/2)) ){
+                                return listSortPos = i;
+                            }
+                        } else {
+                            if( currentPosY > (columnHeight*i)-(columnHeight/2) && currentPosY <= (columnHeight*i)+(columnHeight/2) ){
+                                return listSortPos = i;
+                            }
+                        }
+                    }
+                }
+
+                // 복사될 리스트 생성
+                function createListCopy(m){
+                    let listText = m.text;
+
+                    let columns = $("<div></div>").addClass("column column_disabled")
+                        .append(
+                            $("<div></div>").addClass("check")
+                                .append( $("<input />").attr({ type : "checkbox", name : "value" }).addClass("input_check") )
+                        )
+                        .append(
+                            $("<p></p>").addClass("text")
+                                .append( $("<a href='#'></a>").text(listText) )
+                        );
+
+                    return columns;
+                }
+            });
+        }
+        /*
+            === options ===
+            etcNode : "클래스 이름" ----- 이동할 순수영역을 제외한 필요없는 노드 클래스
+            value : "idx" ----- 정렬했을경우 추가할 index 목록
+        */
+        $.fn.sortTable.default = {
+            etcNode : null,
+            value : "value"
+        }
+        $("#js_sortTable .unit").sortTable({ etcNode : ".title", value : "value" });
+
+
+        // 스크롤 생성
+        let wrapWidth = $(".admin_wrap_inner")
+            , unitWidth = $(".unit").width() * $(".unit").length;
+        wrapWidth.css( "width" , unitWidth );
+        $(".unit").css("height", wrapWidth.outerHeight());
+    });
+
+</script>

@@ -1,0 +1,39 @@
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset,
+legend, textarea, p, blockquote, th, td, input, select, textarea, button {
+    margin: 0;
+    padding: 0;
+}
+
+input, select, textarea, button {
+    font-size: 100%;
+    vertical-align: middle;
+}
+
+/* 버튼 공통 */
+.btnType {padding:5px; color:#666; vertical-align:baseline; border:1px solid #ccc; background:#fff; cursor:pointer;}
+
+/* 관리자 메뉴 추가 기능 */
+.admin_userControll {margin:10px 10px 0; color:#666;}
+.admin_userControll input {margin:-4px 5px 0 0; vertical-align:middle;}
+.admin_userControll .btn {margin-left:10px;}
+.admin_userControll .btn2 {margin-left :600px;}
+.admin_wrap {border-left:1px solid #dbdbdb;}
+.admin_wrap_inner {zoom:1;}
+.admin_wrap_inner:after {content:""; display:block; clear:both;}
+.admin_wrap_inner .unit {position:relative; float:left; width:140px; margin-left:-1px; text-align:center; border-right:1px solid #eee;}
+.admin_wrap_inner .unit .title {min-height:55px; padding:11px 0 0; font-weight:600; font-size:13px; color:#333; border:1px solid #dbdbdb; border-top:2px solid #454854; border-right:none; background-color:#f5f5f5;}
+.admin_wrap_inner .unit .title button {margin:-3px 0 0px 5px; padding:4px 5px;}
+.admin_wrap_inner .unit .column {overflow:hidden; position:relative; width:139px; font-size:13px; color:#777; text-align:center; border:1px solid #eee; border-top:none; border-right:none; background:#fff; zoom:1;}
+.admin_wrap_inner .unit .column .check {position:absolute; left:10px; top:9px;}
+.admin_wrap_inner .unit .column .text {padding:0 33px 0 0; line-height:18px; text-align:left;}
+.admin_wrap_inner .unit .column .text a {display:block; overflow:hidden; padding:11px 0 10px 30px; color:#666; text-decoration:none; white-space:nowrap; text-overflow:ellipsis;}
+.admin_wrap_inner .unit .column .btn_Sortable {position:absolute; right:0; top:0; z-index:101;}
+.admin_wrap_inner .unit .column .btn_Sortable a {display:block; width:33px; height:39px;}
+.admin_wrap_inner .unit .column .btn_Sortable a span {position:absolute; left:9px; top:15px; width:15px; height:1px; background:#ccc;}
+.admin_wrap_inner .unit .column .btn_Sortable a span:before,
+.admin_wrap_inner .unit .column .btn_Sortable a span:after {content:""; position:absolute; left:0; width:15px; height:1px; background:#ccc;}
+.admin_wrap_inner .unit .column .btn_Sortable a span:before {top:4px;}
+.admin_wrap_inner .unit .column .btn_Sortable a span:after {top:8px;}
+.admin_wrap_inner .unit .column_active {border:1px solid #666; background:#f8f8f8;}
+.admin_wrap_inner .unit .column_disabled {display:none; opacity:0.6;}
+/*.admin_wrap_inner .unit .btn {width:49px; margin:10px; padding:5px 0; float:left;}*/

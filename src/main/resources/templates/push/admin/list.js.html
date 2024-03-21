@@ -1,0 +1,98 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        pushAdmin.list(page);
+    });
+
+    let pushAdmin = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/push/admin',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                cache: true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if (window.location.search !== "?" + $("#frm").serialize()) {
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        //조건 노출
+                        $('#alarmText').text("false 상태에서만 새로운 푸시 등록이 가능합니다::" + [[${workerState}]]);
+
+                        if (res.data.list.length > 0) {
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx.toLocaleString()}</td>
+                                    <td class="text-left">${el.typeTitle}</td>
+                                    <td class="text-left">${el.title}</td>
+                                    <td class="text-left">${el.body}</td>
+                                    <td class="text-center"><a href="${el.moveLink}">이동</a></td>
+                                    <td class="text-center"><img src="${el.img}" style="max-height:100px; max-width:200px"></td>
+                                    <td class="text-left">${el.adminId}</td>
+                                   <td class="text-center">${el.regDate}</td>
+                                 </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("follow", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="9" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },// 등록
+        regist: function () {
+            if ([[${workerState}]]) {
+                alert("진행중인 푸시가 있습니다 완료 후 새로운 푸시가 등록 가능합니다.");
+            } else {
+                location.href = '[[${SERVER.currentDomain}]]/push/admin/regist';
+            }
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/push/admin/list';
+        },
+        // 상세
+        view: function (url) {
+            location.href = '[[${SERVER.currentDomain}]]' + url;
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function (event) {
+        window.location = document.location.href;
+    });
+</script>

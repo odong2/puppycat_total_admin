@@ -1,0 +1,93 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let idx = "[[${dataSet.idx}]]";
+        restrain_modify.view(idx);
+    });
+
+    let text = {
+        stateNormal: "[[#{lang.restrain.member.state.normal}]]",        // 정상
+        stateReject: "[[#{lang.restrain.member.state.reject}]]",        // 반려
+        stateDelete: "[[#{lang.restrain.member.state.delete}]]",        // 삭제
+    }
+
+    let restrain_modify = {
+        view: function (idx) {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/restrain/member/view/' + idx,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                data: '',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        $("input[name=memberIdx]").val(res.data.restrain.memberIdx);
+                        $("input[name=startDate]").val(res.data.restrain.startDate);
+                        $("input[name=endDate]").val(res.data.restrain.endDate);
+                        $("input[name=reason]").val(res.data.restrain.restrainName);
+                        $("#reason").attr("disabled", "disabled");
+
+                        var typeIdx = res.data.restrain.typeIdx
+                        $('select[name="typeIdx"]').find('option[value=' + typeIdx + ']').attr("selected", true);
+
+                        var dateIdx = res.data.restrain.dateIdx
+                        $('select[name="dateIdx"]').find('option[value=' + dateIdx + ']').attr("selected", true);
+
+                        let state = res.data.restrain.state
+                        let stateOption = ``;
+                        if (state != 0) {
+                            stateOption += ` <input type="radio" class="btn-check" name="state" id="state1" value="1" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-primary" for="state1">${text.stateNormal}</label>`
+                        }
+                        if (state == 2) {
+                            stateOption += ` <input type="radio" class="btn-check" name="state" id="state3" value="3" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-warning" for="state3">${text.stateReject}</label>`
+                        }
+                        stateOption += `<input type="radio" class="btn-check" name="state" id="state0" value="0" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-danger" for="state0">${text.stateDelete}</label>`
+                        $("#stateRadio").append(stateOption);
+
+                        $("input:radio[name='state']:radio[value=" + state + "]").prop('checked', true);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        modify: function () {
+            var form = $("#modifyForm")[0];
+            var formData = new FormData(form);
+            let idx = "[[${dataSet.idx}]]";
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/restrain/member/' + idx,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        location.reload();
+                        alert(res.message);
+                        opener.location.reload();
+                        //self.close();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+</script>

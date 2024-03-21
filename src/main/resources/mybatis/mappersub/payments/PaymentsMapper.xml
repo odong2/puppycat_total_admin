@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.payments.PaymentsDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="commonColumns">
+        `shpa`.`idx`
+        , `shpa`.`order_id`
+        , `shpa`.`m_id`
+        , `shpa`.`type`
+        , `shpa`.`method`
+        , `shpa`.`status`
+        , `shpa`.`state`
+        , `shpa`.`total_amount`
+        , `shpa`.`balance_amount`
+        , CONVERT_TZ(`shpa`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- 결제 전체 수 -->
+    <select id="getTotalCount" resultType="Integer">
+        SELECT
+            count(`shpa`.`idx`)
+        FROM <include refid="databaseShop"/>`shop_payments` AS `shpa`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'idx'">
+                        AND `shpa`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'order_id'">
+                        AND `shpa`.`order_id` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'method'">
+                        AND `shpa`.`method` = #{searchWord}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `shpa`.`state` = #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                    AND (`shpa`.`reg_date` >= #{searchStartDate} AND `shpa`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+
+    </select>
+
+    <!-- 결제 목록 -->
+    <select id="getList" parameterType="paymentsDto" resultType="paymentsDto">
+        SELECT
+            <include refid="commonColumns"/>
+        FROM <include refid="databaseShop"/>`shop_payments` AS `shpa`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'idx'">
+                        AND `shpa`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'order_id'">
+                        AND `shpa`.`order_id` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'method'">
+                        AND `shpa`.`method` = #{searchWord}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `shpa`.`state` = #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                    AND (`shpa`.`reg_date` >= #{searchStartDate} AND `shpa`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+        ORDER BY  `shpa`.`idx` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

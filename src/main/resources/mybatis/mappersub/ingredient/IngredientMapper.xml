@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.ingredient.IngredientDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="ingredientColumns">
+    </sql>
+
+    <!-- 단위 조회 -->
+    <select id="getUnitList" resultType="AllergyDto">
+        SELECT
+            `shinun`.`idx`
+            , `shinun`.`unit`
+            , `shinun`.`state`
+            , IFNULL(CONVERT_TZ(`shinun`.`modi_date`, 'UTC', '${convertTZ}'), NULL)
+            , IFNULL(CONVERT_TZ(`shinun`.`reg_date`, 'UTC', '${convertTZ}'), NULL)
+        FROM <include refid="databaseShop"/>`shop_ingredient_unit` AS `shinun`
+        <where>
+            `shinun`.`state` = 1
+        </where>
+    </select>
+</mapper>

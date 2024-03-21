@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.product.ProductMpDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="commonColumns">
+        `shpr`.`idx`
+        , `shpr`.`brand_idx`
+        , `shpr`.`product_name`
+        , `shpr`.`certification_type`
+        , `shpr`.`volume`
+        , `shpr`.`volume_unit`
+        , `shpr`.`standard`
+        , `shpr`.`standard_unit`
+        , `shpr`.`state`
+        , CONVERT_TZ(`shpr`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        , IFNULL(`shprpr`.`price`, 0) AS `price`
+        , `shprde`.`detail`
+        , `shprbr`.`brand_name`
+    </sql>
+
+    <!-- MP 상품 전체 수 -->
+    <select id="getTotalCount" resultType="Integer">
+        SELECT
+            count(`shpr`.`idx`)
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'idx'">
+                        AND `shpr`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `shpr`.`product_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `shpr`.`state` = #{state}
+            </if>
+        </where>
+
+    </select>
+
+    <!-- MP 상품 목록 -->
+    <select id="getList" resultMap="getList_rm">
+        SELECT
+            <include refid="commonColumns"/>
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_price` AS `shprpr`
+            ON `shpr`.`idx` = `shprpr`.`product_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_detail` AS `shprde`
+            ON `shpr`.`idx` = `shprde`.`product_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+            ON `shpr`.`brand_idx` = `shprbr`.idx
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'idx'">
+                        AND `shpr`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `shpr`.`product_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `shpr`.`state` = #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                    AND (`shpr`.`reg_date` >= #{searchStartDate} AND `shpr`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+        ORDER BY  `shpr`.`idx` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- MP 상품 목록 resultMap -->
+    <resultMap id="getList_rm" type="ProductDto">
+        <id property="idx" column="idx" />
+
+        <result property="brandIdx" column="brand_idx" />
+        <result property="productName" column="product_name" />
+        <result property="certificationType" column="certification_type" />
+        <result property="volume" column="volume" />
+        <result property="volumeUnit" column="volume_unit" />
+        <result property="standard" column="standard" />
+        <result property="standardUnit" column="standard_unit" />
+        <result property="state" column="state" />
+        <result property="regDate" column="reg_date" />
+        <result property="price" column="price" />
+        <result property="detail" column="detail" />
+        <result property="brandName" column="brand_name" />
+        <result property="brandGroupIdx" column="brand_group_idx" />
+
+        <!-- category List -->
+        <collection property="categoryList" column="idx" javaType="java.util.ArrayList" ofType="" select="getCategoryList" />
+
+        <!-- thumbnail image List -->
+        <collection property="thumbnailList" column="idx" javaType="java.util.ArrayList" ofType="" select="getThumbImage" />
+    </resultMap>
+
+
+
+    <!-- MP 상품 상세 -->
+    <select id="getProductMp" resultMap="getProductMp_rm">
+        SELECT
+            <include refid="commonColumns"/>
+            , `shbrgrma`.`brand_group_idx`
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_price` AS `shprpr`
+            ON `shpr`.`idx` = `shprpr`.`product_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_detail` AS `shprde`
+            ON `shpr`.`idx` = `shprde`.`product_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+            ON `shpr`.`brand_idx` = `shprbr`.idx
+        LEFT JOIN <include refid="databaseShop"/>`shop_brand_group_mapping` AS `shbrgrma`
+            ON `shprbr`.`idx` = `shbrgrma`.`brand_idx`
+        <where>
+            `shpr`.idx = #{idx}
+        </where>
+    </select>
+
+    <!-- MP 상품 상세 resultMap -->
+    <resultMap id="getProductMp_rm" type="ProductDto">
+        <id property="idx" column="idx" />
+
+        <result property="brandIdx" column="brand_idx" />
+        <result property="productName" column="product_name" />
+        <result property="certificationType" column="certification_type" />
+        <result property="volume" column="volume" />
+        <result property="volumeUnit" column="volume_unit" />
+        <result property="standard" column="standard" />
+        <result property="standardUnit" column="standard_unit" />
+        <result property="state" column="state" />
+        <result property="regDate" column="reg_date" />
+        <result property="price" column="price" />
+        <result property="detail" column="detail" />
+        <result property="brandName" column="brand_name" />
+        <result property="brandGroupIdx" column="brand_group_idx" />
+
+        <!-- category List -->
+        <collection property="categoryList" column="idx" javaType="java.util.ArrayList" ofType="" select="getCategoryList" />
+
+        <!-- thumbnail image List -->
+        <collection property="thumbnailList" column="idx" javaType="java.util.ArrayList" ofType="" select="getThumbImage" />
+
+        <!-- certification List -->
+        <collection property="certificationList" column="idx" javaType="java.util.ArrayList" ofType="" select="getCertification" />
+
+        <!-- attribute List -->
+        <collection property="attributeList" column="idx" javaType="java.util.ArrayList" ofType="" select="getAttribute" />
+
+        <!-- ingredient List -->
+        <collection property="ingredientList" column="idx" javaType="java.util.ArrayList" ofType="" select="getIngredient" />
+
+        <!-- health List -->
+        <collection property="healthList" column="idx" javaType="java.util.ArrayList" ofType="" select="getHealth" />
+    </resultMap>
+
+
+    <!-- 카테고리 목록 -->
+    <select id="getCategoryList" parameterType="hashmap" resultType="CategoryDto">
+        SELECT
+        `shprcama`.`idx` AS `category_mapping_idx`
+        , `shprcama`.`product_idx`
+        , `shprcama`.`group_num`
+        , `shprcama`.`main`
+        , `shprcama`.`state`
+        , CONVERT_TZ(`shprcama`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        , `shprca`.`idx`
+        , `shprca`.`parent`
+        , `shprca`.`depth`
+        , `shprca`.`code`
+        , `shprca`.`category`
+        , `shprca`.`sort`
+        FROM <include refid="databaseShop"/>`shop_product_category_mapping` AS `shprcama`
+        JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+        ON `shprcama`.`category_idx` = `shprca`.`idx`
+        <where>
+            `shprcama`.`product_idx` = #{idx}
+            AND `shprcama`.`state` = 1
+        </where>
+        ORDER BY
+        `shprcama`.`group_num` ASC, `shprca`.`depth` ASC
+    </select>
+
+    <!-- 썸네일 목록 -->
+    <select id="getThumbImage" parameterType="Integer" resultType="ProductImgDto">
+        SELECT
+        `shprthim`.`idx`
+        , `shprthim`.`product_idx`
+        , `shprthim`.`url`
+        , `shprthim`.`upload_name`
+        , `shprthim`.`upload_path`
+        , `shprthim`.`img_width`
+        , `shprthim`.`img_height`
+        , `shprthim`.`type`
+        , `shprthim`.`sort`
+        , `shprthim`.`state`
+        , CONVERT_TZ(`shprthim`.`modi_date`, 'UTC', '${convertTZ}') AS `modi_date`
+        , CONVERT_TZ(`shprthim`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_thumb_img` AS `shprthim`
+        <where>
+            `shprthim`.`product_idx` = #{idx}
+            AND `shprthim`.`state` = 1
+        </where>
+        ORDER BY `shprthim`.`sort` ASC
+    </select>
+
+    <!-- 인증유형 List -->
+    <select id="getCertification" parameterType="Integer" resultType="CertificationDto">
+        SELECT
+            `shprcema`.`idx`
+             , `shprcema`.`product_idx`
+             , `shprcema`.`certification_idx`
+             , `shprcema`.`certification_num`
+             , `shprcema`.`state`
+             , CONVERT_TZ(`shprcema`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_certification_mapping` AS `shprcema`
+        <where>
+                `shprcema`.`product_idx` = #{idx}
+            AND `shprcema`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 상품정보 제공고시 List -->
+    <select id="getAttribute" parameterType="Integer" resultType="AttributeSetDto">
+        SELECT
+            `shpratma`.`idx` AS `attribute_mapping_idx`
+             , `shpratma`.`attribute_set_idx` AS `idx`
+             , `shpratma`.`attribute_name_idx` AS `attribute_idx`
+             , `shpratma`.`attribute_value`
+             , `shpratma`.`state`
+             , CONVERT_TZ(`shpratma`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_attribute_mapping` AS `shpratma`
+        <where>
+                `shpratma`.`product_idx` = #{idx}
+            AND `shpratma`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 구성성분(알러지) List -->
+    <select id="getIngredient" parameterType="Integer" resultType="AllergyDto">
+        SELECT
+            `shprinma`.`idx`
+             , `shprinma`.`product_idx`
+             , `shprinma`.`ingredient_idx` AS `allergy_type_idx`
+             , `shprinma`.`unit_idx`
+             , `shprinma`.`value` AS `ingredient_value`
+             , `shprinma`.`ratio`
+             , `shprinma`.`state`
+             , CONVERT_TZ(`shprinma`.`modi_date`, 'UTC', '${convertTZ}') AS `modi_date`
+             , CONVERT_TZ(`shprinma`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_ingredient_mapping` AS `shprinma`
+        <where>
+                `shprinma`.`product_idx` = #{idx}
+            AND `shprinma`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 건강질환 List -->
+    <select id="getHealth" parameterType="Integer" resultType="HealthDto">
+        SELECT
+            `shprhema`.`idx`
+             , `shprhema`.`product_idx`
+             , `shprhema`.`health_idx` as `health_type_idx`
+             , `shprhema`.`state`
+             , CONVERT_TZ(`shprhema`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_health_mapping` AS `shprhema`
+        <where>
+                `shprhema`.`product_idx` = #{idx}
+            AND `shprhema`.`state` = 1
+        </where>
+    </select>
+
+</mapper>

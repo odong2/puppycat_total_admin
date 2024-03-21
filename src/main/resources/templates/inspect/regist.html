@@ -1,0 +1,64 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.inspect.regist.title}"></h5>
+            </div>
+            <div class="card-body row">
+                <form id="frm" onsubmit="return false;" accept-charset="utf-8">
+                    <!-- 기본 정보 -->
+                    <div id="lay_information">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width: 20%;">
+                            </colgroup>
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="2" th:text="#{lang.inspect.information}"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th class="text-center"><label th:text="#{lang.inspect.type}"></label></th>
+                                <td class="p-0 pl-1">
+                                    <input type="checkbox" name="chk_type" id="type_all" value="all">
+                                    <label for="type_all" class="form-label" th:text="#{lang.inspect.text.all}"></label>
+                                    <input type="checkbox" name="chk_type" id="type_sns" value="sns">
+                                    <label for="type_sns" class="form-label" th:text="#{lang.inspect.text.sns}"></label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-center"><label for="startDate" th:text="#{lang.inspect.start.date}"></label></th>
+                                <td class="p-0 pl-1">
+                                    <input class="datetimepicker form-control form-control-sm ml-1" name="startDate" id="startDate" autocomplete="off">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-center"><label for="endDate" th:text="#{lang.inspect.end.date}"></label></th>
+                                <td class="p-0 pl-1">
+                                    <input class="datetimepicker form-control form-control-sm ml-1" name="endDate" id="endDate" autocomplete="off">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-center" th:text="#{lang.inspect.message}"></th>
+                                <td class="p-0 pl-2 py-1">
+                                    <textarea class="w-100 p-1 rounded-1 mt-2" maxlength="1000" rows="6" name="message" id="message"></textarea>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- //기본 정보 -->
+                    <div class="form-group row" id="btnGroup">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="inspect.list();" th:text="#{lang.faq.button.list}"></button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="inspect.regist();" th:text="#{lang.faq.button.regist}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

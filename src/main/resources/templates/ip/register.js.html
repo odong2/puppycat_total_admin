@@ -1,0 +1,41 @@
+<script th:fragment="importJsFragment">
+
+    let adminIp = {
+        // 허용 IP 등록
+        register: function () {
+
+            let form = $("#registerForm")[0];
+            let formData = new FormData(form);
+            if ($("input:checkbox[name='state']:checked").val() == null) {
+                formData.append("state", 2);
+            }
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/ip',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        opener.location.reload();
+                        self.close();
+                    } else {
+                        // 등록 실패
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    // filter error
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        }
+    }
+</script>

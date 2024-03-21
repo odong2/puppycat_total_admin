@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.faq.FaqDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="faqColumns">
+        `pubofa`.`idx`
+        ,`pubofa`.`menu_idx`
+        ,IFNULL(`pubofamena`.`name`,`pubofame`.`name`) AS `menu_name`
+        ,IFNULL(`pubofati`.`title`,`pubofa`.`title`) AS `title`
+        ,`pubofaco`.`contents`
+        ,`pubofa`.`admin_id`
+        ,`pubofa`.`state`
+        ,CONVERT_TZ(`pubofa`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- FAQ 목록 -->
+    <select id="getFaqList" parameterType="SearchDto" resultType="FaqDto">
+        SELECT
+            <include refid="faqColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_faq` AS `pubofa`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu` AS `pubofame`
+            ON `pubofa`.`menu_idx` = `pubofame`.`idx`
+            AND `pubofame`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu_name` AS `pubofamena`
+            ON `pubofame`.`idx` = `pubofamena`.`menu_idx`
+            AND `pubofamena`.`lang` = 'ko'
+            AND  `pubofamena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_title` AS `pubofati`
+            ON `pubofa`.`idx` = `pubofati`.`faq_idx`
+            AND `pubofati`.`state` = 1
+            AND `pubofati`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_contents` AS `pubofaco`
+            ON `pubofa`.`idx` = `pubofaco`.`faq_idx`
+            AND `pubofaco`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubofati`.`title`,`pubofa`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubofaco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubofa`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubofa`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY  `pubofa`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pubofa`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_faq` AS `pubofa`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu` AS `pubofame`
+            ON `pubofa`.`menu_idx` = `pubofame`.`idx`
+            AND `pubofame`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu_name` AS `pubofamena`
+            ON `pubofame`.`idx` = `pubofamena`.`menu_idx`
+            AND `pubofamena`.`lang` = 'ko'
+            AND  `pubofamena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_title` AS `pubofati`
+            ON `pubofa`.`idx` = `pubofati`.`faq_idx`
+            AND `pubofati`.`state` = 1
+            AND `pubofati`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_contents` AS `pubofaco`
+            ON `pubofa`.`idx` = `pubofaco`.`faq_idx`
+            AND `pubofaco`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubofati`.`title`,`pubofa`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubofaco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubofa`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubofa`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- FAQ 상세 -->
+    <select id="getViewFaq" parameterType="_int" resultType="FaqDto">
+        SELECT
+            <include refid="faqColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_faq` AS `pubofa`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu` AS `pubofame`
+            ON `pubofa`.`menu_idx` = `pubofame`.`idx`
+            AND `pubofame`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_menu_name` AS `pubofamena`
+            ON `pubofame`.`idx` = `pubofamena`.`menu_idx`
+            AND `pubofamena`.`lang` = 'ko'
+            AND  `pubofamena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_faq_title` AS `pubofati`
+            ON `pubofa`.`idx` = `pubofati`.`faq_idx`
+            AND `pubofati`.`state` = 1
+            AND `pubofati`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_faq_contents` AS `pubofaco`
+            ON `pubofa`.`idx` = `pubofaco`.`faq_idx`
+            AND `pubofaco`.`lang` = 'ko'
+        WHERE
+            `pubofa`.`idx` = #{idx}
+    </select>
+
+    <!-- FAQ 메뉴 리스트 가져오기 -->
+    <select id="getMenuList" parameterType="FaqDto" resultType="FaqDto">
+        SELECT
+            `pubofame`.`idx`
+            ,IFNULL(`pubofamena`.`name`,`pubofame`.`name`) AS `menu_name`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_faq_menu`AS `pubofame`
+        LEFT JOIN  <include refid="databaseCommon"/>`puppycat_board_faq_menu_name` AS `pubofamena`
+            ON `pubofame`.`idx` = `pubofamena`.`menu_idx`
+            AND `pubofamena`.`lang` = 'ko'
+            AND  `pubofamena`.`state` = 1
+        WHERE `pubofame`.`state` = '1'
+        ORDER BY `pubofame`.`idx` ASC
+    </select>
+</mapper>

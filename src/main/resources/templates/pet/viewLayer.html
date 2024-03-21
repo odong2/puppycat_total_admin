@@ -1,0 +1,13 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.pet.view}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="viewLayer">
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="pet.cancel();" th:text="#{lang.member.button.cancel}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

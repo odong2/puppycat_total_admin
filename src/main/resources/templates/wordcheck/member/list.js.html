@@ -1,0 +1,220 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        wordcheck_member.list(page);
+    });
+
+    let text = {
+        delWordButton: "[[#{lang.wordcheck.button.delete}]]",               // 삭제
+        canDelWordButton: "[[#{lang.wordcheck.button.restoration}]]",       // 복구
+        delWordConfirm: "[[#{lang.wordcheck.confirm.delete}]]",             // 해당 금칙어를 삭제 하시겠습니까?
+        canDelWordConfirm: "[[#{lang.wordcheck.confirm.cancelDelete}]]",    // 해당 금칙어를 다시 적용 하시겠습니까?
+    }
+
+    let wordcheck_member = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/word-check/member/list',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${listNum.toLocaleString()}</td>
+                                    <td class="text-center">${el.word}</td>
+                                    <td class="text-center">${el.changeWord}</td>
+                                    <td class="text-center">${el.typeText}</td>
+                                    <td class="text-center">${el.memo}</td>
+                                    <td class="text-center">${el.adminId}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center">${el.regDate}</td>`
+                                if(el.state == 1){
+                                listTbody +=`
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger" onclick="wordcheck_member.delete(${el.idx})">${text.delWordButton}</button></td>
+                                </tr> `;
+                                }else{
+                                    listTbody +=`
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-warning" onclick="wordcheck_member.deleteCancel(${el.idx})">${text.canDelWordButton}</button></td>
+                                </tr> `;
+                                }
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("wordcheck_member", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="8" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 삭제
+        delete: function (idx) {
+            let formData = new FormData();
+            formData.set("idx", idx);
+
+            if (confirm(text.delWordConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/member/word-check',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'DELETE',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            wordcheck_member.list();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 삭제 취소
+        deleteCancel: function (idx) {
+            let formData = new FormData();
+            formData.set("idx", idx);
+
+            if (confirm(text.canDelWordConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/member/word-check',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/word-check/member/list';
+        },
+        // 회원 제재 모달창 노출
+        layer:function(memberIdx){
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/word-check/member/layer");
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        regist: function() {
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+            formData.append("memberIdx", '[[${idx}]]');
+
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/member/word-check',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        wordcheck_member.cancel();
+                        location.reload();
+                        toast.alert(res.message);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/word-check/member/excel?'+$("#frm").serialize();
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

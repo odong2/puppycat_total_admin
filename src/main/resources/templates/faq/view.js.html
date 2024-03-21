@@ -1,0 +1,112 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        $(document).ready(function () {
+            // ckeditor
+            if ($("#contents").length > 0) {
+                ClassicEditor
+                    .create(document.querySelector("#contents"), {
+                        language: "ko",
+                        simpleUpload: {
+                            uploadUrl: "[[${SERVER.currentDomain}]]/v1/faq/tempImage",
+                            withCredentials: true,
+                        },
+                    })
+                    .then(newEditor => {
+                        editor = newEditor;
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+        });
+        // 상세 정보
+        faq.view();
+    });
+
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+
+    let faq = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/faq/list?" + qStr;
+        },
+        view: function () {
+            // 상세 정보
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/faq/view/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //  제목
+                        $("input[name=title]").val(res.data.faq.title);
+                        // 상태
+                        $("input[name=state]").radioSelect(res.data.faq.state);
+                        // 공지종류
+                        $("#menuIdx").val(res.data.faq.menuIdx).prop("selected", true);
+                        // 이벤트 내용
+                        editor.setData(res.data.faq.contents);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                        location.href = "[[${SERVER.currentDomain}]]/faq/list";
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        modify: function () {
+            formData = new FormData(form);
+            formData.set("contents", editor.getData());
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/faq/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'PUT',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        }
+    }
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function (val) {
+        this.each(function () {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+
+</script>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.pet.PetAllergyDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 전체 카운트 -->
+    <select id="getAllergyTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pupealty`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseMember"/>`puppycat_pet_allergy_type` AS `pupealty`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_allergy_type_name` AS `pupealtyna`
+            ON `pupealty`.`idx` = `pupealtyna`.`allergy_type_idx`
+            AND `pupealtyna`.`state` = 1
+            AND `pupealtyna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'allergy'">
+                        AND IFNULL(`pupealtyna`.`name`,`pupealty`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `pupealty`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 알러지 리스트 -->
+    <select id="getAllergyList" parameterType="SearchDto" resultType="AllergyDto">
+        SELECT
+            `pupealty`.`idx`
+            , IFNULL(`pupealtyna`.`name`,`pupealty`.`name`) AS `allergy`
+            ,`pupealty`.`sort`
+            ,`pupealty`.`state`
+            , CONVERT_TZ(`pupealty`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_allergy_type` AS `pupealty`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_allergy_type_name` AS `pupealtyna`
+            ON `pupealty`.`idx` = `pupealtyna`.`allergy_type_idx`
+            AND `pupealtyna`.`state` = 1
+            AND `pupealtyna`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'allergy'">
+                        AND IFNULL(`pupealtyna`.`name`,`pupealty`.`name`) LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="state != null">
+                AND `pupealty`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY `pupealty`.`state` DESC, `pupealty`.`sort` is null ASC, `pupealty`.`sort` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 알러지 조회 -->
+    <select id="getAllergyInfo" parameterType="long"  resultType="AllergyDto">
+        SELECT
+            `pupealty`.`idx`
+            , IFNULL(`pupealtyna`.`name`,`pupealty`.`name`) AS `allergy`
+            ,`pupealty`.`sort`
+            ,`pupealty`.`state`
+            , CONVERT_TZ(`pupealty`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_allergy_type` AS `pupealty`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_allergy_type_name` AS `pupealtyna`
+            ON `pupealty`.`idx` = `pupealtyna`.`allergy_type_idx`
+            AND `pupealtyna`.`state` = 1
+            AND `pupealtyna`.`lang` = 'ko'
+        WHERE
+            `pupealty`.`idx` = #{idx}
+    </select>
+
+    <!-- 알러지 전체 리스트 조회 -->
+    <select id="getAllAllergyList" resultType="AllergyDto">
+        SELECT
+            `pupealty`.`idx`
+            , IFNULL(`pupealtyna`.`name`,`pupealty`.`name`) AS `allergy`
+            ,`pupealty`.`sort`
+            ,`pupealty`.`state`
+            , CONVERT_TZ(`pupealty`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_pet_allergy_type` AS `pupealty`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_pet_allergy_type_name` AS `pupealtyna`
+            ON `pupealty`.`idx` = `pupealtyna`.`allergy_type_idx`
+            AND `pupealtyna`.`state` = 1
+            AND `pupealtyna`.`lang` = 'ko'
+    </select>
+
+
+</mapper>

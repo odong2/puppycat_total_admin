@@ -1,0 +1,30 @@
+<div th:fragment="layerFragment" class="modal-content">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title" th:text="#{lang.contents.image.add}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body" id="contentsImageLayer">
+        <div class="col-md-12">
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.contents.image.attach}"></label>
+                <div class="col-md-8 col-sm-9 pt-1">
+                    <label class="py-1 px-3 rounded-2">
+                        <input type="file" name="fileData" multiple="" accept="image/jpg,image/jpeg,image/png" onchange="contentsImage.imageChange();" th:text="#{lang.contents.image.file}">
+                    </label>
+                </div>
+            </div>
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.contents.image.preview}"></label>
+                <div class="col-md-8 pt-2" id="preview">
+                    <span th:text="#{lang.contents.placeholder.file.no}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="contentsImage.cancel();" th:text="#{lang.contents.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="contentsImage.add();" th:text="#{lang.contents.button.regist}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

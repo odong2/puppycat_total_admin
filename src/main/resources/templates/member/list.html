@@ -1,0 +1,120 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.member.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="member.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 날짜 검색 -->
+                                            <select name="searchDateType" class="form-select form-select-sm col-4">
+                                                <option value=""  th:text="#{lang.member.date}"></option>
+                                                <option value="regDate" th:text="#{lang.member.regDate}" th:selected="${search.searchDateType} == 'regDate'"></option>
+                                                <option value="lastLogin" th:text="#{lang.member.lastLogin}" th:selected="${search.searchDateType} == 'lastLogin'"></option>
+                                            </select>
+                                            <input type="date" class="form-control form-control-sm ml-1" name="searchStartDate" th:value="${param.searchStartDate}" style='width:100px;'>
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input type="date" class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}" style='width:100px;'>
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <!-- 아이디/닉네임 -->
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.member.search}" ></option>
+                                                <option th:value="id" th:text="#{lang.member.id}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="nick" th:text="#{lang.member.nick}" th:selected="${search.searchType} == 'nick'"></option>
+                                                <option th:value="name" th:text="#{lang.member.name}" th:selected="${search.searchType} == 'name'"></option>
+                                                <option th:value="phone" th:text="#{lang.member.phone}" th:selected="${search.searchType} == 'phone'"></option>
+                                                <option th:value="joinIp" th:text="#{lang.member.joinIp}" th:selected="${search.searchType} == 'joinIp'"></option>
+                                                <option th:value="loginIp" th:text="#{lang.member.loginIp}" th:selected="${search.searchType} == 'loginIp'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.member.placeholder.search.word}" style="width:30%;">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <!-- 계정 상태 -->
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <select name="isDel" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.member.state}"></option>
+                                                <option value="0" th:text="#{lang.member.state.normal}" th:selected="${search.isDel} == '0'"></option>
+                                                <option value="1" th:text="#{lang.member.state.out.wait}" th:selected="${search.isDel} == '1'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 보기 -->
+                                            <select name="recordSize" class="form-select form-select-sm">
+                                                <option value="10" th:text="#{lang.common.view.ten}" th:selected="${search.recordSize} == 10"></option>
+                                                <option value="30" th:text="#{lang.common.view.thirty}" th:selected="${search.recordSize} == 30"></option>
+                                                <option value="50" th:text="#{lang.common.view.fifty}" th:selected="${search.recordSize} == 50"></option>
+                                                <option value="100" th:text="#{lang.common.view.hundred}" th:selected="${search.recordSize} == 100"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.member.button.search}" onclick="member.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="member.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <button type="button" id="btnRegist" onclick="member.excel();" class="btn btn-sm btn-primary" th:text="#{lang.member.button.excel}"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.member.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.member.idx}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.state}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.member.simplejoin}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.id}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.nick}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.name}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.member.gender}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.phone}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.birth}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.regDate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.lastLogin}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

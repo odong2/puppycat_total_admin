@@ -1,0 +1,48 @@
+<script th:fragment="importJsFragment">
+
+    let productMp = {
+        bulk: function () {
+
+            if (confirm("[[#{lang.product.confirm.register}]]")) {
+                if (!$("input[name=productMpFile]").val()) {
+                    toast.alert("[[#{lang.product.exception.file.no}]]");
+
+                    return false;
+                }
+
+
+                let form = $("#frm")[0];
+                let formData = new FormData(form);
+
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/product/mp/bulk',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'POST',
+                    enctype: 'multipart/form-data',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+
+                            // 상세 페이지 이동
+                            // location.reload();
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        }
+    }
+
+</script>

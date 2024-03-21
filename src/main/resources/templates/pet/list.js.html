@@ -1,0 +1,302 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        pet.list(page);
+    });
+
+    let text = {
+        viewBtn : "[[#{lang.pet.button.view}]]",                 // 보기 버튼
+        imageTitle : "[[#{lang.pet.image}]]",                    // 이미지
+        genderTitle : "[[#{lang.pet.gender}]]",                  // 성별
+        typeTitle : "[[#{lang.pet.type}]]",                      // 유형
+        breedTitle : "[[#{lang.pet.breed}]]",                    // 품종
+        regDateTitle : "[[#{lang.pet.regdate}]]",                // 등록일
+        nameTitle : "[[#{lang.pet.name}]]",                      // 이름
+        allergyTitle : "[[#{lang.pet.allergy}]]",                // 알러지
+        healthTitle : "[[#{lang.pet.health}]]",                  // 건강 정보
+        weightTitle : "[[#{lang.pet.weight}]]",                  // 체중
+        stateTitle : "[[#{lang.pet.state}]]",                    // 상태
+        breedEtcTitle : "[[#{lang.pet.breed.etc}]]",             // 기타 품종
+        personalityTitle : "[[#{lang.pet.personality}]]",        // 성격
+        personalityEtcTitle : "[[#{lang.pet.personality.etc}]]", // 기타 성격
+        sizeTitle : "[[#{lang.pet.size}]]",                      // 크기
+        birthTitle : "[[#{lang.pet.birth}]]",                    // 생년월일
+        numberTitle : "[[#{lang.pet.number}]]",                  // 등록 번호
+    }
+
+    let pet = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/pet/list',
+                cache: true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if (window.location.search !== "?" + $("#frm").serialize()) {
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx.toLocaleString()}</td>
+                                    <td class="text-center">${el.name}</td>
+                                    <td class="text-center">${el.typeName}</td>
+                                    <td class="text-center">${el.genderText}</td>
+                                    <td class="text-center">${el.breedName}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="member.view(${el.memberUuid});">${el.memberId}</a></td>
+                                    <td class="text-center">${el.memberNick}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>>
+                                    <td class="text-center">${el.regDate}</td>
+                                    <td class="text-center"><button type="button" id="viewBtn" onclick="pet.layer(${el.idx}, ${el.memberIdx});" class="btn btn-sm btn-primary">${text.viewBtn}</button></td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("pet", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="10" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 반려동물 상세
+        layer: function (idx, memberIdx) {
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/pet/view-layer", () => {
+                pet.view(idx, memberIdx);
+            });
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/pet/list';
+        },
+        cancel: function () {
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/pet/excel?' + $("#frm").serialize();
+        },
+        // 반려동물 상세 보기
+        view: function (idx, memberIdx) {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/pet/' + idx + '/members/' + memberIdx,
+                cache: true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.data.list.length > 0) {
+                            // list
+                            let modalBody = "";
+                            $.each(res.data.list, function (index, el) {
+                                modalBody += `
+                                <div class="col-md-12">
+                                    <div class="row border-bottom pb-3 pt-2">
+                                        <label class="col-md-4 mt-4 pt-2 text-center font-weight-bold">${text.imageTitle}</label>
+                                        <div class="col-md-8 col-sm-9 pt-1">
+                                              <img src="${el.url || "/images/puppy.png"}" onclick="pet.imageClick('${el.originUrl}',${el.imgWidth},${el.imgHeight})" style="max-height:100px; max-width:150px; cursor:pointer"/>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.nameTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.name}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.typeTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.typeName}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.birthTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.birth}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.numberTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.number}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.genderTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.genderText}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.breedTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.breedName || '-'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.breedEtcTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.breedNameEtc || '-'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.weightTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${Math.floor(el.weight).toFixed(2)}kg</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.sizeTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.sizeText}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.personalityTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.personality || '-'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.personalityEtcTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.personalityEtc || '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>`;
+                                let allergy = "";
+                                let health = "";
+                                // 알러지 리스트 set
+                                if (el.allergyList.length > 1) {
+                                    $.each(el.allergyList, function (index, al) {
+                                        allergy += `${al},`
+                                    });
+                                    let index = allergy.lastIndexOf(",");
+                                    allergy = allergy.substring(0, index);
+                                }
+                                // 건강 리스트 set
+                                if (el.healthList.length > 1) {
+                                    $.each(el.healthList, function (index, hl) {
+                                        health += `${hl},`
+                                    });
+                                    let index = health.lastIndexOf(",");
+                                    health = health.substring(0, index);
+                                }
+
+                                modalBody += `
+                                   <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.allergyTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${allergy || "-"}</span>
+                                        </div>
+                                    </div>
+                                   <div class="row border-bottom pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.healthTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${health || "-"}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row pb-2 pt-1">
+                                        <label class="col-md-4 pt-2 text-center font-weight-bold">${text.regDateTitle}</label>
+                                        <div class="col-md-8 pt-2">
+                                            <span>${el.regDate}</span>
+                                        </div>
+                                    </div>
+                                </div>`
+                            });
+                            $("#viewLayer").html(modalBody);
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 이미지 확대
+        imageClick: function (originUrl, imgWidth, imgHeight) {
+            if (originUrl == "undefined" || originUrl == null || originUrl == "") {
+                window.open("/images/puppy.png");
+
+            } else {
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/pet/image?originUrl=' + originUrl + "&imgWidth=" + imgWidth + "&imgHeight=" + imgHeight,
+                    cache: true,
+                    method: 'GET',
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            window.open(res.data.imgUrl);
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+    }
+
+    let member = {
+        // 상세
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/members/view/' + idx;
+        }
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function (event) {
+        window.location = document.location.href;
+    });
+</script>

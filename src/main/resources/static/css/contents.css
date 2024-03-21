@@ -1,0 +1,138 @@
+/***********************************************
+* 카테고리
+***********************************************/
+
+
+/***********************************************
+* 브랜드
+***********************************************/
+
+form .table-header{background-color:#f6f6f6}
+.btn_minus{display: inline-block; vertical-align: middle; padding: 8px; border-radius: 50%; border: 0; background: #919191 url("../images/icon_minus.png") no-repeat center; cursor: pointer; line-height: 0;}
+.fncut_info{min-width: 65px; text-align: center; display: inline-block; box-sizing: border-box; vertical-align: top; line-height: 2.0; float: left; width: 80px; border: 1px solid #ced4da; padding: 3px 0 2px;}
+.current_cnt{font-weight: 600; color: #4472c4;}
+
+/* category */
+#lay_category_select > table > tbody > tr > td > select{height:142px;}
+#lay_brand_select > table > tbody > tr > td > select{height:142px;}
+
+/* information */
+#lay_information > table > tbody > tr > td >div[name=detail]{border:1px solid #ddd; width: 300px; overflow: hidden;}
+#lay_information > table > tbody > tr > td >div[name=detail] img{width: 100%; height: 100%; object-fit: cover;}
+
+/* options */
+#options{padding:0px 0px 0.6rem}
+#options .d-table-row{height:40px; border-bottom:1px solid #ced4da;}
+#options .d-table-row .d-table-cell{vertical-align: middle;}
+#options .d-table-row .d-table-cell.table-header:not(:last-of-type){border-right:1px solid #ced4da;}
+
+/* template */
+#lay_common > table > tbody > tr > td > div.contents_view{position: relative; border: 1px solid #ced4da; height: 150px; overflow-y: auto;}
+
+/* contents image */
+.icon_move{display:inline-block; background:url("../images/icon_move.png") no-repeat center; width:18px; height:18px;}
+#lay_images > table > tbody > tr:last-child > td > div {width: 280px;}
+#resizeTable > tbody > tr > th{border-right:1px solid #ced4da;}
+#sortTable > thead > tr > th:not(:last-child) {border-right:1px solid #ced4da;}
+#sortTable > tbody > tr > td:not(:last-child) {border-right:1px solid #ced4da;}
+
+/* layer */
+.file-label > label{background: #1c7430; color: #ffffff; border: 1px solid #1c7430;}
+.file-label > label > input{position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;}
+#contentsImageLayer > div > div > div > label{background: #aeafb4; color: #ffffff; border: 1px solid #aeafb4;}
+#contentsImageLayer > div > div > div > label > input{position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;}
+#contentsImageLayer > div > div > div > div.image-preview-wrap{padding: 22px 8px 8px 8px; margin: 8px 0; display: inline-block; height: auto; width: auto; max-width: 90px; min-width: 35px; text-align: center; position: relative; line-height: 35px; border: 1px solid #dadada; border-radius: 5px;}
+#contentsImageLayer > div > div > div > div.image-tag-preview-wrap{padding: 22px 8px 8px 8px; margin: 8px 0; display: inline-block; height: auto; width: auto; max-width: 90px; min-width: 35px; text-align: center; position: relative; line-height: 35px; border: 1px solid #dadada; border-radius: 5px;}
+#contentsImageLayer > div > div > div > div > div.bg{display: table; background: #eee; min-height: 30px; width: 100%;}
+#contentsImageLayer > div > div > div > div > div.bg > a{position: absolute; top: 6px; right: 5px; width: 8px; height: 8px; background: url("../images/btn_pop_close.gif") no-repeat center center; cursor: pointer;}
+#contentsImageLayer > div > div > div > div > div.bg > div.preview-img{display: table-cell; vertical-align: middle; max-width: 90px;}
+#contentsImageLayer > div > div > div > div > div.bg > div > a > img{cursor: pointer; max-width: 100%; height: auto;}
+
+/* layer */
+#adminPushImageLayer > div > div > div > label{background: #aeafb4; color: #ffffff; border: 1px solid #aeafb4;}
+#adminPushImageLayer > div > div > div > label > input{position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;}
+#adminPushImageLayer > div > div > div > div.image-preview-wrap{padding: 22px 8px 8px 8px; margin: 8px 0; display: inline-block; height: auto; width: auto; max-width: 150px; min-width: 35px; text-align: center; position: relative; line-height: 35px; border: 1px solid #dadada; border-radius: 5px;}
+#adminPushImageLayer > div > div > div > div > div.bg{display: table; background: #eee; min-height: 30px; width: 100%;}
+#adminPushImageLayer > div > div > div > div > div.bg > div.preview-img{display: table-cell; vertical-align: middle; max-width: 150px;}
+#adminPushImageLayer > div > div > div > div > div.bg > div > a > img{cursor: pointer; max-width: 100%; height: auto;}
+
+
+/* ckeditor size */
+#container {
+    width: 1000px;
+    margin: 20px auto;
+}
+.ck-editor__editable[role="textbox"] {
+    /* editing area */
+    min-height: 200px;
+    word-break:break-all;
+}
+.ck-content .image {
+    /* block images */
+    max-width: 80%;
+    margin: 20px auto;
+}
+
+/* contents report list tooltip */
+#tooltip {
+    position: relative;
+}
+
+#tooltip .tooltip-text {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+}
+
+#tooltip:hover .tooltip-text {
+    visibility: visible;
+}
+
+#tooltip .tooltip-text::after {
+    content: " ";
+    position: absolute;
+    border-style: solid;
+    border-width: 5px;
+}
+
+#tooltip .tooltip-right {
+    top: -3px;
+    left: 80%;
+}
+
+#tooltip .tooltip-right::after {
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-color: transparent black transparent transparent;
+}
+
+/* contents image-tag tooltip */
+.imgTag {
+    display: block;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 7px;
+    padding: 5px;
+    z-index: 1;
+    opacity: 0.7;
+    border: none;
+}
+/* Hide Arrows from input number (Chrome, Safari, Edge, Opera)*/
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Hide Arrows from input number (Firefox) */
+input[type=number] {
+    -moz-appearance: textfield;
+}

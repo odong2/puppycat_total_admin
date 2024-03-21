@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.qna.PartnerQnaDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="qnaColumns">
+        `shpaqu`.`idx`
+        ,`shpaqu`.`menu_idx`
+        ,`shpa`.`idx` as `partner_idx`
+        ,`shpa`.`id` as `partner_id`
+        ,`shpade`.`company_name` AS `company_name`
+        ,`shpaqume`.`name` AS `menu_name`
+        ,`shpaqu`.`title`
+        ,`shpaqu`.`state` AS `answer_state`
+        ,`shpaqu`.`show`
+        ,`shpaquco`.`contents`
+        ,`toad`.`id` AS `admin_id`
+        ,`toad`.`name` AS `admin_name`
+        ,CONVERT_TZ(`shpaqu`.`reg_date`, 'UTC', 'Asia/Seoul') AS `reg_date`
+        ,CONVERT_TZ(`shpaquan`.`reg_date`, 'UTC', 'Asia/Seoul') AS `answer_reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 1:1문의 메뉴 리스트 가져오기 -->
+    <select id="getMenuList" resultType="PartnerQnaDto">
+        SELECT
+            `shpaqume`.`idx`
+            ,`shpaqume`.`name` AS `menu_name`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question_menu` AS `shpaqume`
+        WHERE `shpaqume`.`state` = '1'
+        ORDER BY `shpaqume`.`idx` ASC
+    </select>
+
+    <!-- 매크로 타이틀 가져오기 -->
+    <select id="getMacroTitleList" resultType="PartnerQnaDto">
+        SELECT
+            `shpaquanma`.`idx`
+            ,`shpaquanma`.`title`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question_answer_macro` AS `shpaquanma`
+        WHERE `shpaquanma`.`state` = '1'
+        ORDER BY `shpaquanma`.`idx` ASC
+    </select>
+
+    <!-- 매크로 내용 가져오기 -->
+    <select id="getMacroContents" parameterType="_int" resultType="String">
+        SELECT
+            `shpaquanma`.`contents`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question_answer_macro` AS `shpaquanma`
+        WHERE `shpaquanma`.`state` = '1'
+            AND `shpaquanma`.`idx` = #{idx}
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shpaqu`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question` AS `shpaqu`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_menu` AS `shpaqume`
+            ON `shpaqu`.`menu_idx` = `shpaqume`.`idx`
+            AND `shpaqume`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_contents` AS `shpaquco`
+            ON `shpaquco`.`question_idx` = `shpaqu`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpaqu`.`partner_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_question_answer` AS `shpaquan`
+            ON `shpaqu`.`idx` = `shpaquan`.`question_idx`
+            AND `shpaquan`.`state` = 1
+        LEFT JOIN <include refid="databaseTotal"/>`total_admin` AS `toad`
+            ON `toad`.`idx` = `shpaquan`.`admin_idx`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND `shpaqu`.`title` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `shpaquco`.`contents` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'company'">
+                        AND `shpade`.`company_name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'partnerId'">
+                        AND `shpa`.`id` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `shpaqu`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `shpaqu`.`state` = #{state}
+            </if>
+            <if test="show != null">
+                AND `shpaqu`.`show` = #{show}
+            </if>
+        </where>
+    </select>
+
+    <!-- 1:1문의 목록 -->
+    <select id="getListQna" parameterType="SearchDto" resultType="PartnerQnaDto">
+        SELECT
+            <include refid="qnaColumns"/>
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question` AS `shpaqu`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_menu` AS `shpaqume`
+            ON `shpaqu`.`menu_idx` = `shpaqume`.`idx`
+            AND `shpaqume`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_contents` AS `shpaquco`
+            ON `shpaquco`.`question_idx` = `shpaqu`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpaqu`.`partner_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_question_answer` AS `shpaquan`
+            ON `shpaqu`.`idx` = `shpaquan`.`question_idx`
+            AND `shpaquan`.`state` = 1
+        LEFT JOIN <include refid="databaseTotal"/>`total_admin` AS `toad`
+            ON `toad`.`idx` = `shpaquan`.`admin_idx`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND `shpaqu`.`title` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `shpaquco`.`contents` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'company'">
+                        AND `shpade`.`company_name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'partnerId'">
+                        AND `shpa`.`id` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `shpaqu`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `shpaqu`.`state` = #{state}
+            </if>
+            <if test="show != null">
+                AND `shpaqu`.`show` = #{show}
+            </if>
+        </where>
+        ORDER BY `shpaqu`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 1:1문의 상세 -->
+    <select id="getViewQna" parameterType="_int" resultType="PartnerQnaDto">
+        SELECT
+            <include refid="qnaColumns"/>
+            ,`shpaquanco`.`contents` as `answer_contents`
+            ,`shpaquanco`.`idx` as `answer_idx`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_question` AS `shpaqu`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_menu` AS `shpaqume`
+            ON `shpaqu`.`menu_idx` = `shpaqume`.`idx`
+            AND `shpaqume`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_question_contents` AS `shpaquco`
+            ON `shpaquco`.`question_idx` = `shpaqu`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpaqu`.`partner_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_question_answer` AS `shpaquan`
+            ON `shpaqu`.`idx` = `shpaquan`.`question_idx`
+            AND `shpaquan`.`state` = 1
+        LEFT JOIN <include refid="databaseTotal"/>`total_admin` as `toad`
+            on `toad`.`idx` = `shpaquan`.`admin_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_partner_question_answer_contents` AS `shpaquanco`
+		    ON  `shpaquanco`.`answer_idx` = `shpaquan`.`idx`
+        WHERE
+            `shpaqu`.`idx` = #{idx}
+    </select>
+
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.chat.ChatDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefIdChat}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchTargetType == 'all'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                            OR `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                            OR  BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reporter'">
+                        <if test="searchType == 'id'">
+                            AND `pume1`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume1`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                    <when test="searchTargetType == 'reported'">
+                        <if test="searchType == 'id'">
+                            AND `pume2`.`id` LIKE #{val}
+                        </if>
+                        <if test="searchType == 'nick'">
+                            AND BINARY `pume2`.`nick` LIKE #{val}
+                        </if>
+                    </when>
+                </choose>
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null">
+                <![CDATA[
+                AND (`chromere`.`reg_date` >= #{searchStartDate} AND `chromere`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 해당 유저와 채팅 신고 내역이 있는지 가져오기 -->
+    <select id="getChatReportList" parameterType="SearchDto" resultType="ChatMessageReportDto">
+        SELECT
+            `chromere`.`idx`,
+            `chromere`.`room_uuid`,
+            `pume1`.`nick` AS `memberNick`,
+            `pume2`.`nick` AS `targetMemberNick`,
+            `pume1`.`id` AS `id`,
+            `pume2`.`id` AS `targetId`,
+            `chromere`.`message`,
+            `chromere`.`reg_date`
+        FROM
+            <include refid="database" />`chat_room_message_report` AS `chromere`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `chromere`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `chromere`.`target_member_uuid` = `pume2`.`uuid`
+        <include refid="searchCondition"/>
+        ORDER BY `chromere`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 채팅 신고 총 개수 -->
+    <select id="getChatReportTotalCount" resultType="_int">
+        SELECT
+            COUNT(`chromere`.`idx`) AS iTotalCount
+        FROM
+            <include refid="database" />`chat_room_message_report` AS `chromere`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+            ON `chromere`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `chromere`.`target_member_uuid` = `pume2`.`uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 채팅 신고 상세 -->
+    <select id="getChatReportView" parameterType="int" resultType="ChatMessageReportDto">
+        SELECT
+            `chromere`.`idx`,
+            `chromere`.`room_uuid`,
+            `chromere`.`score`,
+            `pume1`.`nick` AS `memberNick`,
+            `pume1`.`uuid` AS `memberUuid`,
+            `pume2`.`nick` AS `targetMemberNick`,
+            `pume2`.`uuid` AS `targetMemberUuid`,
+            `pume1`.`id` AS `id`,
+            `pume2`.`id` AS `targetId`,
+            `chromere`.`message`,
+            `chromere`.`reg_date`
+        FROM
+        <include refid="database" />`chat_room_message_report` AS `chromere`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume1`
+        ON `chromere`.`member_uuid` = `pume1`.`uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+        ON `chromere`.`target_member_uuid` = `pume2`.`uuid`
+        WHERE `chromere`.idx = #{idx}
+    </select>
+</mapper>

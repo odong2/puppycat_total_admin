@@ -1,0 +1,105 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.badge.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="badge.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-2">
+                                            <!-- 아이디/닉네임 -->
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.badge.search}" ></option>
+                                                <option th:value="id" th:text="#{lang.badge.id}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="nick" th:text="#{lang.badge.nick}" th:selected="${search.searchType} == 'nick'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.badge.placeholder.search.word}" style="width:30%;">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-2">
+                                            <!-- 계정 상태 -->
+                                            <select name="state" class="form-select form-select-sm col-13">
+                                                <option value=""  th:text="#{lang.badge.state}"></option>
+                                                <option value="0" th:text="#{lang.badge.state.normal}" th:selected="${search.state} == '0'"></option>
+                                                <option value="1" th:text="#{lang.badge.state.out.wait}" th:selected="${search.state} == '1'"></option>
+                                            </select>
+                                            <!-- 보기 -->
+                                            <select name="recordSize" class="form-select form-select-sm">
+                                                <option value="10" th:text="#{lang.common.view.ten}" th:selected="${search.recordSize} == 10"></option>
+                                                <option value="30" th:text="#{lang.common.view.thirty}" th:selected="${search.recordSize} == 30"></option>
+                                                <option value="50" th:text="#{lang.common.view.fifty}" th:selected="${search.recordSize} == 50"></option>
+                                                <option value="100" th:text="#{lang.common.view.hundred}" th:selected="${search.recordSize} == 100"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 팔로워 수 정렬 -->
+                                            <select name="order" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.badge.followerCnt}"></option>
+                                                <option value="0" th:text="#{lang.badge.followerCnt.ascending}" th:selected="${search.order} == '0'"></option>
+                                                <option value="1" th:text="#{lang.badge.followerCnt.descending}" th:selected="${search.order} == '1'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.badge.button.search}" onclick="badge.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="badge.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.badge.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm" style="background-color:lightgreen">
+                                            <p id="badgeCondition"></p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.badge.num}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.badge.memberId}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.badge.memberNick}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.badge.followerCnt}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.badge.out}" class="text-center" ></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

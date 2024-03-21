@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.noti.NotiDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 회원 알림 내역 체크 -->
+    <select id="getNotiCheck" parameterType="NotiDto" resultType="Long">
+        SELECT
+            `snmeno`.`idx`
+        FROM
+            <include refid="databaseSns"/>`sns_member_notification` AS `snmeno`
+        WHERE
+                `snmeno`.`member_idx` = #{memberIdx}
+            AND `snmeno`.`sub_type` = #{subType}
+            AND `snmeno`.`sender_idx` = #{senderIdx}
+            AND `snmeno`.`state` <![CDATA[ = ]]> 1
+            AND `snmeno`.`reg_date` >= #{checkNotiDate}
+        ORDER BY `snmeno`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+    <!-- 회원 마지막으로 알림 함 본 날짜  -->
+    <select id="getNotiShowDate" parameterType="NotiDto" resultType="String">
+        SELECT
+            `snmenosh`.`show_date`
+        FROM
+            <include refid="databaseSns"/>`sns_member_notification_show` AS `snmenosh`
+        WHERE
+            `snmenosh`.`member_idx` = #{memberIdx}
+        LIMIT 1
+    </select>
+
+    <!-- 신규 알림 있는지 체크 -->
+    <select id="getCountNewNoti" parameterType="NotiDto" resultType="int">
+        SELECT
+            COUNT(`snmeno`.`idx`) AS `cnt`
+        FROM
+            <include refid="databaseSns" />`sns_member_notification` AS `snmeno`
+        <where>
+            <if test=" showDate != null and showDate != '' ">
+                `snmeno`.`reg_date` > #{showDate}
+            </if>
+            AND `snmeno`.`member_idx` =  #{memberIdx}
+            AND `snmeno`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 신규 공지 알림 있는지 체크 -->
+    <select id="getCountNewNoticeNoti" parameterType="NotiDto" resultType="int">
+        SELECT
+            COUNT(`snnono`.`idx`) AS `cnt`
+        FROM
+        <include refid="databaseSns" />`sns_notification_notice` AS `snnono`
+        <where>
+            <if test=" showDate != null and showDate != '' ">
+                `snnono`.`reg_date` > #{showDate}
+            </if>
+            AND `snnono`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 팔로워 목록 sns_member_follow-->
+    <select id="getFollowerList" parameterType="NotiDto" resultType="long">
+        SELECT
+            `snmefo`.`member_uuid` AS `follower_idx`
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+        WHERE
+                `snmefo`.`follow_uuid` = #{senderIdx}
+            AND `snmefo`.`state` = 1
+            AND `snmefo`.`reg_date` <![CDATA[ < ]]> #{regDate}
+    </select>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

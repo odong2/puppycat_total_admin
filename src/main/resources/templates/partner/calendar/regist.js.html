@@ -1,0 +1,121 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        calendar.init(); // 날짜 설정
+    });
+
+    const text = {
+        essentialValue : '[[#{lang.admin.exception.essential.value}]]', // 필수값을 입력해주세요.
+        registConfirm : '[[#{lang.admin.confirm.regist.holiday}]]',     // 공휴일을 등록하시겠습니까?
+    }
+
+    const calendar = {
+        // 날짜 초기화
+        init : () => {
+            let startDate = '[[${startDate}]]';
+            let endDate = '[[${endDate}]]';
+            let today = new Date(); // 오늘 날짜
+            today= moment(today).add(1, 'days').format('YYYY-MM-DD'); // 오늘 날짜 이후만 선택 가능
+
+            // 등록 페이지 호출전 드레그된 날짜가 있는 경우
+            if (!check.isEmpty(startDate) && !check.isEmpty(endDate)) {
+                // MODEL로 넘겨 받은 값 set
+                $('input[name=startDate]').val(startDate);
+                $('input[name=endDate]').val(endDate);
+
+                $('input[name=startDate]').attr('min', today);        // 시작 날짜는 오늘 이후 날짜 min 설정
+                $('input[name=endDate]').attr('min', startDate);
+
+            } else {
+                $('input[name=startDate]').attr('min', today);        // 시작 날짜는 오늘 이후 날짜 min 설정
+                $('input[name=endDate]').attr('min', today);
+            }
+
+        },
+        // 휴무일 등록
+        regist : () => {
+            // 빈값 체크
+            if (!check.validate()) {
+                return false;
+            }
+            // 휴무일을 등록하시겠습니까?
+            if (!confirm(text.registConfirm)) {
+                return false;
+            }
+
+            let form = $("#frm")[0];
+            let formData = new FormData(form);
+            $('#registBtn').prop('disabled', true);
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/holidays',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        toast.alert(res.message);
+
+                        setTimeout(() => {
+                            window.close(); // 팝업창 닫기
+                            opener.calendar.list();
+                        }, 1000);
+                    } else {
+                        toast.alert(res.message);
+                        $('#registBtn').prop('disabled', false);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+        },
+        // 팝업 닫기
+        closeBtn : () => {
+            window.close();
+        },
+        // 날짜 체크
+        checkDate : () => {
+            let startDate = $('input[name=startDate]').val();
+            $('input[name=endDate]').attr('min', startDate);
+        }
+    }
+
+    // 체크 오브젝트
+    let check = {
+        // 빈값 체크
+        isEmpty: (value) => {
+            if (
+                typeof value === 'undefined' ||
+                value === null ||
+                value.trim() === '' ||
+                value === 'null' ||
+                value.length === 0
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        // 유효성 체크
+        validate : () => {
+            let startDate = $('input[name=startDate]').val();
+            let endDate = $('input[name=endDate]').val();
+            let name = $('input[name=name]').val();
+            let description = $('textarea[name=description]').val();
+            if (check.isEmpty(startDate) || check.isEmpty(endDate) || check.isEmpty(name) || check.isEmpty(description)) {
+                toast.alert(text.essentialValue);
+                return false;
+            }
+            return true;
+        }
+    }
+
+</script>

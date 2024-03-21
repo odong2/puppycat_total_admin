@@ -1,0 +1,75 @@
+<div th:fragment="layerFragment" class="modal-content" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title " th:text="#{lang.coupon.title.excel.upload}"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="coupon.modalCancel();"></button>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12">
+            <!-- 엑셀 업로드 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <label for="fileName" class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.coupon.button.excel.upload}"></label>
+                <div class="col-auto input-group input-group-sm m-1 p-0 col-7">
+                    <!-- 파일명 -->
+                    <input type="text" id="fileName" class="form-control form-control-sm text-center" th:placeholder="#{lang.coupon.placeholder.no.file}" style="width: 5%; margin-right: 10px;" readonly="">
+                    <!-- 파일 등록 -->
+                    <label for="fileUpload" class="btn btn-sm btn-primary" style="border-radius: 2px; margin-right: 5px;" th:text="#{lang.coupon.button.file.search}"></label>
+                    <input type="file" id="fileUpload" class="hidden" name="excelFile" onchange="coupon.updateFileInput(this)">
+                    <!-- 확인 -->
+                    <button type="button" id="fileUploadBtn" class="btn btn-sm btn-warning hidden" onclick="coupon.excelUpload()" th:text="#{lang.coupon.button.file.upload}" style="border-radius: 2px; margin-right: 5px;"></button>
+                    <input type="hidden" id="rangeType" name="rangeType">
+                </div>
+            </div>
+            <!-- 선택된 대상 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.coupon.search.preview}"></label>
+                <div class="send-list-box-modal" id="preview-modal">
+                </div>
+            </div>
+            <!-- 검색된 리스트 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <div class="d-inline p-0">
+                    <div class="float-left form-control-sm">
+                        <strong class="successCount" th:text=" #{lang.coupon.excel.success} + ' : ' "></strong> <span>0</span>
+                        <strong class="failCount" th:text=" #{lang.coupon.excel.fail} + ' : ' "></strong> <span>0</span>
+                    </div>
+                    <div class="float-right">
+                        <!-- 실패 다운로드 -->
+                        <button type="button" id="failDownloadBtn" class="btn btn-sm btn-danger hidden" onclick="coupon.failExcelDownload(this.value)" th:text="#{lang.coupon.button.fail.excel.download}" style="border-radius: 2px; margin-bottom: 3px;"></button>
+                        <!-- 양식 다운로드 -->
+                        <button type="button" class="btn btn-sm btn-info" onclick="coupon.sampleExcelDownload()" th:text="#{lang.coupon.button.sample.excel.download}" style="border-radius: 2px; margin-bottom: 3px;"></button>
+                    </div>
+                </div>
+                <!-- list -->
+                <div class="table-responsive">
+                    <table class="table table-hover" id="modalListLayer">
+                        <thead class="table-active" style="position:sticky; top:0; background: #dee2e6">
+                        <tr class="text-center hidden" id="theadProduct">
+                            <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.product.name}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.excel.result}" class="text-center"></th>
+                        </tr>
+                        <tr class="text-center hidden" id="theadMember">
+                            <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.member.name}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.member.nick}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.member.email}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.coupon.excel.result}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody style="height: 250px;">
+                        <tr class="text-center">
+                            <td th:text="#{lang.coupon.placeholder.no.excel.file}" colspan="5" class="text-center"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="coupon.modalCancel();" th:text="#{lang.member.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="coupon.registTarget();" th:text="#{lang.member.button.regist}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

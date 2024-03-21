@@ -1,0 +1,68 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid" layout:fragment="content">
+        <form id="registForm">
+            <input type="hidden" name="memberUuid" id="memberUuid" th:value="${dataSet.memberUuid}">
+            <table class="table">
+                <thead>
+                <colgroup>
+                    <col style="min-width: 20px;" />
+                </colgroup>
+                <tr>
+                    <th class="table-primary" colspan="2" th:text="#{lang.restrain.member.title.regist}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th class="text-center"><label for="typeIdx" th:text="#{lang.restrain.member.type}"></label></th>
+                    <td class="p-0 pl-2">
+                        <select name="typeIdx" id="typeIdx" class="form-select form-select-sm">
+                            <th:block th:each="val: ${dataSet.typeList}">
+                                <option th:value="${val.idx}" th:text="${val.restrainType}"></option>
+                            </th:block>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="startDate" th:text="#{lang.restrain.member.startDate}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="datetimepicker form-control form-control-sm ml-1" name="startDate" id="startDate"  autocomplete="off">
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="dateIdx" th:text="#{lang.restrain.member.date}"></label></th>
+                    <td class="p-0 pl-2">
+                        <select name="dateIdx" id="dateIdx" class="form-select form-select-sm">
+                            <th:block th:each="val: ${dataSet.dateList}">
+                                <option th:value="${val.idx}" th:text="${val.title}"></option>
+                            </th:block>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="codeIdx" th:text="#{lang.restrain.member.code}"></label></th>
+                    <td class="p-0 pl-2">
+                        <select name="codeIdx" id="codeIdx" class="form-select form-select-sm">
+                            <th:block th:each="val: ${dataSet.codeList}">
+                                <option th:value="${val.idx}" th:text="${val.restrainName}"></option>
+                            </th:block>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="text-center"><label for="reason" th:text="#{lang.restrain.member.reason}"></label></th>
+                    <td class="p-0 pl-2">
+                        <input class="form-control form-control-sm ml-1" name="reason" id="reason" disabled autocomplete="off">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="form-group row">
+                <div class="col text-center">
+                    <button type="button" class="btn btn-secondary" th:onclick="|self.close()|" th:text="#{lang.member.button.cancel}"></button>
+                    <button type="button" class="btn btn-primary" onclick="restrain_regist.regist();" th:text="#{lang.member.button.regist}"></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</th:block>

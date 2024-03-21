@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.product.ProductPartnerDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+
+    <!-- databaseShop name -->
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="productPartnerColumns">
+        `shpapr`.`idx` AS `partner_product_idx`
+        ,`shpr`.`idx`
+        ,`shpr`.`product_name`
+        ,`shpapr`.`state`
+        ,`shpapr`.`certification_type`
+        ,`shpapr`.`delivery_policy_idx`
+        ,`shpapr`.`open` AS `open_state`
+        ,`shprma`.`state` AS `min_price_state`
+        ,`shpaprbe`.`state` AS `benefit_state`
+        ,`shpaprpr`.`sync`
+        ,`shpaprpr`.`sale_price`
+        ,`shpaprpr`.`discount_price`
+        ,`shpaprst`.`unlimit`
+        ,`shpaprst`.`stock`
+        ,`shpaprst`.`alarm`
+        ,`shpaprst`.`alarm_count`
+        ,`shpa`.`partner_code`
+	    ,`shpade`.`company_name` AS `company_name`
+        ,IFNULL(CONVERT_TZ(`shpapr`.`approval_date`, 'UTC', '${convertTZ}'),"") AS `approval_date`
+        , CONVERT_TZ(`shpapr`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- 조건 검색 -->
+     <sql id="searchCondition">
+     <where>
+        <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+            <![CDATA[
+                AND (`shpapr`.`reg_date` >= #{searchStartDate} AND `shpapr`.`reg_date` <= #{searchEndDate})
+            ]]>
+        </if>
+        <if test="searchWord != '' and searchWord != null">
+            <bind name="val" value="'%' + searchWord + '%'" />
+            <choose>
+                <when test="searchType == 'idx'">
+                    AND `shpr`.`idx` LIKE #{val}
+                </when>
+                <when test="searchType == 'name'">
+                    AND `shpr`.`product_name` LIKE #{val}
+                </when>
+                <when test="searchType == ''">
+                    AND ( `shpr`.`idx` LIKE #{val} OR `shpr`.`product_name` LIKE #{val} )
+                </when>
+            </choose>
+        </if>
+        <if test="mainIdx != null">
+            AND `shpa`.`main_idx` = #{mainIdx}
+        </if>
+        <if test="open != null">
+            AND `shpapr`.`open` = #{open}
+        </if>
+        <if test="minPrice != null">
+            AND `shprma`.`state` = #{minPrice}
+        </if>
+        <if test="benefit != null">
+            AND `shpaprbe`.`state` = #{benefit}
+        </if>
+        <if test="sync != null">
+            AND `shpaprpr`.`sync` = #{sync}
+        </if>
+        <if test="deliveryCombine != null">
+            AND `shdepo`.`is_combine` = #{deliveryCombine}
+        </if>
+        <if test="deliveryType != null">
+            AND `shdepo`.`payment_type` IN
+            <foreach item="item" index="index" collection="deliveryType" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="searchStartStock == null and searchEndStock == null and unlimit != null">
+            AND `shpaprst`.`unlimit` = #{unlimit}
+        </if>
+        <if test="searchStartStock != null and searchEndStock != null ">
+            <![CDATA[
+                AND (`shpaprst`.`stock` >= #{searchStartStock} AND `shpaprst`.`stock` <= #{searchEndStock})
+            ]]>
+            <if test="unlimit == 1">
+                OR `shpaprst`.`unlimit` = 1
+            </if>
+            <if test="unlimit == null">
+                AND `shpaprst`.`unlimit` = 0
+            </if>
+        </if>
+        <if test="state != null">
+            AND `shpapr`.`state` = #{state}
+        </if>
+    </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchProductDto" resultType="long">
+        SELECT
+            COUNT(`shpapr`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_product` AS `shpapr`
+        INNER JOIN <include refid="databaseShop"/>`shop_product_mapping` AS `shprma`
+            ON `shpapr`.`idx` = `shprma`.`partner_product_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_product` AS `shpr`
+            ON `shpr`.`idx` = `shprma`.`product_idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpapr`.`partner_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_benefit` AS `shpaprbe`
+            ON `shpaprbe`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_price` AS `shpaprpr`
+            ON `shpaprpr`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_stock` AS `shpaprst`
+            ON `shpaprst`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_delivery_policy` AS `shdepo`
+            ON `shdepo`.`idx` = `shpapr`.`delivery_policy_idx`
+            AND `shdepo`.`state` = 1
+        <include refid="searchCondition"/>
+    </select>
+
+     <!-- 전체 리스트 -->
+    <select id="getListProduct" parameterType="SearchProductDto" resultType="ProductDto">
+        SELECT
+            <include refid="productPartnerColumns"/>
+            ,`shdepo`.`payment_type`
+            ,`shdepo`.`is_combine`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_product` AS `shpapr`
+        INNER JOIN <include refid="databaseShop"/>`shop_product_mapping` AS `shprma`
+            ON `shpapr`.`idx` = `shprma`.`partner_product_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_product` AS `shpr`
+            ON `shpr`.`idx` = `shprma`.`product_idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpapr`.`partner_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_benefit` AS `shpaprbe`
+            ON `shpaprbe`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_price` AS `shpaprpr`
+            ON `shpaprpr`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_stock` AS `shpaprst`
+            ON `shpaprst`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        LEFT JOIN <include refid="databaseShop"/>`shop_delivery_policy` AS `shdepo`
+            ON `shdepo`.`idx` = `shpapr`.`delivery_policy_idx`
+            AND `shdepo`.`state` = 1
+        <include refid="searchCondition"/>
+        <if test="sort == ''">
+        ORDER BY `shpapr`.`idx` DESC
+        </if>
+        <if test="sort != '' and sort == 'productName_desc'">
+        ORDER BY `shpr`.`product_name` DESC
+        </if>
+        <if test="sort != '' and sort == 'productName_asc'">
+        ORDER BY `shpr`.`product_name` ASC
+        </if>
+        <if test="sort != '' and sort == 'stock_desc'">
+        ORDER BY `shpaprst`.`stock` DESC
+        </if>
+        <if test="sort != '' and sort == 'stock_asc'">
+        ORDER BY `shpaprst`.`stock` ASC
+        </if>
+        <if test="sort != '' and sort == 'alarm_desc'">
+        ORDER BY `shpaprst`.`alarm` DESC,`shpaprst`.`alarm_count` DESC
+        </if>
+        <if test="sort != '' and sort == 'alarm_asc'">
+        ORDER BY `shpaprst`.`alarm` DESC,`shpaprst`.`alarm_count` ASC
+        </if>
+        <if test="sort != '' and sort == 'minPrice_desc'">
+        ORDER BY `shpaprpr`.`discount_price` DESC
+        </if>
+        <if test="sort != '' and sort == 'minPrice_asc'">
+        ORDER BY `shpaprpr`.`discount_price` ASC
+        </if>
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+
+     <!-- 파트너 상품 상세 -->
+    <select id="getViewProductPartner" resultMap="getViewProductPartner_rm">
+        SELECT
+            <include refid="productPartnerColumns"/>
+            ,`shpaprde`.`detail`
+            ,`shprpr`.`price`
+            ,`shpaprpr`.`min_price`
+            ,`shpaprpr`.`max_price`
+            ,`shpaprpr`.`event_price`
+            ,`shpaprbe`.`buy`
+            ,`shpaprbe`.`review`
+            ,`shpaprbe`.`review30`
+            ,`shpaprbe`.`is_auto`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_product` AS `shpapr`
+        INNER JOIN <include refid="databaseShop"/>`shop_product_mapping` AS `shprma`
+            ON `shpapr`.`idx` = `shprma`.`partner_product_idx`
+        INNER JOIN <include refid="databaseShop"/>`shop_product` AS `shpr`
+            ON `shpr`.`idx` = `shprma`.`product_idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner` AS `shpa`
+            ON `shpa`.`idx` = `shpapr`.`partner_idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_detail` AS `shpade`
+	        ON `shpade`.`partner_idx` = `shpa`.`main_idx`
+        INNER JOIN  <include refid="databaseShop"/> `shop_product_price` AS `shprpr`
+	        ON `shprpr`.`product_idx` = `shprma`.`product_idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_product_price` AS `shpaprpr`
+	        ON `shpaprpr`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_product_stock` AS `shpaprst`
+	        ON `shpaprst`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_product_benefit` AS `shpaprbe`
+	        ON `shpaprbe`.`partner_product_idx` = `shpapr`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_partner_product_detail` AS `shpaprde`
+            ON `shpaprde`.`partner_product_idx` = `shpapr`.`idx`
+        <where>
+            `shpapr`.idx = #{idx}
+        </where>
+    </select>
+
+    <!-- 파트너 상품 상세 resultMap -->
+    <resultMap id="getViewProductPartner_rm" type="ProductDto">
+        <id property="partnerProductIdx" column="partner_product_idx" />
+
+        <result property="idx" column="idx" />
+        <result property="productName" column="product_name" />
+        <result property="state" column="state" />
+        <result property="certificationType" column="certification_type" />
+        <result property="regDate" column="reg_date" />
+        <result property="openState" column="open_state" />
+        <result property="minPriceState" column="min_price_state" />
+        <result property="detail" column="detail" />
+        <result property="partnerCode" column="partner_code" />
+        <result property="companyName" column="company_name" />
+        <result property="approvalDate" column="approval_date" />
+        <result property="regDate" column="reg_date" />
+
+        <!-- category List -->
+        <collection property="categoryList" column="idx" javaType="java.util.ArrayList" ofType="" select="getCategoryList" />
+
+        <!-- certification List -->
+        <collection property="certificationList" column="idx" javaType="java.util.ArrayList" ofType="" select="getCertification" />
+
+         <!-- attribute List -->
+        <collection property="attributeList" column="idx" javaType="java.util.ArrayList" ofType="" select="getAttribute"/>
+
+        <!-- delivery Policy Info -->
+        <collection property="deliveryList" column="partner_product_idx" javaType="DeliveryPolicyDto" ofType="" select="getDeliveryInfo"/>
+    </resultMap>
+
+    <!-- 카테고리 목록 -->
+    <select id="getCategoryList" parameterType="hashmap" resultType="CategoryDto">
+        SELECT
+            `shprcama`.`idx` AS `category_mapping_idx`
+            , `shprcama`.`product_idx`
+            , `shprcama`.`group_num`
+            , `shprcama`.`main`
+            , `shprcama`.`state`
+            , CONVERT_TZ(`shprcama`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+            , `shprca`.`idx`
+            , `shprca`.`parent`
+            , `shprca`.`depth`
+            , `shprca`.`code`
+            , `shprca`.`category`
+            , `shprca`.`sort`
+        FROM <include refid="databaseShop"/>`shop_product_category_mapping` AS `shprcama`
+        JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+            ON `shprcama`.`category_idx` = `shprca`.`idx`
+        <where>
+                `shprcama`.`product_idx` = #{idx}
+            AND `shprcama`.`state` = 1
+        </where>
+        ORDER BY
+            `shprcama`.`group_num` ASC, `shprca`.`depth` ASC
+    </select>
+
+    <!-- 인증유형 List -->
+    <select id="getCertification" parameterType="Integer" resultType="CertificationDto">
+        SELECT
+            `shprcema`.`idx`
+             , `shprcema`.`product_idx`
+             , `shprcema`.`certification_idx`
+             , `shprcema`.`certification_num`
+             , `shprcema`.`state`
+             , CONVERT_TZ(`shprcema`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_certification_mapping` AS `shprcema`
+        <where>
+                `shprcema`.`product_idx` = #{idx}
+            AND `shprcema`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 상품정보 제공고시 List -->
+    <select id="getAttribute" parameterType="Integer" resultType="AttributeSetDto">
+        SELECT
+            `shpratma`.`idx` AS `attribute_mapping_idx`
+             , `shpratma`.`attribute_set_idx` AS `idx`
+             , `shpratma`.`attribute_name_idx` AS `attribute_idx`
+             , `shpratma`.`attribute_value`
+             , `shpratma`.`state`
+             , CONVERT_TZ(`shpratma`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_product_attribute_mapping` AS `shpratma`
+        <where>
+                `shpratma`.`product_idx` = #{idx}
+            AND `shpratma`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 파트너사 상품정보 제공고시 List -->
+    <select id="getPartnerAttribute" parameterType="Integer" resultType="AttributeSetDto">
+        SELECT
+            `shpapratma`.`idx` AS `attribute_mapping_idx`
+             , `shpapratma`.`attribute_set_idx` AS `idx`
+             , `shpapratma`.`attribute_name_idx` AS `attribute_idx`
+             , `shpapratma`.`attribute_value`
+             , `shpapratma`.`state`
+             , CONVERT_TZ(`shpapratma`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseShop"/>`shop_partner_product_attribute_mapping` AS `shpapratma`
+        <where>
+                `shpapratma`.`partner_product_idx` = #{idx}
+            AND `shpapratma`.`state` = 1
+        </where>
+    </select>
+
+
+    <!-- 상품정보 제공고시 List -->
+    <select id="getDeliveryInfo" parameterType="Integer" resultType="DeliveryPolicyDto">
+        SELECT
+            `shdepo`.`idx` ,
+            `shdepo`.`name`,
+            `shdepo`.`property`,
+            `shdeco`.`idx` AS `companyIdx`,
+            `shdeco`.`name` AS `companyName`,
+            `shdeco2`.`idx` AS `returnCompanyIdx`,
+            `shdeco2`.`name` AS `returnCompanyName`,
+            `shdepo`.`release_address`,
+            `shdepo`.`release_address_detail`,
+            `shdepo`.`return_address`,
+            `shdepo`.`return_address_detail`,
+            `shdepo`.`deadline`,
+            `shdepo`.`same_day_delivery_time`,
+            `shdepo`.`is_combine`,
+            `shdepo`.`is_island`,
+            `shdepo`.`payment_type`,
+            `shdepo`.`free_condition`,
+            `shdepo`.`basic_fee`,
+            `shdepo`.`island_fee`,
+            `shdepo`.`exchange_fee`,
+            `shdepo`.`return_fee`,
+            `shdepo`.`state`,
+            CONVERT_TZ(`shdepo`.`reg_date`, 'UTC', 'Asia/Seoul') AS `regDate`,
+            IFNULL(CONVERT_TZ( `shdepo`.`modi_date`, 'UTC', 'Asia/Seoul'), '-') AS `modi_date`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_product` AS `shpapr`
+        INNER JOIN <include refid="databaseShop"/>`shop_delivery_policy` AS `shdepo`
+            ON	`shpapr`.`delivery_policy_idx` = `shdepo`.`idx`
+        INNER JOIN  <include refid="databaseShop"/>`shop_delivery_company` AS `shdeco`
+            ON `shdeco`.`idx` = `shdepo`.`company_idx`
+		INNER JOIN  <include refid="databaseShop"/>`shop_delivery_company` AS `shdeco2`
+            ON `shdeco2`.`idx` = `shdepo`.`return_company_idx`
+        <where>
+                `shpapr`.`idx` = #{idx}
+            AND `shdepo`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 상품 최저가 조회 -->
+    <select id="getProductMinPrice" parameterType="Integer" resultType="Integer">
+        SELECT
+            `shpaprpr`.`discount_price`
+        FROM <include refid="databaseShop"/>`shop_product_mapping` AS `shprma`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product` AS `shpapr`
+            ON `shpapr`.`idx` = `shprma`.`partner_product_idx`
+            AND `shpapr`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_product_price` AS `shpaprpr`
+            ON `shpaprpr`.`partner_product_idx` =  `shpapr`.`idx`
+        WHERE
+                `shprma`.`product_idx` =  #{idx}
+            AND `shprma`.`state` = 1
+    </select>
+
+    <!-- 파트너 상품 반려 사유 -->
+    <select id="getReturnReason" parameterType="Long" resultType="ProductDto">
+        SELECT
+            `shpaprrere`.reason AS `returnReason`
+            ,`toad`.`id` AS `returnReasonAdmin`
+        FROM <include refid="databaseShop"/>`shop_partner_product_return_reason` AS `shpaprrere`
+        INNER JOIN <include refid="databaseTotal"/>`total_admin` AS `toad`
+            ON `shpaprrere`.`admin_idx` = `toad`.`idx`
+        WHERE
+                `shpaprrere`.`partner_product_idx` =  #{idx}
+        ORDER BY `shpaprrere`.reg_date DESC
+        LIMIT 1
+    </select>
+
+</mapper>

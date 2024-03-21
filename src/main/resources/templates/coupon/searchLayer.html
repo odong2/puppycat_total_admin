@@ -1,0 +1,88 @@
+<div th:fragment="layerFragment" class="modal-content" style="width: 600px;" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <!-- 컨텐츠 영역 -->
+    <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="coupon.modalCancel();"></button>
+    </div>
+    <div class="modal-body">
+        <div class="col-md-12">
+            <!-- 이름 검색 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" id="searchName"></label>
+                <div class="col-auto input-group input-group-sm m-1 p-0 col-7">
+                    <select name="searchTypeProduct" class="form-control form-select col-4 hidden" id="selectBoxProduct">
+                        <option th:value="productName" th:text="#{lang.coupon.product.name}"></option>
+                        <option th:value="productIdx" th:text="#{lang.coupon.num}"></option>
+                    </select>
+                    <select name="searchTypeCategory" class="form-control form-select col-4 hidden" id="selectBoxCategory">
+                        <option th:value="categoryName" th:text="#{lang.coupon.category.name}" ></option>
+                        <option th:value="categoryIdx" th:text="#{lang.coupon.num}" ></option>
+                    </select>
+                    <select name="searchTypeBrand" class="form-control form-select col-4 hidden" id="selectBoxBrand">
+                        <option th:value="brandName" th:text="#{lang.coupon.brand.name}" ></option>
+                        <option th:value="brandIdx" th:text="#{lang.coupon.num}" ></option>
+                    </select>
+                    <select name="searchTypeMember" class="form-control form-select col-4 hidden" id="selectBoxMember">
+                        <option th:value="phoneNumber" th:text="#{lang.coupon.member.phone_number}"></option>
+                        <option th:value="memberName" th:text="#{lang.coupon.member.name}"></option>
+                        <option th:value="memberEmail" th:text="#{lang.coupon.member.email}"></option>
+                        <option th:value="memberIdx" th:text="#{lang.coupon.num}"></option>
+                        <option th:value="memberNick" th:text="#{lang.coupon.member.nick}"></option>
+                    </select>
+                    <input type="text" name="searchWord" class="form-control form-control-sm" style="margin-right: 5px; border-radius: 2px;">
+                    <input type="hidden" id="rangeType" name="rangeType">
+                    <button class="btn btn-sm btn-success" onClick="coupon.list(1);" type="button" th:text="#{lang.coupon.button.search}" style="border-radius :3px;"></button>
+                </div>
+            </div>
+            <!-- 선택된 대상 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <label class="col-md-4 pt-2 text-center font-weight-bold" th:text="#{lang.coupon.search.preview}"></label>
+                <div class="send-list-box-modal" id="preview-modal">
+                </div>
+            </div>
+            <!-- 검색된 리스트 -->
+            <div class="row border-bottom pb-3 pt-2">
+                <!-- list -->
+                <table class="table table-hover" id="modalListLayer">
+                    <thead class="table-active">
+                    <tr class="text-center hidden" id="theadProduct">
+                        <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.product.name}" class="text-center"></th>
+                    </tr>
+                    <tr class="text-center hidden" id="theadCategory">
+                        <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.category.name}" class="text-center"></th>
+                    </tr>
+                    <tr class="text-center hidden" id="theadBrand">
+                        <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.brand.name}" class="text-center"></th>
+                    </tr>
+                    <tr class="text-center hidden" id="theadMember">
+                        <th scope="col" th:text="#{lang.coupon.num}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.member.name}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.member.nick}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.member.email}" class="text-center"></th>
+                        <th scope="col" th:text="#{lang.coupon.member.phone_number}" class="text-center"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="text-center">
+                        <td th:text="#{lang.coupon.placeholder.no.search}" colspan="5" class="text-center"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <th:block layout:fragment="paging">
+                    <div class="col-md-12 d-flex flex-row-reverse my-3">
+                        <ul id="modalPagination" class="pagination" style="font-size: 12px;">
+                        </ul>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="coupon.modalCancel();" th:text="#{lang.member.button.cancel}"></button>
+        <button type="button" class="btn btn-primary" onclick="coupon.registTarget();" th:text="#{lang.member.button.regist}"></button>
+    </div>
+    <!-- 컨텐츠 영역 -->
+</div>

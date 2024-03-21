@@ -1,0 +1,46 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div class="container-fluid p-3" layout:fragment="content">
+        <form id="registForm">
+            <table class="table">
+                <thead class="table-primary">
+                <tr>
+                    <th colspan="2" th:text="#{lang.menu.button.cateadd}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th><label for="menu_name"  th:text="#{lang.menu.list.name}"></label></th>
+                    <td>
+                        <input class="form-control form-control-sm" id="menu_name" name="name" type="text" value="">
+                    </td>
+                </tr>
+                <tr>
+                    <th th:text="#{lang.menu.list.level}"></th>
+                    <td>
+                        <div aria-label="Basic radio toggle button group" class="btn-group" role="group">
+                            <th:block th:each="level : ${dataSet.adminLevel}">
+                            <input autocomplete="off" class="btn-check" th:id="'level' + ${level.key}"  name="level" type="radio" th:value="|${level.key}|" th:checked="${level.key == 0}" >
+                            <label class="btn btn-sm btn-outline-primary"  th:for="'level' + ${level.key}" th:text="|${level.value}|"></label>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th th:text="#{lang.menu.list.state}"></th>
+                    <td>
+                        <div class="form-check form-switch" style="padding: 0; margin: 0;">
+                            <input class="form-check-input" id="state" name="state" type="checkbox" value="1" style="margin-left:0;" checked>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="form-group row">
+                <div class="col text-center">
+                    <button class="btn btn-sm btn-secondary" onclick="self.close();" type="button">닫기</button>
+                    <button class="btn btn-sm btn-success" onClick="menu.cateRegistProc();" type="button" th:text="#{lang.menu.button.regist}"></button>
+                </div>
+            </div>
+        </form>
+    </div>
+</th:block>

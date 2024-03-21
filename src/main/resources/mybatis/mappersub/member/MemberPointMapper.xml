@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.MemberPointDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberColumns">
+    </sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'position'">
+                        AND `pumepolo`.`position` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'title'">
+                        AND `pumepolo`.`title` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'admin'">
+                        AND `pumepolo`.`admin` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'partner'">
+                        AND `pumepolo`.`partner` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memberId'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memberNick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='type != null and type > 0'>
+                AND `pumepolo`.`type` = #{type}
+            </if>
+            <if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != '' ">
+                <choose>
+                    <when test="searchDateType.equals('regDate')">
+                        <![CDATA[
+                        AND (`pumepolo`.`regdate` >= #{searchStartDate} AND `pumepolo`.`regdate` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('expireDate')">
+                        <![CDATA[
+                        AND (`pumeposa`.`expiredate` >= #{searchStartDate} AND `pumeposa`.`expiredate` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 회원 포인트 조회 -->
+    <select id="getMemberPoint" parameterType="String" resultType="MemberPointDto">
+        SELECT
+            `pumepo`.`point`,
+            `pumepo`.`save_point`,
+            `pumepo`.`use_point`,
+            `pumepo`.`expire_point`
+        FROM <include refid="databaseMember"/>`puppycat_member_point` AS `pumepo`
+        WHERE
+            `pumepo`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 상품 주문번호 체크 -->
+    <select id="checkProductOrderId" parameterType="MemberPointDto" resultType="int">
+        SELECT
+            COUNT(`shor`.`idx`) AS `count`
+        FROM <include refid="databaseShop"/>`shop_order` AS `shor`
+        WHERE
+                `shor`.`order_id` = #{productOrderId}
+            AND `shor`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 포인트 리스트 카운트 -->
+    <select id="getPointTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`pumepolo`.`idx`) AS `count`
+        FROM <include refid="databaseMember"/>`puppycat_member_point_save` AS `pumeposa`
+        INNER JOIN <include refid="databaseMember"/> `puppycat_member_point_log` AS `pumepolo`
+            ON `pumeposa`.`idx` = `pumepolo`.`point_save_idx`
+            AND `pumepolo`.`state` = 1
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumepolo`.`member_uuid` = `pume`.`uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 포인트 리스트 -->
+    <select id="getPointList" parameterType="SearchDto" resultType="MemberPointDto">
+        SELECT
+            `pumepolo`.`idx`,
+            `pumepolo`.`member_uuid`,
+            `pumepolo`.`point`,
+            `pumeposa`.`rest_point`,
+            `pumepolo`.`title`,
+            `pumepolo`.`position`,
+            `pumepolo`.`admin`,
+            `pumepolo`.`partner`,
+            `pumepolo`.`product_order_id`,
+            `pume`.`id` AS `memberId`,
+            `pume`.`nick` AS `memberNick`,
+            `pume`.`idx` AS `memberIdx`,
+            CONVERT_TZ(`pumepolo`.`regdate`, 'UTC', '${convertTZ}') AS `regdate`,
+            CONVERT_TZ(`pumeposa`.`expiredate`, 'UTC', '${convertTZ}') AS `expiredate`
+        FROM <include refid="databaseMember"/>`puppycat_member_point_save` AS `pumeposa`
+        INNER JOIN <include refid="databaseMember"/> `puppycat_member_point_log` AS `pumepolo`
+            ON `pumeposa`.`idx` = `pumepolo`.`point_save_idx`
+            AND `pumepolo`.`state` = 1
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumepolo`.`member_uuid` = `pume`.`uuid`
+        <include refid="searchCondition"/>
+        ORDER BY `pumepolo`.`regdate` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

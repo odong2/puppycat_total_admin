@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.commondao.faq.FaqDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- databaseCommon name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- 공지사항 등록하기 -->
+    <insert id="insertFaq" parameterType="FaqDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_faq`
+        <set>
+            `menu_idx`       = #{menuIdx}
+            ,`title`         = #{title}
+            ,`admin_id`      = #{adminId}
+            ,`state`         = #{state}
+            ,`reg_date`       = #{regDate}
+            ,`reg_date_tz`    = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 공지사항 제목 등록하기 -->
+    <insert id="insertFaqTitle" parameterType="FaqDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_faq_title`
+        <set>
+            `faq_idx`         = #{faqIdx}
+            ,`title`          = #{title}
+            ,`lang`           = 'ko'
+            ,`state`          = 1
+            ,`reg_date`       = #{regDate}
+            ,`reg_date_tz`    = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 공지사항 내용 등록하기 -->
+    <insert id="insertFaqContents" parameterType="FaqDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseCommon" />`puppycat_board_faq_contents`
+        <set>
+            `faq_idx`         = #{faqIdx}
+            ,`contents`       = #{contents}
+            ,`lang`           = 'ko'
+            ,`state`          = 1
+            ,`reg_date`       = #{regDate}
+            ,`reg_date_tz`    = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 공지사항 수정 -->
+    <update id="updateFaq" parameterType="FaqDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_faq`
+        SET
+            `menu_idx`       = #{menuIdx}
+            ,`title`         = #{title}
+            ,`state`         = #{state}
+            ,`admin_id`      = #{adminId}
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+    <!-- 공지사항 제목 수정 -->
+    <update id="updateFaqTitle" parameterType="FaqDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_faq_title`
+        SET
+            `title`   = #{title}
+        WHERE
+                `faq_idx` = #{faqIdx}
+            AND `lang`  = 'ko'
+    </update>
+
+    <!-- 공지사항 내용 수정 -->
+    <update id="updateFaqContents" parameterType="FaqDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseCommon" />`puppycat_board_faq_contents`
+        SET
+            `contents`   = #{contents}
+        WHERE
+                `faq_idx`    = #{faqIdx}
+            AND `lang`  = 'ko'
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

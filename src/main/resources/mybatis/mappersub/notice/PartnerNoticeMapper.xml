@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.notice.PartnerNoticeDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="noticeColumns">
+        `shpano`.`idx`
+        ,`shpano`.`menu_idx`
+        ,`shpanome`.`name` AS `menu_name`
+        ,`shpano`.`is_top`
+        ,`shpano`.`title`
+        ,`shpanoco`.`contents`
+        ,`shpano`.`admin_idx`
+        ,`shpano`.`state`
+        ,CONVERT_TZ(`shpano`.`reg_date`, 'UTC', 'Asia/Seoul') AS `reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 공지사항 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="PartnerNoticeDto">
+        SELECT
+            <include refid="noticeColumns"/>
+        FROM
+            <include refid="databaseShop"/>`shop_partner_notice` AS `shpano`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_menu` AS `shpanome`
+            ON `shpano`.`menu_idx` = `shpanome`.`idx`
+            AND `shpanome`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_contents` AS `shpanoco`
+            ON `shpano`.`idx` = `shpanoco`.`notice_idx`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND `shpano`.`title` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `shpanoco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `shpano`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `shpano`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY  `shpano`.`is_top` DESC,
+                  `shpano`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shpano`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_notice` AS `shpano`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_menu` AS `shpanome`
+            ON `shpano`.`menu_idx` = `shpanome`.`idx`
+            AND `shpanome`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_contents` AS `shpanoco`
+            ON `shpano`.`idx` = `shpanoco`.`notice_idx`
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND `shpano`.`title` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `shpanoco`.`contents` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `shpano`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `shpano`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 공지 상세 -->
+    <select id="getViewNotice" parameterType="_int" resultType="PartnerNoticeDto">
+        SELECT
+            <include refid="noticeColumns"/>
+        FROM
+            <include refid="databaseShop"/>`shop_partner_notice` AS `shpano`
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_menu` AS `shpanome`
+            ON `shpano`.`menu_idx` = `shpanome`.`idx`
+            AND `shpanome`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_partner_notice_contents` AS `shpanoco`
+            ON `shpano`.`idx` = `shpanoco`.`notice_idx`
+        WHERE
+            `shpanoco`.`idx` = #{idx}
+    </select>
+
+    <!-- 공지 메뉴 리스트 가져오기 -->
+    <select id="getMenuList" parameterType="PartnerNoticeDto" resultType="PartnerNoticeDto">
+        SELECT
+            `shpanome`.`idx`
+            ,`shpanome`.`name` AS `menu_name`
+        FROM
+            <include refid="databaseShop"/>`shop_partner_notice_menu` AS `shpanome`
+        WHERE `shpanome`.`state` = '1'
+        ORDER BY `shpanome`.`idx` ASC
+    </select>
+</mapper>

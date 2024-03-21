@@ -1,0 +1,245 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        calendar.list();
+    });
+
+    // 드레그로 선택된 날짜 배열
+    let selectedStartDate = '';
+    let selectedEndDate = '';
+    let today = new Date(); // 오늘 날짜
+    let searchDay = today.getFullYear() + '-' + (today.getMonth() + 1);
+
+    const text = {
+        deleteConfirm : '[[#{lang.admin.confirm.delete.all.holiday}]]', // 등록한 모든 공휴일 삭제 하시겠습니까?
+    }
+
+    // 캘린더 객체
+    var calendar = {
+        // 조회
+        list: function () {
+            let searchYear = searchDay.split('-')[0];
+            let params = `?searchYear=${searchYear}`;
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/partner/holidays' + params,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // 캘린더 랜더링
+                        calendar.render(res.data.holidayList);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 캘린더 랜더링
+        render : (eventList) => {
+            let eventArray = []; // 공휴일 배열
+
+            eventList.forEach(value => {
+
+                let item = {
+                                id    : value.idx,
+                                title : value.name,
+                                start : value.startDate,
+                                end   : value.endDate,
+                                backgroundColor : 'orange',
+                                borderColor : 'orange',
+                                allDay: true,
+                            };
+                eventArray.push(item);
+            })
+
+            const calendarEl = document.getElementById("calendar");
+            const calendarObj = new FullCalendar.Calendar(calendarEl, {
+                height: 800,
+                timeZone: "UTC",
+                themeSystem: "bootstrap5",
+                locale: "en",
+                initialDate : new Date(searchDay.split('-')[0], searchDay.split('-')[1]),
+                navLinks: false,             // 날짜 클릭 막기
+                initialView: 'dayGridMonth', // 초기 로드 될때 보이는 캘린더 화면(기본 설정: 달)
+                events: eventArray,          // DB 등록된 이벤트 표시
+                dayMaxEvents: true,
+                editable: false,
+                headerToolbar: {
+                    left: "customPrevYear,customPrev",
+                    center: "title",
+                    right: "todayBtn,customNext,customNextYear",
+                },
+                titleFormat: 'YYYY년 MM월', // you can now use moment format strings!
+                customButtons : {
+                    customPrev : {
+                        click: function () {
+                            calendarObj.prev();
+                            calendar.checkChangeYear();
+                        },
+                        icon : 'chevron-left'
+                    },
+                    customNext : {
+                        click: function () {
+                            calendarObj.next();
+                            calendar.checkChangeYear();
+                        },
+                        icon : 'chevron-right'
+                    },
+                    customPrevYear : {
+                        click: function () {
+                            calendarObj.prevYear();
+                            calendar.checkChangeYear();
+                        },
+                        icon : 'chevrons-left'
+                    },
+                    customNextYear : {
+                        click: function () {
+                            calendarObj.nextYear();
+                            calendar.checkChangeYear();
+                        },
+                        icon : 'chevrons-right'
+                    },
+                    todayBtn : {
+                        text: '오늘',
+                        click: function () {
+                            calendarObj.today();
+                            calendar.checkChangeYear();
+                        },
+                    }
+                },
+                // 테이블 클릭&드레그 이벤트
+                selectable: true,
+                selectMirror: true,
+                select: function (arg) {
+                    selectedStartDate = moment(arg.start).format('YYYY-MM-DD');                 // 선택된 시작 일자
+                    selectedEndDate= moment(arg.end).subtract(1, 'days').format('YYYY-MM-DD');  // 선택된 끝 일자
+                },
+                // 이벤트 클릭
+                eventClick: function (event) {
+                    let idx = event.event.id;
+                    // 수정 페이지 이동
+                    js_popup('[[${SERVER.currentDomain}]]/partner/calendar/' + idx, 'holiday_modify', '900', '800');
+                },
+            });
+
+            // 캘린더 랜더
+            calendarObj.render();
+            // 요일 한국어 변환
+            $("a[aria-label=Sunday]").html("일");
+            $("a[aria-label=Monday]").html("월");
+            $("a[aria-label=Tuesday]").html("화");
+            $("a[aria-label=Wednesday]").html("수");
+            $("a[aria-label=Thursday]").html("목");
+            $("a[aria-label=Friday]").html("금");
+            $("a[aria-label=Saturday]").html("토");
+
+            $('.fc-toolbar-title').css('font-weight', '600');
+
+            // 오늘 이동 버튼 색상
+            $('.fc-todayBtn-button').css('backgroundColor', '#1c7430');
+            $('.fc-todayBtn-button').css('border-color', '#1c7430');
+
+
+        },
+        // 년도 변화 감지 후 db 조회
+        checkChangeYear : () => {
+            // 변경된 년도
+            let year = $('.fc-toolbar-title').text().split('년')[0];
+            let month = $('.fc-toolbar-title').text().split('년')[1].replace(/월/g, '');
+
+            let beforeYear = searchDay.split('-')[0]; //
+            searchDay = year + '-' + month;
+            // 년도 변경 되면
+            if (year != beforeYear) {
+                // 데이터 불러오기
+                calendar.list();
+            }
+        },
+        // 공휴일 등록
+        regist : function () {
+            let queryParams = `?startDate=${selectedStartDate}&endDate=${selectedEndDate}`;
+
+            // 등록 페이지 이동 전 유효성 검사
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/partner/holidays/validate' + queryParams,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // 값 초기화
+                        selectedStartDate = "";
+                        selectedEndDate = "";
+
+                        // 등록 페이지 이동
+                        js_popup('[[${SERVER.currentDomain}]]/partner/calendar/regist' +  queryParams, 'holiday_regist', '900', '800');
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 공휴일 전체 삭제
+        allDelete : () => {
+            // 등록한 모든 공휴일 삭제 하시겠습니까?
+            if (!confirm(text.deleteConfirm)) {
+                return false;
+            }
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/holidays',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'DELETE',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+
+
+
+</script>

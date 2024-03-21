@@ -1,0 +1,13 @@
+body {font-family: sans-serif;}
+h6 {font-size: 13px;}
+
+a:link { text-decoration: none; }
+a:visited { text-decoration: none; }
+a:hover { text-decoration: none; }
+a:active { text-decoration: none; }
+
+.pointer {cursor: pointer;}
+
+/* nav */
+.sidebar .nav-item .nav-link span {font-size: 0.8rem;}
+.sidebar .nav-item .collapse .collapse-inner, .sidebar .nav-item .collapsing .collapse-inner {font-size: 0.8rem;}

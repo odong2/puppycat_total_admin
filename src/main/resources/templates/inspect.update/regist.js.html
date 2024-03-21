@@ -1,0 +1,77 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        // ckeditor
+        if ($("#patchNote").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#patchNote"), {
+                    language: "ko",
+                })
+                .then(newEditor => {
+                    patchNoteEditor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        if ($("#forcePatchNote").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#forcePatchNote"), {
+                    language: "ko",
+                })
+                .then(newEditor => {
+                    forcePatchNoteEditor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    });
+
+    let text = {
+        manyCharacters: "[[#{lang.faq.exception.characters}]]" // 글자 수가 너무 많습니다.
+    }
+
+    let form = $("#frm")[0];
+
+    /** 점검 리스트 이동 **/
+    let update_inspect = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/inspect/update/list";
+        },
+        regist: function () {
+            formData = new FormData(form);
+            formData.set('patchNote', patchNoteEditor.getData());
+            formData.set('forcePatchNote', forcePatchNoteEditor.getData());
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/inspect/update/regist',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.href = "[[${SERVER.currentDomain}]]/inspect/update/list";
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        }
+    }
+</script>

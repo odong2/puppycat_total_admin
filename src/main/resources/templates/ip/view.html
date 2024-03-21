@@ -1,0 +1,47 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" name="title" th:text="#{lang.ip.title.view}"></h5>
+            </div>
+            <div class="card-body row">
+                <form id="frm" accept-charset="utf-8">
+                    <table class="table">
+                        <thead></thead>
+                        <tbody>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.idx}"></th>
+                            <td class="text-center" name="idx" id="idx"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.state}"></th>
+                            <td class="text-center" name="state" id="state"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.ip}"></th>
+                            <td class="text-center" name="ip" id="ip"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.memo}"></th>
+                            <td class="text-center" name="memo" id="memo"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.regdate}"></th>
+                            <td class="text-center" name="regdate" id="regdate"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-group row">
+                        <div class="col text-center">
+                            <button type="button" name="delete" class="btn btn-sm btn-danger" onclick="adminIp.delete();" th:text="#{lang.ip.button.delete}"></button>
+                            <button type="button" name="modify" class="btn btn-sm btn-warning" onclick="adminIp.modifyPopUp();" th:text="#{lang.ip.button.modify}"></button>
+                            <button type="button" name="close" class="btn btn-sm btn-secondary" th:onclick="|self.close()|" th:text="#{lang.ip.button.close}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- //컨텐츠 영역 -->
+    </div>
+</th:block>

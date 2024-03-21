@@ -1,0 +1,240 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        // ckeditor
+        if ($("#answerContents").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#answerContents"), {
+                    language: "ko",
+                    simpleUpload: {
+                        uploadUrl: "[[${SERVER.shopDomain}]]/v1/partner/qna/tempImage",
+                    },
+                })
+                .then(newEditor => {
+                    const fileInput = newEditor.ui.view.element.querySelector('input[type="file"]');
+                    fileInput.setAttribute("accept", ".jpg,.jpeg,.png"); // jpg, jpeg, png 이미지만 허용
+                    editor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+        // 상세 정보
+        qna.view();
+    });
+
+    let text = {
+        noAnswer : "[[#{lang.qna.exception.no.answer}]]" // 아직 답변이 입력되지 않았습니다.
+        ,prcAnswer : "[[#{lang.qna.exception.prc.answer}]]" // 답변 처리 중입니다.
+        ,modifyBtn: "[[#{lang.qna.button.modify}]]"      // 수정 버튼
+        ,registBtn: "[[#{lang.qna.button.regist}]]"      // 등록 버튼
+        ,prcBtn: "[[#{lang.qna.button.prc}]]"            // 처리중 버튼
+        ,deleteConfirm: "[[#{lang.qna.confirm.delete}]]" // 삭제하시겠습니까?
+    }
+
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+
+    let qna = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/partner/qna/list?" + qStr;
+        },
+        view: function () {
+            // 상세 정보
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/partner/qna/view/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //  제목
+                        $("td[name=title]").text("["+res.data.menuName+"]  " + res.data.title );
+                        // 내용
+                        $("div[name=contents]").html(res.data.contents);
+                        // 등록일
+                        $("td[name=regdate]").text(res.data.regDate);
+                        // 질문자ID
+                        $("td[name=partnerId]").text(res.data.partnerId);
+
+                        // 답변 내용이 있으면
+                        if(res.data.answerState == 3){
+                            // 답변 내용
+                            editor.setData(res.data.answerContents);
+                            // 답변자 ID
+                            $("td[name=adminId]").text(res.data.adminId+"["+res.data.adminName +"]");
+                            // 답변 등록일
+                            $("td[name=answerRegdate]").text(res.data.answerRegDate);
+                            // 수정버튼
+                            let modifyBtn = `<button type="button" class="btn btn-sm btn-warning" onclick="qna.modify(${res.data.answerIdx})">${text.modifyBtn}</button>`;
+                            $("#modiBtn").replaceWith(modifyBtn);
+                        }else if(res.data.answerState == 2){
+                            // 답변 내용이 없습니다 노출
+                            $("td[name=adminId]").text(text.prcAnswer);
+                            // 등록버튼
+                            let registBtn = `<button type="button" class="btn btn-sm btn-primary" onclick="qna.regist()">${text.registBtn}</button>`;
+                            $("#registBtn").replaceWith(registBtn);
+                        } else{
+                            // 답변 내용이 없습니다 노출
+                            $("td[name=adminId]").text(text.noAnswer);
+                            // 등록버튼
+                            let registBtn = `<button type="button" class="btn btn-sm btn-primary" onclick="qna.regist()">${text.registBtn}</button>`;
+                            $("#registBtn").replaceWith(registBtn);
+                            // 처리중 버튼
+                            let prcBtn = `<button type="button" class="btn btn-sm btn-warning" onclick="qna.prc()">${text.prcBtn}</button>`;
+                            $("#prcBtn").replaceWith(prcBtn);
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                        qna.list();
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        macro: function (idx) {
+            if(idx == ""){
+                editor.setData("");
+            }else{
+                // 상세 정보
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/partner/qna/macro/'+idx,
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'GET',
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            editor.setData(res.data.contents);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        regist: function () {
+            formData = new FormData(form);
+            formData.set('contents', editor.getData());
+            formData.set("questionIdx", "[[${idx}]]");
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/qna',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        prc:  function () {
+            formData = new FormData();
+            formData.set("state", 2);
+            formData.set("questionIdx", "[[${idx}]]");
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/qna',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'PATCH',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        modify: function (idx) {
+            formData = new FormData(form);
+            formData.set("contents", editor.getData());
+            formData.set("answerIdx", idx);
+            formData.set("questionIdx", "[[${idx}]]");
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/partner/qna/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'PUT',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        }
+    }
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function (val) {
+        this.each(function () {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+
+</script>

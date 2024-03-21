@@ -1,0 +1,100 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        adminIp.modifyView();
+    });
+
+    let adminIp = {
+
+        // 수정할 IP 조회
+        modifyView: function () {
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/ip/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.data != undefined) {
+
+                            // 사용 상태 세팅
+                            if (res.data.state == 1) {
+                                $("input:checkbox[id='state']").prop("checked", true);
+                            }
+
+                            // 관리자 구분값 세팅
+                            if (res.data.type == 'Admin') {
+                                $("input:radio[name ='type']:input[value='Admin']").attr("checked", true);
+                            } else if (res.data.type == 'cpAdmin') {
+                                $("input:radio[name ='type']:input[value='cpAdmin']").attr("checked", true);
+                            }
+
+                            // IP 상세 정보 폼
+                            $("td[name=idx]").text(res.data.idx || "");
+                            $("td[name=ip]").html(`<input type="text" name="ip" id="ip" class="form-control form-control-sm" value="${res.data.ip || ""}">`);
+                            $("td[name=memo]").html(`<input type="text" name="memo" id="memo" class="form-control form-control-sm" value="${res.data.memo || ""}">`);
+                            $("td[name=regdate]").text(res.data.regdate || "");
+
+                        } else {
+                            // 결과 없음
+                            toast.alert(res.message);
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // IP 수정
+        modify: function () {
+
+            let modifyConfirmMessage = `[[#{lang.ip.confirm.modify}]]`;
+
+            if (confirm(modifyConfirmMessage)) {
+
+                let form = $("#modifyForm")[0];
+                let formData = new FormData(form);
+                if ($("input:checkbox[name='state']:checked").val() == null) {
+                    formData.append("state", 2);
+                }
+
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/ip/[[${idx}]]',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: "PUT",
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            opener.location.reload();
+                            self.close();
+                        } else {
+                            // 수정 실패
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+                return false;
+            }
+        }
+    }
+</script>

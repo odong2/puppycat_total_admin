@@ -1,0 +1,123 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.contents.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="contents.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 날짜 검색 -->
+                                            <div class ="form-control form-control-sm text-center" th:text="#{lang.contents.regdate}"></div>
+                                            <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" th:value="${param.searchStartDate}">
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input  type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}">
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 정렬 -->
+                                            <select name="searchSort" class="form-select form-select-sm">
+                                                <option value="recent" th:text="#{lang.contents.sort.recent}" th:selected="${search.searchSort} == 'recent'"></option>
+                                                <option value="report" th:text="#{lang.contents.sort.report}" th:selected="${search.searchSort} == 'report'"></option>
+                                                <option value="comment" th:text="#{lang.contents.sort.comment}" th:selected="${search.searchSort} == 'comment'"></option>
+                                                <option value="like" th:text="#{lang.contents.sort.like}" th:selected="${search.searchSort} == 'like'"></option>
+                                                <option value="save" th:text="#{lang.contents.sort.save}" th:selected="${search.searchSort} == 'save'"></option>
+                                                <option value="hourPopular" th:text="#{lang.contents.sort.hour.popular}" th:selected="${search.searchSort} == 'hourPopular'"></option>
+                                                <option value="weekPopular" th:text="#{lang.contents.sort.week.popular}" th:selected="${search.searchSort} == 'weekPopular'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <select name="searchType" class="form-control form-select col-5">
+                                                <option value="" th:text="#{lang.contents.search}" ></option>
+                                                <option th:value="id" th:text="#{lang.contents.memberId}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="nick" th:text="#{lang.contents.memberNick}" th:selected="${search.searchType} == 'nick'"></option>
+                                                <option th:value="contents" th:text="#{lang.contents.contents}" th:selected="${search.searchType} == 'contents'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.contents.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 상태 -->
+                                            <select name="state" class="form-select form-select-sm">
+                                                <option value=""  th:text="#{lang.contents.state}"></option>
+                                                <option value="1" th:text="#{lang.contents.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                <option value="0" th:text="#{lang.contents.state.hide}" th:selected="${search.state} == '0'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 보기 -->
+                                            <select name="recordSize" class="form-select form-select-sm">
+                                                <option value="10" th:text="#{lang.common.view.ten}" th:selected="${search.recordSize} == 10"></option>
+                                                <option value="30" th:text="#{lang.common.view.thirty}" th:selected="${search.recordSize} == 30"></option>
+                                                <option value="50" th:text="#{lang.common.view.fifty}" th:selected="${search.recordSize} == 50"></option>
+                                                <option value="100" th:text="#{lang.common.view.hundred}" th:selected="${search.recordSize} == 100"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.contents.button.search}" onclick="contents.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="contents.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.contents.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.contents.idx}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.memberId}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.memberNick}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.state}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.thumbnail}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.contents}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.img.count}" class="text-center" style="width: 75px"></th>
+                            <th scope="col" th:text="#{lang.contents.like.count}" class="text-center" style="width: 75px"></th>
+                            <th scope="col" th:text="#{lang.contents.save.count}" class="text-center" style="width: 70px"></th>
+                            <th scope="col" th:text="#{lang.contents.comment.count}" class="text-center" style="width: 70px"></th>
+                            <th scope="col" th:text="#{lang.contents.report.count}" class="text-center" style="width: 70px"></th>
+                            <th scope="col" th:text="#{lang.contents.modify.date}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.contents.regdate}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

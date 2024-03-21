@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.member.MemberDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- 닉네임 로그 인서트 -->
+    <insert id="insertNickLog" parameterType="memberDto" keyProperty="insertedId">
+        INSERT INTO <include refid="databaseSns" />`sns_member_nick_log`
+        <set>
+            `member_idx`   = #{idx},
+            `nick`         = #{nick},
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 회원 정보 수정 -->
+    <update id="updateInfo" parameterType="memberDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="databaseMember" />`puppycat_member_info` AS `pumein`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        SET
+            `pume`.`lang`     = #{lang},
+            `pumein`.`phone`  = #{phone},
+        <if test="birth != '' and birth != null">
+            `pumein`.`birth`  = #{birth},
+        </if>
+            `pumein`.`gender` = #{gender}
+        WHERE
+            `pumein`.`member_uuid` = #{idx}
+    </update>
+
+    <!-- 회원 닉네임 수정 -->
+    <update id="updateNick" parameterType="MemberDto" keyProperty="affectedRow">
+        UPDATE <include refid="databaseMember" />`puppycat_member` AS `pume`
+        <set>
+            `pume`.`nick`  = #{nick}
+        </set>
+        WHERE
+            `pume`.`uuid` = #{idx}
+    </update>
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

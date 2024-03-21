@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.admin.AdminDao">
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 어드민 등록하기 -->
+    <insert id="insert" parameterType="AdminDto" useGeneratedKeys="true" keyProperty="insertedId">
+        INSERT INTO <include refid="databaseTotal" />`total_admin`
+        <set>
+            `id`                  =  #{id}
+            ,`password`           =  #{password}
+            ,`name`               =  #{name}
+            ,`level`              =  1
+            ,`login_ip`           =  #{loginIp}
+            ,`join_ip`            =  #{joinIp}
+            ,`state`              =  2
+            ,`reg_date`           =  #{regDate}
+            ,`reg_date_tz`        =  '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 마지막 로그인 날짜 업데이트 -->
+    <update id="updateLastDate" parameterType="AdminDto" useGeneratedKeys="true" keyProperty="lastDateRow">
+        UPDATE <include refid="databaseTotal" />`total_admin`
+        <set>
+            `login_ip`               = #{loginIp}
+            ,`last_login_date`       = #{lastLoginDate}
+            ,`last_login_date_tz`    = '${convertTZ}'
+        </set>
+        WHERE `idx` = #{idx}
+    </update>
+
+
+    <!-- 비밀번호 변경 -->
+    <update id="modifyPassword" parameterType="adminDto">
+        UPDATE <include refid="databaseTotal" /> `total_admin`
+        SET
+            `password` = #{password}
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+    <!-- 관리자 수정 -->
+    <update id="modifyAdmin" parameterType="adminDto">
+        UPDATE <include refid="databaseTotal" />`total_admin` AS `snad`
+        <set>
+            `snad`.`state` = #{state},
+            `snad`.`level` = #{level},
+        </set>
+        WHERE `idx` = #{idx}
+    </update>
+
+    <!-- 내 정보 수정 -->
+    <update id="modifyMyPage" parameterType="adminDto">
+        UPDATE <include refid="databaseTotal" /> `total_admin`
+        SET
+            `name` = #{name},
+            `level` = #{level},
+            `state` = #{state}
+        WHERE
+            `idx` = #{idx}
+    </update>
+</mapper>

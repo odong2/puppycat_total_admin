@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.bank.BankDaoSub">
+
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 은행 리스트 조회 -->
+
+    <select id="getBankList" resultType="BankDto">
+        SELECT
+            `shbaca`.`idx`,
+            `shbaca`.`sort`,
+            `shbaca`.`name`
+        FROM <include refid="databaseShop"/>`shop_bank_category` AS `shbaca`
+        WHERE
+            `shbaca`.`state` = 1
+        ORDER BY
+            `shbaca`.`sort` ASC
+    </select>
+
+
+</mapper>

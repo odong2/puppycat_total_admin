@@ -1,0 +1,73 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        // ckeditor
+        if ($("#message").length > 0) {
+            ClassicEditor
+                .create(document.querySelector("#message"), {
+                    language: "ko",
+                })
+                .then(newEditor => {
+                    message = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+    });
+
+    let text = {
+        manyCharacters: "[[#{lang.faq.exception.characters}]]" // 글자 수가 너무 많습니다.
+    }
+
+    let form = $("#frm")[0];
+
+    /** 점검 리스트 이동 **/
+    let inspect = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/inspect/list";
+        },
+        regist: function () {
+            formData = new FormData(form);
+            formData.set('message', message.getData());
+
+            //빈 배열 선언 후 담아준다.
+            let targetServiceList = [];
+
+            $("input[name=chk_type]:checked").each(function(){
+                let targetService = $(this).val();
+                targetServiceList.push(targetService);
+            })
+
+            formData.set('targetServiceList', targetServiceList);
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/inspect/regist',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.href = "[[${SERVER.currentDomain}]]/inspect/list";
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        }
+    }
+</script>

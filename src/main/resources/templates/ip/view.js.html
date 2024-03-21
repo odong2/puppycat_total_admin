@@ -1,0 +1,86 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        adminIp.view();
+    });
+
+    let adminIp = {
+        // 허용 IP 상세
+        view: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/ip/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.data != undefined) {
+
+                            // 허용 IP 상세 정보 폼
+                            $("td[name=idx]").text(res.data.idx || "-");
+                            $("td[name=state]").html(`<span class="badge ${res.data.stateBg}">${res.data.stateText || "-"}</span>`);
+                            $("td[name=type]").text(res.data.typeText || "-");
+                            $("td[name=ip]").text(res.data.ip || "-");
+                            $("td[name=memo]").text(res.data.memo || "-");
+                            $("td[name=regdate]").text(res.data.regdate || "-");
+
+                        } else {
+                            // 결과 없음
+                            toast.alert(res.message);
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        // IP 삭제
+        delete: function () {
+
+            let deleteConfirmMessage = `[[#{lang.ip.confirm.delete}]]`;
+
+            if (confirm(deleteConfirmMessage)) {
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/ip/[[${idx}]]',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: "DELETE",
+                    data: '',
+                    dataType: 'json',
+                    processData: false,
+                    contentType: "application/json",
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            opener.location.reload();
+                            self.close();
+                        } else {
+                            // 삭제 실패
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+                return false;
+            }
+        },
+        // IP 수정 팝업
+        modifyPopUp: function () {
+            window.location.href = '[[${SERVER.currentDomain}]]/ip/modify/[[${idx}]]';
+        }
+    }
+</script>

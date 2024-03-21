@@ -1,0 +1,105 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.push.admin.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight" onsubmit="pushAdmin.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 날짜 검색 -->
+                                            <div class ="form-control form-control-sm text-center" th:text="#{lang.push.admin.regdate}"></div>
+                                            <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" th:value="${param.searchStartDate}">
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input  type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}">
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-2">
+                                            <select name="searchType" class="form-select form-select-sm col-6">
+                                                <option value="" th:text="#{lang.push.admin.search}" ></option>
+                                                <option th:value="id" th:text="#{lang.push.admin.title}" th:selected="${search.searchType} == 'title'"></option>
+                                                <option th:value="nick" th:text="#{lang.push.admin.body}" th:selected="${search.searchType} == 'body'"></option>
+                                                <option th:value="adminId" th:text="#{lang.push.admin.push.adminId}" th:selected="${search.searchType} == 'adminId'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.push.admin.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 타입 -->
+                                            <select name="type" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.push.admin.type}"></option>
+                                                <option value="9" th:text="#{lang.push.admin.type.notice}" th:selected="${search.type} == '9'"></option>
+                                                <option value="10" th:text="#{lang.push.admin.type.event}" th:selected="${search.type} == '10'"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.push.admin.button.search}" onclick="pushAdmin.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="pushAdmin.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <button type="button" id="btnRegist" onclick="pushAdmin.regist();" class="btn btn-sm btn-primary" th:text="#{lang.push.admin.button.regist}"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.push.admin.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm" >
+                                            <p id="alarmText" style="background-color:lightgreen"></p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.push.admin.idx}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.push.admin.type}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.push.admin.title}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.push.admin.body}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.push.admin.push.contentsType}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.push.admin.push.img}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.push.admin.push.adminId}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.push.admin.regdate}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

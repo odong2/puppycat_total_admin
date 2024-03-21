@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.policy.PolicyDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseCommon">${databaseRefIdCommon}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="policyColumns">
+        `pubopo`.`idx`
+        ,`pubopo`.`menu_idx`
+        ,`pubopo`.`required`
+        ,`pubopo`.`current`
+        ,IFNULL(`pubopomena`.`name`,`pubopome`.`name`) AS `menu_name`
+        ,IFNULL(`pubopoti`.`title`,`pubopo`.`title`) AS `title`
+        ,`pubopode`.`detail`
+        ,`pubopo`.`state`
+        ,CONVERT_TZ(`pubopo`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 이용약관 목록 -->
+    <select id="getPolicyList" parameterType="SearchDto" resultType="PolicyDto">
+        SELECT
+            <include refid="policyColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_policy` AS `pubopo`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu` AS `pubopome`
+            ON `pubopo`.`menu_idx` = `pubopome`.`idx`
+            AND `pubopome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu_name` AS `pubopomena`
+            ON `pubopome`.`idx` = `pubopomena`.`menu_idx`
+            AND `pubopomena`.`lang` = 'ko'
+            AND  `pubopomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_title` AS `pubopoti`
+            ON `pubopo`.`idx` = `pubopoti`.`policy_idx`
+            AND `pubopoti`.`state` = 1
+            AND `pubopoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_detail` AS `pubopode`
+            ON `pubopo`.`idx` = `pubopode`.`policy_idx`
+            AND `pubopode`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubopoti`.`title`,`pubopo`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubopode`.`detail` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubopo`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubopo`.`state` = #{state}
+            </if>
+        </where>
+        ORDER BY  `pubopo`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pubopo`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_policy` AS `pubopo`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu` AS `pubopome`
+            ON `pubopo`.`menu_idx` = `pubopome`.`idx`
+            AND `pubopome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu_name` AS `pubopomena`
+            ON `pubopome`.`idx` = `pubopomena`.`menu_idx`
+            AND `pubopomena`.`lang` = 'ko'
+            AND  `pubopomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_title` AS `pubopoti`
+            ON `pubopo`.`idx` = `pubopoti`.`policy_idx`
+            AND `pubopoti`.`state` = 1
+            AND `pubopoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_detail` AS `pubopode`
+            ON `pubopo`.`idx` = `pubopode`.`policy_idx`
+            AND `pubopode`.`lang` = 'ko'
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND IFNULL(`pubopoti`.`title`,`pubopo`.`title`)  LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `pubopode`.`detail` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="type != null">
+                AND `pubopo`.`menu_idx` = #{type}
+            </if>
+            <if test="state != null">
+                AND `pubopo`.`state` = #{state}
+            </if>
+        </where>
+    </select>
+
+    <!-- 이용약관 상세 -->
+    <select id="getViewPolicy" parameterType="_int" resultType="PolicyDto">
+        SELECT
+            <include refid="policyColumns"/>
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_policy` AS `pubopo`
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu` AS `pubopome`
+            ON `pubopo`.`menu_idx` = `pubopome`.`idx`
+            AND `pubopome`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_menu_name` AS `pubopomena`
+            ON `pubopome`.`idx` = `pubopomena`.`menu_idx`
+            AND `pubopomena`.`lang` = 'ko'
+            AND  `pubopomena`.`state` = 1
+        LEFT JOIN <include refid="databaseCommon"/>`puppycat_board_policy_title` AS `pubopoti`
+            ON `pubopo`.`idx` = `pubopoti`.`policy_idx`
+            AND `pubopoti`.`state` = 1
+            AND `pubopoti`.`lang` = 'ko'
+        INNER JOIN <include refid="databaseCommon"/>`puppycat_board_policy_detail` AS `pubopode`
+            ON `pubopo`.`idx` = `pubopode`.`policy_idx`
+            AND `pubopode`.`lang` = 'ko'
+        WHERE
+            `pubopo`.`idx` = #{idx}
+    </select>
+    
+    <!-- 이용약관 메뉴 리스트 가져오기 -->
+    <select id="getPolicyMenuList" parameterType="PolicyDto" resultType="PolicyDto">
+        SELECT
+            `pubopome`.`idx`
+            ,IFNULL(`pubopomena`.`name`,`pubopome`.`name`) AS `menu_name`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_policy_menu`AS `pubopome`
+        LEFT JOIN  <include refid="databaseCommon"/>`puppycat_board_policy_menu_name` AS `pubopomena`
+            ON `pubopome`.`idx` = `pubopomena`.`menu_idx`
+            AND `pubopomena`.`lang` = 'ko'
+            AND  `pubopomena`.`state` = 1
+        WHERE `pubopome`.`state` = '1'
+        ORDER BY `pubopome`.`idx` ASC
+    </select>
+
+    <!-- 이용약관 메뉴 리스트 가져오기 -->
+    <select id="getCountCurrent" parameterType="PolicyDto" resultType="int">
+        SELECT
+            COUNT(`pubopo`.`idx`) AS `cnt`
+        FROM
+            <include refid="databaseCommon"/>`puppycat_board_policy` AS `pubopo`
+        WHERE
+                `pubopo`.`menu_idx` = '1'
+            AND  `pubopo`.`state` = '1'
+            AND  `pubopo`.`current` = '1'
+    </select>
+
+</mapper>

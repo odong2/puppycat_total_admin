@@ -1,0 +1,105 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        restrain_partner.list(page);
+    });
+
+    let text = {
+        delRestrainButton: "[[#{lang.restrain.partner.button.delete}]]",       // 제재 삭제
+        delRestrainConfirm: "[[#{lang.restrain.partner.confirm.delete}]]",     // 제재내역을 삭제 하시겠습니까?
+    }
+
+    let adminLevel = "[[${dataSet.adminLevel}]]";
+    let restrain_partner = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/restrain/partner',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                cache: true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if (window.location.search !== "?" + $("#frm").serialize()) {
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+
+                                listTbody += `
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center">${el.companyName}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="restrain_partner.view(${el.partnerIdx});">${el.id}</a></td>
+                                    <td class="text-center">${el.type}</td>
+                                    <td class="text-center" style="text-overflow :ellipsis; overflow: hidden;">${el.info}</td>
+                                    <td class="text-center">${el.startDate}</td>
+                                    <td class="text-center">${el.endDate}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                    <td class="text-center">${el.modiDate}</td>
+                                </tr>
+                                `
+                            });
+
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("restrain_partner", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="13" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/restrain/partner/excel?' + $("#frm").serialize();
+        },
+        // 파트너 상세
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/partner/view/' + idx;
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/restrain/partner';
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function (event) {
+        window.location = document.location.href;
+    });
+</script>

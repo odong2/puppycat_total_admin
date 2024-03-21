@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.partner.PartnerCalendarDaoSub">
+
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <sql id="commonColumn">
+        `shpuho`.`idx`,
+        `shpuho`.`name`,
+        `shpuho`.`description`,
+        `shpuho`.`start_date`,
+        `shpuho`.`end_date`
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 국가 공휴일 정보 조회 -->
+    <select id="getHolidayInfoByIdx" parameterType="int" resultType="PartnerHolidayDto">
+        SELECT
+        <include refid="commonColumn"/>
+        FROM <include refid="databaseShop"/>`shop_public_holidays` AS `shpuho`
+        WHERE
+                `shpuho`.`idx` = #{idx}
+            AND `shpuho`.`state` = 1
+    </select>
+
+    <!-- 국가 공휴일 조회 -->
+    <select id="getHolidayList" parameterType="String" resultType="PartnerHolidayDto">
+        SELECT
+            <include refid="commonColumn"/>
+        FROM <include refid="databaseShop"/>`shop_public_holidays` AS `shpuho`
+        WHERE
+                `shpuho`.`state` = 1
+            AND LEFT(`shpuho`.`start_date`, 4) = #{searchYear}
+    </select>
+
+    <!-- 해당 기간에 등록된 휴무일 개수 -->
+    <select id="getHolidayCnt" parameterType="PartnerHolidayDto" resultType="int">
+        SELECT
+            COUNT(`idx`)
+        FROM <include refid="databaseShop"/>`shop_public_holidays`
+        WHERE
+        <foreach collection="searchConditionList" item="item" open="(" separator="OR" close=")">
+            <![CDATA[
+                    `start_date` <= #{item.startDate} AND `end_date` >= #{item.endDate} AND `state` = 1
+            ]]>
+        </foreach>
+    </select>
+
+    <!-- 공휴일 유무 조회 -->
+    <select id="getHolidayCntByIdx" parameterType="int" resultType="int">
+        SELECT
+            COUNT(`idx`)
+        FROM <include refid="databaseShop"/>`shop_public_holidays`
+        WHERE
+                `idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+</mapper>

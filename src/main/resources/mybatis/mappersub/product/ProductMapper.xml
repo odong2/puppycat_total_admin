@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.product.ProductDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <sql id="productSearchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'productIdx'">
+                        AND `shpr`.`idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'productName'">
+                        AND `shpr`.`product_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 상품 조회 목록 -->
+    <select id="getProductListByIdx" parameterType="List" resultType="ProductDto">
+        SELECT
+            `shpr`.`idx`,
+            `shpr`.`product_name`
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        WHERE
+            `shpr`.`idx` IN
+            <foreach collection="list" item="idx" open="(" separator="," close=")">
+                #{idx}
+            </foreach>
+    </select>
+
+    <!-- 상품 검색 카운트 -->
+    <select id="getProductSearchCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`shpr`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        <include refid="productSearchCondition"/>
+    </select>
+
+    <!-- 상품 검색 리스트 -->
+    <select id="getProductSearchList" parameterType="SearchDto" resultType="ProductDto">
+        SELECT
+            `shpr`.`idx`,
+            `shpr`.`product_name`
+        FROM <include refid="databaseShop"/>`shop_product` AS `shpr`
+        <include refid="productSearchCondition"/>
+        ORDER BY `shpr`.`idx` ASC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,133 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.report.contents.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="report.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 날짜 검색 -->
+                                            <div class ="form-control form-control-sm text-center" th:text="#{lang.report.regdate}"></div>
+                                            <input type="date" class="form-control form-control-sm ml-1"  name="searchStartDate" th:value="${param.searchStartDate}">
+                                            &nbsp;&nbsp;<h5>~</h5> &nbsp;&nbsp;
+                                            <input  type="date"  class="form-control form-control-sm ml-1" name="searchEndDate" th:value="${param.searchEndDate}">
+                                        </div>
+                                    </div>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <!-- 신고자/대상자 선택-->
+                                            <select name="searchTargetType" class="form-control form-select">
+                                                <option value="all" th:text="#{lang.report.all}" th:selected="${search.searchTargetType} == 'all'"></option>
+                                                <option value="reporter" th:text="#{lang.member.reporter}" th:selected="${search.searchTargetType} == 'reporter'"></option>
+                                                <option value="reported" th:text="#{lang.member.reported}" th:selected="${search.searchTargetType} == 'reported'"></option>
+                                            </select>
+                                            <!-- 아이디/닉네임 선택 -->
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.report.search}" ></option>
+                                                <option th:value="id" th:text="#{lang.report.member.id}" th:selected="${search.searchType} == 'id'"></option>
+                                                <option th:value="nick" th:text="#{lang.report.member.nick}" th:selected="${search.searchType} == 'nick'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.report.placeholder.search.word}">
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <!-- 상태 -->
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <select name="state" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.report.state}"></option>
+                                                <option value="1" th:text="#{lang.report.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                <option value="0" th:text="#{lang.report.state.user.delete}" th:selected="${search.state} == '0'"></option>
+                                            </select>
+                                        </div>
+                                        <!-- 신고사유 선택 -->
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <select name="code" id="selectReportCode" class="form-select form-select-sm col-12">
+                                                <option value=""  th:text="#{lang.report.reason}"></option>
+                                                <th:block th:each="val: ${dataSet.codeList}">
+                                                    <option th:value="${val.idx}" th:text="${val.name}"></option>
+                                                </th:block>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-1">
+                                            <!-- 보기 -->
+                                            <select name="recordSize" class="form-select form-select-sm">
+                                                <option value="10" th:text="#{lang.common.view.ten}" th:selected="${search.recordSize} == 10"></option>
+                                                <option value="30" th:text="#{lang.common.view.thirty}" th:selected="${search.recordSize} == 30"></option>
+                                                <option value="50" th:text="#{lang.common.view.fifty}" th:selected="${search.recordSize} == 50"></option>
+                                                <option value="100" th:text="#{lang.common.view.hundred}" th:selected="${search.recordSize} == 100"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.report.button.search}" onclick="report.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="report.reset(1);"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                        <div class="text-right col">
+                                            <!-- 신고 취소 -->
+                                            <button type="button" id="deleteBtn" th:text="#{lang.report.button.report.cancel}" onclick="report.delete();" class="btn btn-sm bg-danger"  style="color: black"></button>
+                                            <!-- 제재버튼 -->
+                                            <button type="button" id="restrainBtn" th:text="#{lang.report.button.restrain}" onclick="report.restrain();" class="btn btn-sm bg-warning" style="color: black"></button>
+                                            <!-- 확인버튼 -->
+                                            <button type="button" id="confirmBtn" th:text="#{lang.report.button.confirm}" onclick="report.confirm();" class="btn btn-sm bg-success" style="color: white"></button>
+                                            <!-- 엑셀 다운로드 -->
+                                            <button type="button" id="excelBtn" th:text="#{lang.report.button.excel}" onclick="report.excel();" class="btn btn-sm bg-primary" style="color: white"></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.report.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" class="text-center"><input type="checkbox" name="checkAll" id="th_checkAll" onclick="checkAll();"></th>
+                            <th scope="col" th:text="#{lang.report.num}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.member}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.target.member}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.contents}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.reason}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.state}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.regdate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.state.admin.check.state}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.report.state.admin.check.date}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

@@ -1,0 +1,89 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let idx = "[[${dataSet.idx}]]";
+        let viewType = "[[${dataSet.viewType}]]";
+        comment_view.view(idx, viewType);
+    });
+
+    let text = {
+        stateNormal: "[[#{lang.comment.state.normal}]]",        // 정상
+        stateHide: "[[#{lang.comment.state.delete}]]",          // 삭제
+        stateRestrain: "[[#{lang.comment.state.restrain}]]",    // 제재
+    }
+
+    let comment_view = {
+        view:function (idx, viewType){
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/comment/view/'+ idx + '?viewType=' + viewType,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                data: '',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        $("input[name=memberIdx]").val(res.data.comment.memberIdx);
+                        $("input[name=id]").val(res.data.comment.memberId);
+                        $("input[name=nick]").val(res.data.comment.memberNick);
+                        $("textarea[name=contents]").val(res.data.comment.contents);
+                        $("input[name=modiDate]").val(res.data.comment.modiDate);
+                        $("input[name=regDate]").val(res.data.comment.regDate);
+
+                        let state = res.data.comment.state
+                        let stateOption =``;
+                        stateOption +=
+                            `
+                            <input type="radio" class="btn-check" name="state" id="state0" value="0" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-danger" for="state0">${text.stateHide}</label>
+                            <input type="radio" class="btn-check" name="state" id="state1" value="1" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-primary" for="state1">${text.stateNormal}</label>
+                            <input type="radio" class="btn-check" name="state" id="state9" value="9" autocomplete="off">
+                            <label class="btn btn-sm btn-outline-warning" for="state9">${text.stateRestrain}</label>
+                            `
+
+                        $("#stateRadio").append(stateOption);
+
+                        $("input:radio[name='state']:radio[value="+state+"]").prop('checked', true);
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        modify:function() {
+            var form = $("#modifyForm")[0];
+            var formData = new FormData(form);
+            let idx = "[[${dataSet.idx}]]";
+
+            $.ajax({
+                url: '[[${SERVER.snsDomain}]]/v1/comment/modify/state/'+idx,
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        location.reload();
+                        alert(res.message);// hmImportFile put 이슈 발생하여 중간에 처리함
+                        opener.location.reload();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+</script>

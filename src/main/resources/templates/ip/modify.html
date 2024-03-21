@@ -1,0 +1,50 @@
+<th:block layout:decorate="~{common/layout_popup_nomenu}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="container-fluid">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.ip.title.modify}"></h5>
+            </div>
+            <div class="card-body row">
+                <form id="modifyForm" onsubmit="adminIp.modify(); return false;"accept-charset="utf-8">
+                    <table class="table">
+                        <thead></thead>
+                        <tbody>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.idx}"></th>
+                            <td class="text-center" name="idx" id="idx"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.state}"></th>
+                            <td>
+                                <div class="form-check form-switch" style="padding: 0; margin: 0;">
+                                    <input class="form-check-input" id="state" name="state" type="checkbox" value="1" style="margin-left:0;">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.ip}"></th>
+                            <td class="text-center" name="ip" id="ip"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.memo}"></th>
+                            <td class="text-center" name="memo" id="memo"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-center" th:text="#{lang.ip.regdate}"></th>
+                            <td class="text-center" name="regdate" id="regdate"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-group row">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-warning" onclick="adminIp.modify();" th:text="#{lang.ip.button.modify}"></button>
+                            <button type="button" class="btn btn-sm btn-secondary" th:onclick="|self.close()|" th:text="#{lang.ip.button.close}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- //컨텐츠 영역 -->
+    </div>
+</th:block>

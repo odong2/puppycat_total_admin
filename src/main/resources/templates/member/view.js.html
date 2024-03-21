@@ -1,0 +1,1100 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        member.view();
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+    let firstNick = "";
+    let memberUuid = "";
+
+    let text = {
+        deleteBtn: "[[#{lang.member.button.out}]]",                       // 탈퇴 버튼
+        addBtn: "[[#{lang.member.button.add}]]",                          // 등록 버튼
+        applyBtn: "[[#{lang.restrain.member.button.apply}]]",             // 신청 버튼
+        selectFileBtn: "[[#{lang.member.button.selectFile}]]",            // 파일 선택
+        viewMoreBtn: "[[#{lang.member.button.viewMore}]]",                // 더보기 버튼
+        deleteConfirm: "[[#{lang.member.confirm.out}]]",                  // 삭제 confirm
+        restrainImageConfirm: "[[#{lang.member.confirm.restrain.image}]]",  // 이미지 제재 confirm
+        restrainReasonInput: "[[#{lang.member.confirm.restrain.reason}]]",  // 이미지 제재 사유 입력
+        modifyConfirm: "[[#{lang.member.confirm.modify}]]",               // 수정 confirm
+        imageEmptyTxt: "[[#{lang.member.exception.image}]]",              // 프로필 이미지 없을때
+        followEmptyTxt: "[[#{lang.member.exception.follow}]]",            // 팔로우 리스트 없을때
+        followerEmptyTxt: "[[#{lang.member.exception.follower}]]",        // 팔로워 리스트 없을때
+        blockEmptyTxt: "[[#{lang.member.exception.block}]]",              // 차단 리스트 없을때
+        duplicateNick: "[[#{lang.member.exception.check.nick}]]"          // 중복된 닉네임일때
+    }
+    let param;
+
+    /** 회원 프로필 이미지 **/
+    // 등록할 이미지
+    let memberImageRowTemp = [];
+
+    let member = {
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/members/list?" + qStr;
+        },
+        view: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/member/view/[[${memberIdx}]]',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.data != undefined) {
+                                memberUuid = res.data.member.uuid;
+                                // 뷰 하위단 호출
+                                // 회원 포인트 내역
+                                member_point.list(res.data.member.uuid);
+                                // 제재내역
+                                restrain_member.list(res.data.member.uuid,res.data.member.nick);
+                                // 로그인 내역
+                                member_access_log.list(res.data.member.uuid);
+                                // 활동 내역
+                                member_login_log.list(res.data.member.uuid);
+                                // 팔로우 회원
+                                following_member.list(res.data.member.uuid,res.data.member.nick);
+                                // 팔로워 회원
+                                follower_member.list(res.data.member.uuid,res.data.member.nick);
+                                // 댓글 내역
+                                member_comment.list(res.data.member.uuid,res.data.member.nick);
+                                // 차단 내역
+                                block_member.list(res.data.member.uuid,res.data.member.nick);
+                                interactive_member.list(res.data.member.uuid);
+                                // 컨텐츠
+                                member_content.list(res.data.member.uuid,res.data.member.nick);
+                                var badgeEmo = "";
+                                if(res.data.member.badge == "Y"){
+                                    badgeEmo = " <i class=\"fa-solid fa-check\"></i>";
+                            }
+                            // 회원 상세 정보 폼
+                            $("td[name=idx]").text(res.data.member.idx);
+                            $("td[name=id]").text(res.data.member.id);
+                            $("td[name=id]").append(badgeEmo);
+                            $("td[name=nick]").text(res.data.member.nick);
+                            $("td[name=name]").text(res.data.member.name);
+                            $("td[name=phone]").text(res.data.member.phone);
+                            $("td[name=modiDate]").text(res.data.member.modiDate||'-');
+                            $("td[name=birth]").text(res.data.member.birth);
+                            $("td[name=simpletype]").text(res.data.member.simpleType);
+                            $("textarea[name=intro]").val(res.data.member.intro);
+                            $("input[name=nick]").val(res.data.member.nick);
+                            $("input[name=gender]").radioSelect(res.data.member.gender);
+                            $("td[name=loginIp]").text(res.data.member.loginIp);
+                            $("td[name=lastLogin]").text(res.data.member.lastLogin);
+                            $("td[name=joinIp]").text(res.data.member.joinIp);
+                            $("td[name=regDate]").text(res.data.member.regDate);
+                            $("td[name=marketingAgreeDate]").text(res.data.member.marketingRegDate);
+
+                            $("select[name=lang]").val(res.data.member.lang).prop("selected", true);
+
+                            let state = `<span class="btn btn-sm ${res.data.member.isDelBg}" style="cursor: default; color: white">${res.data.member.isDelText}</span>`;
+                            let marketingState = `<span class="btn btn-sm ${res.data.member.marketingStateBg}" style="cursor: default; color: white">${res.data.member.marketingStateText}</span>`;
+                            $("td[name=state]").html(state);
+                            $("td[name=marketingState]").html(marketingState);
+
+                            // 원래 닉네임 임시저장
+                            firstNick = res.data.member.nick;
+
+                            /** 이미지 **/
+                            let memberHtml = "";
+
+                            if (res.data.member.memberImg.imgWidth > 0) {
+                                if (res.data.member.memberImg.url !== "") {
+                                    memberHtml += `
+                                    <div class='col-sm-4 text-right'>
+                                        <img src="${res.data.member.memberImg.url}"/>
+                                        <button type="button" class="btn-close bg-white" onclick="member.deleteImage();" aria-label="Close" style="position:absolute; top:5px; font-size:16px;"></button>
+                                    </div>
+                                    `;
+                                }else{
+                                    memberHtml += `
+                                    <div class='col-sm-4 text-right'>
+                                        <img src="/images/user.png" style="width:120px; height:120px; object-fit: cover;"/>
+                                    </div>
+                                    `;
+                                }
+                            } else {
+                                // 프로필 이미지가 없으면 기본 이미지
+                                memberHtml += `
+                                <div class='col-sm-4 text-right'>
+                                    <img src="/images/user.png" style="width:120px; height:120px; object-fit: cover;"/>
+                                </div>
+                                `;
+                            }
+
+                            $("#imageMember").html(memberHtml);
+                            /** //이미지 **/
+
+                            /** 탈퇴 버튼 **/
+                            let deleteBtn = `<button type="button" class="btn btn-sm btn-danger" onclick="member.delete();">${text.deleteBtn}</button>`;
+                            $("#deleteBtn").replaceWith(deleteBtn);
+                            /** //탈퇴 버튼 **/
+
+                        } else {
+                            // 결과 없음
+                            toast.alert(res.message);
+                            $("#btn-form").children("div:first-child").html("");
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        // 회원 탈퇴
+        delete: function () {
+            let formData = new FormData();
+            formData.append("uuid", '[[${memberUuid}]]');
+            if (confirm(text.deleteConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.memberDomain}]]/v1/members/out',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'DELETE',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            if (res.data != undefined) {
+                                toast.alert(res.message);
+                                location.reload();
+                            } else {
+                                // 삭제 실패
+                                toast.alert(res.message);
+                            }
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+
+                return false;
+            }
+        },
+        // 이미지 모달창 띄우기
+        layer: function () {
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/members/image-layer", function () {
+                // 레이어 미리보기
+                member.layerPreview();
+            });
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 이미지 파일 선택
+        imageChange: function () {
+            const fileDom = document.querySelector("input[name=fileData]");
+            memberImageRowTemp = fileDom.files[0]; // 등록할 이미지에 넣기
+
+            // 레이어 미리보기
+            member.layerPreview();
+        },
+        // 프로필 이미지 등록
+        registImage: function () {
+            formData = new FormData(form);
+            formData.append("memberUuid", '[[${memberUuid}]]');
+
+            // 이미지 row
+            if (memberImageRowTemp != null) {
+                formData.append('uploadFile', memberImageRowTemp);
+            }
+
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/member/image',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                enctype: 'multipart/form-data',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        member.cancel();
+                        location.reload();
+                        toast.alert(res.message);
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 프로필 소개 등록
+        registIntro: function () {
+            formData = new FormData(form);
+            formData.append("memberUuid", '[[${memberUuid}]]');
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/member/intro',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 프로필 이미지 제재
+        deleteImage: function () {
+            formData = new FormData(form);
+            formData.append("memberUuid", '[[${memberUuid}]]');
+
+            if (confirm(text.restrainImageConfirm)) {
+
+                var inputMemo = prompt(text.restrainReasonInput);
+
+                if (inputMemo != null) {
+                    formData.append("memo", inputMemo);
+
+                    $.ajax({
+                        url: '[[${SERVER.memberDomain}]]/v1/member/image',
+                        headers: {
+                            'Authorization': `Bearer `+$.cookie('accessToken'),
+                        },
+                        method: 'DELETE',
+                        data: formData,
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.result) {
+                                // 이미지 삭제
+                                toast.alert(res.message);
+                                location.reload();
+                            } else {
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        },
+                        error: function (request, status, error) {
+                            // filter error
+                            toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                        }
+                    });
+                }
+
+                return false;
+            }
+        },
+        // 프로필 이미지 미리보기
+        layerPreview : function () {
+            if (memberImageRowTemp != 0) {
+                let imgHtml = "";
+                    const imageSrc = URL.createObjectURL(memberImageRowTemp);
+
+                    // 미리 보기 html
+                    imgHtml += `
+                        <div class="image-preview-wrap mr5" style="border: 1px solid #dadada;">
+                            <div class="bg">
+                                <input class="preview-data" type="hidden" name="image_path" value="">
+                                <div class="preview-img">
+                                    <a href="${imageSrc}" target="_blank">
+                                        <img src="${imageSrc}" style="width: 150px; height: 150px;">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $("#preview span").hide();
+                    $("#preview").html(imgHtml);
+            }
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 임시 배열 초기화
+            memberImageRowTemp = [];
+
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        // 회원 정보 수정
+        modify: function () {
+            formData = new FormData(form);
+            formData.append("uuid", '[[${memberUuid}]]');
+
+            $.ajax({
+                url: '[[${SERVER.memberDomain}]]/v1/member/modify',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'PUT',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        toast.alert(res.message);
+                        location.reload();
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+        // 닉네임 check
+        nickCheck() {
+            let nick = $("#nick").val();
+            let formData = new FormData();
+
+            formData.set("nick", nick);
+
+            if(nick == ''){
+                toast.alert("[[#{lang.member.exception.nick_empty}]]");
+            } else if (firstNick == nick) {
+                toast.alert("[[#{lang.member.exception.nick_my}]]");
+            } else {
+                // 기존 닉네임과 비교후 값이 바뀐 경우에만 ajax 실행
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/member/nick/check',
+                    method: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            $("#nick").css("color","blue");
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                            $("#nick").css("color","red");
+                            $("#nick").focus();
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+    }
+    let adminLevel = "[[${dataSet.adminLevel}]]";
+    let restrain_member = {
+        // 회원 제재 리스트
+        list:function (memberUuid,memberNick) {
+            let param = 'searchDateType=&searchStartDate=&searchEndDate=&state=&type=&searchType=nick&searchWord='+memberNick;
+            let formData = new FormData();
+            formData.set("memberUuid", memberUuid);
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/restrain/member/lists/uuid',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let restrainListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            restrainListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.restrainType}</td>
+                                    <td class="text-center">${el.title}</td>
+                                    <td class="text-center">${el.startDate}</td>
+                                    <td class="text-center">${el.endDate}</td>
+                                    <td class="text-left">${el.restrainName}</td>
+                                    <td class="text-center"><span class="badge ${el.stateDateBg}">${el.stateDateText}</span></td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#restrainList tbody").html(restrainListTbody);
+                        // 제재 등록 및 더보기 버튼
+                        let restrainBtn = `<a href="/restrain/members/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `
+                        if([[${dataSet.adminLevel}]] <= 8){
+                            restrainBtn += ` <a href="javascript:void(0)" onclick="restrain_member.apply('${memberUuid}')" class="btn btn-sm btn-primary float-right">${text.applyBtn}</a>&nbsp`;
+                        }
+                        if([[${dataSet.adminLevel}]] == 9 ){
+                            restrainBtn += ` <a href="javascript:void(0)" onclick="restrain_member.regist('${memberUuid}')" class="btn btn-sm btn-primary float-right">${text.addBtn}</a>&nbsp`;
+                        }
+                       $("#restrainBtn").append(restrainBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 회원 제재 신청 팝업
+        apply:function(memberUuid){
+            js_popup('[[${SERVER.currentDomain}]]/restrain/members/apply/'+memberUuid, 'restrain_apply', '600', '400');
+        },
+        // 회원 제재 등록 팝업
+        regist:function(memberUuid){
+            js_popup('[[${SERVER.currentDomain}]]/restrain/members/regist/'+memberUuid, 'restrain_regist', '600', '400');
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 모달 닫기
+            myModal._hideModal();
+        },
+    }
+
+    let member_access_log = {
+        // 회원 로그인 리스트
+        list:function (memberUuid) {
+            let formData = new FormData();
+            formData.set("memberUuid", memberUuid);
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/member/access-log',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let memberAccessLogListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            memberAccessLogListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.id}</td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.domain}</td>
+                                    <td class="text-center">${el.accessIp}</td>
+                                  <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#memberAccessLogList tbody").html(memberAccessLogListTbody);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+     let member_login_log = {
+        // 회원 로그인 리스트
+        list:function (memberUuid) {
+            let formData = new FormData();
+            formData.set("memberUuid", memberUuid);
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/member/login-log',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let memberLoginLogListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            memberLoginLogListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.id}</td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center">${el.loginIp}</td>
+                                  <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#memberLoginLogList tbody").html(memberLoginLogListTbody);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let following_member = {
+        // 회원 팔로잉 리스트
+        list:function (memberUuid,memberNick) {
+            let param = 'searchDateType=&searchStartDate=&searchEndDate=&state=&type=1&searchType=nick&searchWord='+memberNick;
+            let formData = new FormData();
+            formData.set("memberUuid", memberUuid);
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/follow/lists/following',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let followingListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            followingListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.followId}</td>
+                                    <td class="text-center">${el.followNick}</td>
+                                    <td class="text-center"><span class="badge ${el.followStateBg}">${el.followStateText}</span></td>
+                                  <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#followingList tbody").html(followingListTbody);
+                        // 더보기 버튼
+                        let followingBtn = `<a href="/follow/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `;
+                         $("#followingBtn").append(followingBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let follower_member = {
+        // 회원 팔로워 리스트
+        list:function (memberUuid,memberNick) {
+            let param = 'searchDateType=&searchStartDate=&searchEndDate=&state=&type=2&searchType=nick&searchWord='+memberNick;
+            let formData = new FormData();
+            formData.set("memberUuid", memberUuid);
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/follow/lists/follower',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let followerListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            followerListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.memberId}</td>
+                                    <td class="text-center">${el.memberNick}</td>
+                                    <td class="text-center"><span class="badge ${el.memberStateBg}">${el.memberStateText}</span></td>
+                                  <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#followerList tbody").html(followerListTbody);
+                        // 더보기 버튼
+                        let followerBtn = `<a href="/follow/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `;
+                        $("#followerBtn").append(followerBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let member_comment = {
+        // 회원 댓글 리스트
+        list:function (memberUuid, memberNick) {
+            let param = 'type=1&state=&searchType=nick&searchWord='+memberNick;
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/comment/member/view/' + memberUuid,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let commentListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            commentListTbody += `
+                                        <tr>
+                                            <td class="text-center">${el.memberId}</td>
+                                            <td class="text-center">${el.memberNick}</td>
+                                            <td class="text-left inline-block text-truncate" style="max-width: 100px;" data-toggle="tooltip" title="${cleanXSS(el.contents)}">${cleanXSS(el.contents)}</td>
+                                            <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                            <td class="text-center">${el.modiDate}</td>
+                                             <td class="text-center">${el.regDate}</td>
+                                      </tr>
+                                    `;
+                        });
+                        $("#commentList tbody").html(commentListTbody);
+                        // 더보기 버튼
+                        let favoriteBtn = `<a href="/comment/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `;
+                        $("#commentBtn").append(favoriteBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let block_member = {
+        // 회원 차단 리스트
+        list:function (memberUuid, memberNick) {
+            let param = 'type=1&state=&searchType=nick&searchWord='+memberNick;
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/block/members/view/' + memberUuid,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let blockListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            blockListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.blockId}</td>
+                                    <td class="text-center">${el.blockNick}</td>
+                                    <td class="text-center"><span class="badge ${el.blockStateBg}">${el.blockStateText}</span></td>
+                                    <td class="text-center">${el.regDate}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#blockList tbody").html(blockListTbody);
+                        // 더보기 버튼
+                        let blockBtn = `<a href="/block/members/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `;
+                        $("#blockBtn").append(blockBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let interactive_member = {
+
+        // 교류많은 유저 리스트
+        list:function (memberUuid) {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/member/interactive/view/' + memberUuid,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let interactiveListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            interactiveListTbody += `
+                                <tr>
+                                    <td class="text-center">${el.id}</td>
+                                    <td class="text-center">${el.nick}</td>
+                                    <td class="text-center"><span class="badge ${el.isDelBg}">${el.isDelText}</span></td>
+                                    <td class="text-center">${el.likeCnt}</td>
+                              </tr>
+                            `;
+                        });
+                        $("#interactiveList tbody").html(interactiveListTbody);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+
+    let member_content = {
+        // 회원 콘텐츠 리스트
+        list:function (memberUuid, memberNick) {
+            let param = 'type=1&state=&searchType=nick&searchWord='+memberNick;
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/contents/member/view/' + memberUuid,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // list
+                        let contentsListTbody = "";
+                        $.each(res.data.list, function (index, el) {
+                            contentsListTbody += `
+                                        <tr>
+                                            <td class="text-center">${el.memberId}</td>
+                                            <td class="text-center">${el.memberNick}</td>
+                                            <td class="text-left inline-block text-truncate" style="max-width: 100px;" data-toggle="tooltip" title="${cleanXSS(el.contents)}">${cleanXSS(el.contents)}</td>
+                                            <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                            <td class="text-center">${el.imageCnt}</td>
+                                            <td class="text-center">${el.likeCnt}</td>
+                                            <td class="text-center">${el.regDate}</td>
+                                      </tr>
+                                    `;
+                        });
+                        $("#contentsList tbody").html(contentsListTbody);
+                        // 더보기 버튼
+                        let contentsBtn = `<a href="/contents/list?${param}" class="btn btn-sm btn-secondary float-right"><i class="fas fa-plus"></i>${text.viewMoreBtn}</a> `;
+                        $("#contentsBtn").append(contentsBtn);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+    }
+    // 포인트 텍스트
+    let pointText = {
+        payPointPlaceholder : '[[#{lang.point.placeholder.pay.point.title}]]',              // 지급 내용을 입력해주세요.
+        subtractPointPlaceholder : '[[#{lang.point.placeholder.subtraction.point.title}]]', // 차감 내용을 입력해주세요.
+        pay : '[[#{lang.point.pay}]]',                                                      // 지급
+        payPoint : '[[#{lang.point.title.pay.point}]]',                                     // 포인트 지급
+        subtractPoint : '[[#{lang.point.title.subtraction.point}]]',                        // 포인트 차감
+        subtract : '[[#{lang.point.subtract}]]',                                            // 차감
+        paymentConfirm : '[[#{lang.point.confirm.payment}]]',                               // 포인트를 지급하시겠습니까?
+        subtractionConfirm : '[[#{lang.point.confirm.subtraction}]]',                       // 포인트를 차감하시겠습니까?
+    }
+
+    let member_point = {
+        // 포인트 리스트
+        list : (memberUuid) => {
+            let params = `?memberUuid=${memberUuid}`;
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/members/point' + params,
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    // list
+                    let tbody = "";
+                    tbody += `
+                            <tr>
+                                <td class="text-center" id="savePointText">0</td>
+                                <td class="text-center" id="usePointText">0</td>
+                                <td class="text-center" id="pointText">0</td>
+                                <td class="text-center" id="expirePointText">0</td>
+                                <td class="text-center btn-group-sm" colspan="2">
+                                    <button type="button" class="btn btn-sm submit-no-btn btn-primary" id="pointPlusBtn"
+                                        onclick="member_point.payAndSubtractBtn(this);">${pointText.pay}</button>
+                                    <button tpye="button" class="btn btn-sm submit-no-btn" id="pointMinusBtn"
+                                            onclick="member_point.payAndSubtractBtn(this);" style="background-color: #E8422F;color: white"/>${pointText.subtract}</button>
+                                </td>
+                            </tr>
+                        `;
+                    $("#pointTable tbody").html(tbody);
+                    // 관리자 포인트 지급 & 차감 form 전송 막기
+                    $(".submit-no-btn").on("click", (e) => {
+                        e.preventDefault();
+                    });
+                    if (res.result) {
+                        let memberPoint = res.data.memberPoint;
+                        $("#savePointText").text(memberPoint.savePointText);
+                        $("#usePointText").text(memberPoint.usePointText);
+                        $("#pointText").text(memberPoint.pointText);
+                        $("#expirePointText").text(memberPoint.expirePointText);
+                    }
+
+                    // dateTime min 설정
+                    let nowDate = new Date();
+                    let year = nowDate.getFullYear();
+                    let month = nowDate.getMonth() + 1;
+                    let day = nowDate.getDate();
+                    let hour = nowDate.getHours();
+                    let minute = nowDate.getMinutes();
+                    let now = year + '-' + String(month).padStart(2, "0") + '-' + day + 'T'
+                            + String(hour).padStart(2, "0") + ':' + String(minute).padStart(2, "0");
+
+                    $('input[name=expireDate]').attr('min', now);
+
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 지급 버튼
+        payAndSubtractBtn: (btn) => {
+            // 관리자 입력란 보여지도록
+            $('#payActionBody').css('display', '');
+            $('input[name=productOrderId]').val('');
+            $('input[name=expireDate]').val('');
+
+            // 지급 버튼 ui 액션
+            if (btn.id == "pointPlusBtn") {
+                $('input[name=actionType]').val('pay');                 // 액션 유형 지급 설정
+                $('#pointTitle').text(pointText.payPoint);              // 포인트 지급
+                $('#payOrSubtractBtn').text(pointText.pay);             // 지급
+                $('#payOrSubtractBtn').removeClass('btn-danger');       // 차감 버튼 색상 삭제
+                $('#payOrSubtractBtn').addClass('btn-primary');         // 지급 버튼 색상
+                $('input[name=productOrderId]').prop("disabled", true); // 상품 주문번호 비활성화
+                $('input[name=expireDate]').prop("disabled", false);    // 만료일 활성화
+                $('input[name=title]').attr("placeholder", pointText.payPointPlaceholder); // 지급 내용을 입력해주세요
+            }
+            // 차감 버튼 ui 액션
+            else if (btn.id == "pointMinusBtn") {
+                $('input[name=actionType]').val('subtract');             // 액션 유형 차감 설정
+                $('#pointTitle').text(pointText.subtractPoint);          // 포인트 차감
+                $('#payOrSubtractBtn').text(pointText.subtract);         // 차감
+                $('#payOrSubtractBtn').removeClass('btn-primary');       // 지급 버튼 색상 삭제
+                $('#payOrSubtractBtn').addClass('btn-danger');           // 차감 버튼 색상
+                $('input[name=productOrderId]').prop("disabled", false); // 상품 주문번호 활성화
+                $('input[name=expireDate]').prop("disabled", true);      // 만료일 비활성화
+                $('input[name=title]').attr("placeholder", pointText.subtractPointPlaceholder); // 차감 내용을 입력해주세요
+            }
+        },
+        // 취소 버튼
+        cancelBtn: () =>{
+            // 관리자 입력란 보여지도록
+            $('#payActionBody').css('display', 'none');
+        },
+        // 포인트 지급 & 차감
+        payOrSubtract : () =>{
+            let actionType = $('input[name=actionType]').val();
+            let productOrderId = $('input[name=productOrderId]').val();
+            let isValidOrderId = true;
+            if (actionType == 'pay') {
+                if (!confirm(pointText.paymentConfirm)) {
+                    return false;
+                }
+            }
+            // 주문 번호 체크
+            member_point.checkProductOrderId(productOrderId).then((result) => {
+                if (result === true) {
+                    let text = $('input[name=pointText]').val();
+                    let point = member_point.removeComma(text);
+                    // formData 설정
+                    let form = $('#pointFrm')[0];
+                    let formData = new FormData(form);
+                    if (actionType == 'pay') {
+                        formData.append("point", point);
+                    } else {
+                        formData.append("usePoint", point);
+                    }
+                    formData.append("memberUuid",memberUuid);
+                    formData.set("expireDate", $('input[name=expireDate]').val().replace(/T/g, ' ') + ":00");
+
+                    $.ajax({
+                        url: '[[${SERVER.memberDomain}]]/v1/member/point',
+                        headers: {
+                            'Authorization': `Bearer `+$.cookie('accessToken'),
+                        },
+                        method: 'POST',
+                        data: formData,
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if(res.result) {
+                                toast.alert(res.message);
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 1000);
+                            }
+                            else{
+                                // ajax exception error
+                                toast.alert(res.message);
+                            }
+                        },
+                        error: function (request, status, error) {
+                            // filter error
+                            toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                        }
+                    });
+                }
+            });
+
+        },
+        // 숫자 ,(콤마) 표시
+        numberComma : (obj) => {
+            let value = obj.value.replace(/[^\d]/g, ''); // 숫자 이외의 문자 제거
+            obj.value = value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); // 쉼표 추가
+        },
+        // ,(콤마) 제거
+        removeComma : (text) => {
+            return text.replace(/,/g, '');
+        },
+        // 상품 주문번호 체크
+        checkProductOrderId : (productOrderId) => {
+            let params = `?memberUuid=${memberUuid}&productOrderId=${productOrderId}`;
+            // 동기 처리
+            return new Promise((resolve,reject) => {
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/members/point/order-id/check' + params,
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'GET',
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        resolve(res.result);
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                        resolve(false);
+                    }
+                });
+            });
+        }
+    }
+
+    // XSS 공격 방지 - html 태그 이스케이프 처리
+    function cleanXSS(content) {
+
+        let convertText = content
+            .replace(/</g, "&lt;") // 꺽새 변환
+            .replace(/>/g, "&gt;") // 꺽새 변환
+            .replace("\\(", "&#40;") // 괄호 변환
+            .replace("\\)", "&#41;") // 괄호 변환
+            .replace(/\"/g, "&quot;") // 큰따옴표 변환
+            .replace(/\'/g, "&#39;") // 작은따옴표 변환
+            .replace(/\n/g, "<br />"); // <br> 태그 변환
+
+        return convertText;
+    }
+
+    let check = {
+        // 빈값 체크
+        isEmpty : (value) => {
+            if (
+                typeof value === 'undefined' ||
+                value === null ||
+                value.trim() === '' ||
+                value === 'null' ||
+                value.length === 0
+            ) {
+                return true;
+            } else{
+                return false;
+            }
+        },
+    }
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function (val) {
+        this.each(function () {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.attr('checked', true);
+            }
+        });
+        return this;
+    }
+</script>

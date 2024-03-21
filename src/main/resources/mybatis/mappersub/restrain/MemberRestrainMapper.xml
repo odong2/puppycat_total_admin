@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.restrain.member.MemberRestrainDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberRestrainColumns">
+        `pumere`.`idx`
+        ,`pumere`.`member_uuid`
+        ,`pume`.`id`
+        ,`pume`.`idx` AS `member_idx`
+        ,IFNULL(`pume`.`nick`,"") AS `nick`
+        ,`pumeretyna`.`idx` AS `type_idx`
+        ,IFNULL(`pumeretyna`.`name`,`pumerety`.`name`) AS `restrain_type`
+        ,`pumereda`.`idx` AS `date_idx`
+        ,`pumereda`.`title`
+        ,IFNULL(`pumerere`.`reason`,IFNULL(`pumerecona`.`name`,`pumereco`.`name`)) AS `restrain_name`
+        ,CONVERT_TZ( `pumere`.`start_date`, 'UTC', '${convertTZ}') AS `start_date`
+        ,CONVERT_TZ( `pumere`.`end_date`, 'UTC', '${convertTZ}') AS `end_date`
+        ,`pumere`.`state`
+        ,`pumere`.`admin_id`
+        ,CONVERT_TZ( `pumere`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- 검색 조건 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'adminId'">
+                        AND `pumere`.`admin_id` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test='level != null'>
+                AND `pumereda`.`idx` <![CDATA[ = ]]> #{level}
+            </if>
+            <if test='type != null'>
+                AND `pumerety`.`idx` <![CDATA[ = ]]> #{type}
+            </if>
+            <if test='state != null'>
+                AND `pumere`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <choose>
+                    <when test="searchDateType.equals('regdate')">
+                        <![CDATA[
+                        AND (`pumere`.`reg_date` >= #{searchStartDate} AND `pumere`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('startDate')">
+                        <![CDATA[
+                        AND (`pumere`.`start_date` >= #{searchStartDate} AND `pumere`.`start_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('endDate')">
+                        <![CDATA[
+                        AND (`pumere`.`end_date` >= #{searchStartDate} AND `pumere`.`end_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 회원 목록 -->
+    <select id="getListMemberRestrain" parameterType="SearchDto" resultType="MemberRestrainDto">
+        SELECT
+            <include refid="memberRestrainColumns"/>
+        FROM
+             <include refid="databaseMember"/>`puppycat_member_restrain` AS `pumere`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumere`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_type` AS `pumerety`
+            ON `pumerety`.`idx` = `pumere`.`type`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_type_name` AS `pumeretyna`
+            ON `pumerety`.`idx` = `pumeretyna`.`type_idx`
+            AND `pumeretyna`.`lang` = "ko"
+            AND `pumeretyna`.`state` = 1
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_date` AS `pumereda`
+            ON `pumere`.`date` = `pumereda`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code` AS `pumereco`
+            ON `pumere`.`restrain_code` = `pumereco`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code_name` AS `pumerecona`
+            ON `pumereco`.`idx` = `pumerecona`.`code_idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_reason` AS `pumerere`
+            ON `pumere`.`idx` = `pumerere`.`restrain_idx`
+        <include refid="searchCondition"/>
+        ORDER BY  `pumere`.`idx` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`pumere`.`idx`) AS `iTotalCount`
+        FROM
+             <include refid="databaseMember"/>`puppycat_member_restrain` AS `pumere`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumere`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_type` AS `pumerety`
+            ON `pumerety`.`idx` = `pumere`.`type`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_type_name` AS `pumeretyna`
+            ON `pumerety`.`idx` = `pumeretyna`.`type_idx`
+            AND `pumeretyna`.`lang` = "ko"
+            AND `pumeretyna`.`state` = 1
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_date` AS `pumereda`
+            ON `pumere`.`date` = `pumereda`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code` AS `pumereco`
+            ON `pumere`.`restrain_code` = `pumereco`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code_name` AS `pumerecona`
+            ON `pumereco`.`idx` = `pumerecona`.`code_idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_reason` AS `pumerere`
+            ON `pumere`.`idx` = `pumerere`.`restrain_idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 회원 제재 목록 by memberIdx-->
+    <select id="getListMemberRestrainByMemberIdx" parameterType="MemberRestrainDto" resultType="MemberRestrainDto">
+        SELECT
+            <include refid="memberRestrainColumns"/>
+        FROM
+             <include refid="databaseMember"/>`puppycat_member_restrain` AS `pumere`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumere`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_type` AS `pumerety`
+            ON `pumerety`.`idx` = `pumere`.`type`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_type_name` AS `pumeretyna`
+            ON `pumerety`.`idx` = `pumeretyna`.`type_idx`
+            AND `pumeretyna`.`lang` = "ko"
+            AND `pumeretyna`.`state` = 1
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_date` AS `pumereda`
+            ON `pumere`.`date` = `pumereda`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code` AS `pumereco`
+            ON `pumere`.`restrain_code` = `pumereco`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code_name` AS `pumerecona`
+            ON `pumereco`.`idx` = `pumerecona`.`code_idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_reason` AS `pumerere`
+            ON `pumere`.`idx` = `pumerere`.`restrain_idx`
+        WHERE
+            `pumere`.`member_uuid` = #{memberUuid}
+        ORDER BY  `pumere`.`idx` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 제재 사유 목록 -->
+    <select id="getCodeList"  resultType="MemberRestrainDto">
+        SELECT
+            `pumereco`.`idx`
+            ,IFNULL(`pumerecona`.`name`,`pumereco`.`name`) AS `restrain_name`
+        FROM
+            <include refid="databaseMember" />`puppycat_member_restrain_code` as `pumereco`
+        LEFT JOIN <include refid="databaseMember" />`puppycat_member_restrain_code_name` as `pumerecona`
+            ON `pumereco`.`idx` = `pumerecona`.`code_idx`
+            AND `pumerecona`.`lang` = 'ko'
+            AND `pumerecona`.`state` = 1
+        WHERE
+            `pumereco`.`state` = '1'
+        ORDER BY
+            `pumereco`.`idx` ASC
+    </select>
+
+    <!-- 제재 기간 목록 -->
+    <select id="getDateList"  resultType="MemberRestrainDto">
+        SELECT
+            `pumereda`.`idx`
+            ,`pumereda`.`date`
+            ,`pumereda`.`title`
+        FROM
+            <include refid="databaseMember" />`puppycat_member_restrain_date` AS `pumereda`
+        WHERE
+            `pumereda`.`state` = '1'
+        ORDER BY
+            `pumereda`.`date` ASC
+    </select>
+
+    <!-- 제재 타입 목록 -->
+    <select id="getTypeList"  resultType="MemberRestrainDto">
+        SELECT
+            `pumerety`.`idx`
+            ,IFNULL(`pumeretyna`.`name`,`pumerety`.`name`) AS `restrain_type`
+        FROM
+            <include refid="databaseMember" />`puppycat_member_restrain_type` as `pumerety`
+        LEFT JOIN <include refid="databaseMember" />`puppycat_member_restrain_type_name` AS `pumeretyna`
+            ON `pumerety`.`idx` = `pumeretyna`.`type_idx`
+            AND `pumeretyna`.`lang` = 'ko'
+            AND `pumeretyna`.`state` = 1
+        WHERE
+            `pumerety`.`state` = '1'
+        ORDER BY
+            `pumerety`.`idx` ASC
+    </select>
+
+    <!-- 제재 기간 목록 -->
+    <select id="getRestrainDate" parameterType="MemberRestrainDto" resultType="int">
+        SELECT
+            `pumereda`.`date`
+        FROM
+        <include refid="databaseMember" />`puppycat_member_restrain_date` AS `pumereda`
+        WHERE
+            `pumereda`.`idx` = #{dateIdx}
+    </select>
+
+    <select id="getViewRestrain" parameterType="_long" resultType="MemberRestrainDto">
+        SELECT
+            <include refid="memberRestrainColumns"/>
+        FROM
+             <include refid="databaseMember"/>`puppycat_member_restrain` AS `pumere`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pumere`.`member_uuid` = `pume`.`uuid`
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_type` AS `pumerety`
+            ON `pumerety`.`idx` = `pumere`.`type`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_type_name` AS `pumeretyna`
+            ON `pumerety`.`idx` = `pumeretyna`.`type_idx`
+            AND `pumeretyna`.`lang` = "ko"
+            AND `pumeretyna`.`state` = 1
+        INNER JOIN  <include refid="databaseMember"/>`puppycat_member_restrain_date` AS `pumereda`
+            ON `pumere`.`date` = `pumereda`.`idx`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code` AS `pumereco`
+            ON `pumere`.`restrain_code` = `pumereco`.`idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_code_name` AS `pumerecona`
+            ON `pumereco`.`idx` = `pumerecona`.`code_idx`
+        LEFT JOIN <include refid="databaseMember"/>`puppycat_member_restrain_reason` AS `pumerere`
+            ON `pumere`.`idx` = `pumerere`.`restrain_idx`
+        WHERE
+            `pumere`.`idx` = #{idx}
+    </select>
+</mapper>

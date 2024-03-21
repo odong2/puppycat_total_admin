@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.ip.IpDaoSub">
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 해당 ip가 접근 가능 ip인지 조회 -->
+    <select id="checkIsAccessibleIP" parameterType="String" resultType="int">
+        SELECT
+            COUNT(DISTINCT(`idx`)) AS totalCnt
+        FROM <include refid="databaseTotal" />`total_admin_ip`
+        WHERE
+            `state` = 1
+            AND `ip` = #{ip}
+    </select>
+
+    <!-- 관리자 허용 ip 전체 개수 카운트 -->
+    <select id="getAdminIpTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(DISTINCT(`idx`)) AS totalCnt
+        FROM <include refid="databaseTotal" />`total_admin_ip`
+        <where>
+            <choose>
+                <when test="state != null">
+                    AND `state` = #{state}
+                </when>
+                <otherwise>
+                    AND `state` IN (1,2)
+                </otherwise>
+            </choose>
+            <if test="searchWord != null and searchWord != ''">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'ip'">
+                        AND `ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memo'">
+                        AND `memo` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <!-- 관리자 허용 ip 리스트 조회 -->
+    <select id="getAdminIpList" parameterType="SearchDto" resultType="IpDto">
+        SELECT
+            `idx`,
+            `ip`,
+            `memo`,
+            `state`,
+            CONVERT_TZ(`regdate`, 'UTC', '${convertTZ}') AS regdate
+        FROM <include refid="databaseTotal" />`total_admin_ip`
+        <where>
+            <choose>
+                <when test="state != null">
+                    AND `state` = #{state}
+                </when>
+                <otherwise>
+                    AND `state` IN (1,2)
+                </otherwise>
+            </choose>
+            <if test="searchWord != null and searchWord != ''">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'ip'">
+                        AND `ip` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'memo'">
+                        AND `memo` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+        </where>
+        ORDER BY `idx` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 관리자 허용 ip 상세 조회 -->
+    <select id="getViewAdminIp" parameterType="Long" resultType="IpDto">
+        SELECT
+            `idx`,
+            `ip`,
+            `memo`,
+            `state`,
+            CONVERT_TZ(`regdate`, 'UTC', '${convertTZ}') AS regdate
+        FROM <include refid="databaseTotal" />`total_admin_ip`
+        WHERE
+            `idx` = #{idx}
+            AND `state` IN (1,2)
+        LIMIT 1
+    </select>
+</mapper>

@@ -1,0 +1,25 @@
+<div id="layoutSidenav_nav" th:fragment="menuFragment">
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <a class="sidebar-brand d-flex align-items-center pr-4 /*justify-content-center*/" href="/">
+            <span class="fs-5 px-3 text-light text-nowrap" th:text="#{lang.common.title(${SERVER.sSever})}"></span>
+        </a>
+        <button class="btn btn-link btn-sm order-1 order-lg-0" id="sidebarToggle" href="#"><i class="fas fa-bars"></i>
+        </button>
+        <div class="input-group"></div>
+        <!-- 우측버튼 -->
+        <ul class="navbar-nav ml-auto ml-md-0">
+            <li class="nav-item dropdown">
+                <a class="text-white dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown"
+                   data-bs-auto-close="true" aria-expanded="false" th:text="${session.id}">
+                </a>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <a class="dropdown-item" href="/menu/list" th:text="#{lang.common.menu.manage}" th:if="(${dataSet.adminLevel} >= 7 )"></a>
+                    <div class="dropdown-divider" th:if="(${dataSet.adminLevel} >= 7 )"></div>
+                    <a class="dropdown-item" href="#" th:href="@{/admin/mypage/{idx}(idx = ${memberInfo.idx})}" th:text="#{lang.common.user.mypage}"></a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" th:href="|${SERVER.currentDomain}/logout|" th:text="#{lang.common.logout}"></a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</div>

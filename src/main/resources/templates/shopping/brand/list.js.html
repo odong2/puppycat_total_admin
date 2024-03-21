@@ -1,0 +1,222 @@
+
+<script th:fragment="importJsFragment">
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+    let brandObjectList = new Object();
+    let insertedId = null;
+
+    let text = {
+        modifyConfirm : "[[#{lang.brand.confirm.modify}]]", // 수정하시겠습니까?
+        notSelected : "[[#{lang.brand.exception.idx}]]",    // 선택된 브랜드가 없습니다.
+        noBrandName : "[[#{lang.brand.exception.name}]]",   // 브랜드 명을 입력해 주세요.
+        modify : "[[#{lang.common.button.modify}]]",        // 수정
+        register : "[[#{lang.common.button.regist}]]",      // 등록
+
+    }
+
+    $(function () {
+        brand.list();
+    });
+
+    let brand = {
+        list: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/brand',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    brandObjectList = new Object();
+                    if (res.result) {
+                        let brandListHtml = "";
+                        (res.data.brandGroupList).forEach((val, key) => {
+                            brandListHtml += `<tr class="bg-light"><th colspan="2">${val.brandGroupName}</th></tr>`;
+
+                            let brandList = (res.data.list)[key+1];
+                            if (brandList) {
+                                brandList.forEach((data, i) => {
+                                    let addClass = "";
+
+                                    // state 0(사용안함) 일때
+                                    if (data.state == 0) {
+                                        addClass += "opacity-50";
+                                    }
+
+                                    // 등록 및 수정 후 리스트 호출
+                                    if (insertedId && insertedId == data.idx) {
+                                        insertedId = null;
+                                        // list 선택 색상 변경
+                                        addClass += " bg-secondary text-white";
+                                        $("td[name=idxText]").text(data.idx);
+                                        $("input[name=idx]").val(data.idx);
+
+                                        // 버튼 텍스트 변경 - 수정
+                                        $("#registerBrand").removeClass("btn-success").addClass("btn-warning").text(text.modify);
+                                    }
+                                    brandListHtml += `<tr style="cursor:pointer;" class="${addClass}" onclick="brand.detail(this)"><td colspan="2" data-idx="${data.idx}">${data.brandName}</td></tr>`;
+
+                                    // 브랜드 전체 배열
+                                    brandObjectList[data.idx] = data;
+                                })
+                            }
+                        });
+                        $("#brandList").html(brandListHtml);
+
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        register : function () {
+            formData = new FormData(form);
+            if (formData.get("brandName") == "") {
+                toast.alert(text.noBrandName);
+                return false;
+            }
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/brand',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        insertedId = res.data.insertedId;
+                        brand.list();
+                        toast.alert(res.message);
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        modify : function () {
+            if (confirm(text.modifyConfirm)) {
+                formData = new FormData(form);
+
+                if (formData.get("brandName") == "") {
+                    toast.alert(text.noBrandName);
+                    return false;
+                }
+
+                $.ajax({
+                    url: '[[${SERVER.shopDomain}]]/v1/brand',
+                    headers: {
+                        'Authorization': `Bearer `+$.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            insertedId = res.data.insertedId;
+                            brand.list();
+                            toast.alert(res.message);
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        detail : function (_this) {
+            // list 선택 해제
+            $("#brandList tr").removeClass("bg-secondary").removeClass("text-white");
+
+            // display show
+            if ($(".card-body > div:last-child").hasClass("d-none")) {
+                $(".card-body > div:last-child").removeClass("d-none");
+            }
+
+            let brandIdx = $(_this).children().data("idx");
+            let brandDetail = brandObjectList[brandIdx];
+            // list 선택 색상 변경
+            $(_this).addClass("bg-secondary").addClass("text-white");
+
+            // 상세 정보 입력
+            if (brandDetail) {
+                $("td[name=idxText]").text(brandDetail.idx);
+                $("input[name=idx]").val(brandDetail.idx);
+                $("input[name=state]").radioSelect(brandDetail.state);
+                $("input[name=brandName]").val(brandDetail.brandName);
+
+                // 버튼 텍스트 변경 - 수정
+                $("#registerBrand").removeClass("btn-success").addClass("btn-warning").text(text.modify);
+            }
+        },
+        add : function () {
+            // list 선택 해제
+            $("#brandList tr").removeClass("bg-secondary").removeClass("text-white");
+
+            // display show
+            if ($(".card-body > div:last-child").hasClass("d-none")) {
+                $(".card-body > div:last-child").removeClass("d-none");
+            }
+
+            // 상세 정보 초기화
+            $("td[name=idxText]").text("");
+            $("input[name=idx]").val("");
+            $("input[name=brandName]").val("");
+            $("input[name=state]").radioSelect(0);
+
+            // 버튼 텍스트 변경 - 등록
+            $("#registerBrand").removeClass("btn-warning").addClass("btn-success").text(text.register);
+        },
+    }
+
+    // 등록, 수정 버튼
+    $("#registerBrand").on("click", function () {
+        let brandIdx = $("#frm input[name=idx]").val();
+        if (brandIdx != null && brandIdx != "") {
+            brand.modify();
+        } else {
+            brand.register();
+        }
+        return false;
+    })
+
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function(val) {
+        this.each(function() {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+</script>

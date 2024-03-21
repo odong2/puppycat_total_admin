@@ -1,0 +1,89 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.product.MP.register}"></h5>
+            </div>
+
+            <div class="card-body row">
+                <form id="frm" onsubmit="productMp.bulk();return false;" accept-charset="utf-8">
+
+                    <!-- MP 상품 대량 등록 -->
+                    <div id="lay_bulk">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width: 20%;">
+                            </colgroup>
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-primary border-bottom-0" colspan="2" th:text="#{lang.product.MP.bulk}"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th class="text-center" th:text="#{lang.product.excel.register}"></th>
+                                    <td>
+                                        <div class="col-md-8 col-sm-9 pt-1">
+                                            <label class="py-1 px-3 rounded-2">
+                                                <!-- .xls,.xlsx  -->
+                                                <input type="file" name="productMpFile" multiple="" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="return false;" th:text="#{lang.product.button.file}">
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- MP 상품 대량 등록 -->
+
+                    <div class="form-group row">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="productMp.bulk();" th:text="#{lang.product.button.common.regist}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!--<div class="card-body row">
+                <form id="frmImg" onsubmit="bulk.excelImage(); return false;" accept-charset="utf-8">
+
+                    &lt;!&ndash; 컨텐츠 엑셀 등록 &ndash;&gt;
+                    <div id="lay_image">
+                        <table class="table">
+                            <colgroup>
+                                <col style="width: 20%;">
+                            </colgroup>
+                            <thead>
+                            <tr style="border:solid currentColor; border-width:2px 0px;">
+                                <th class="table-primary border-bottom-0" colspan="2">컨텐츠 썸네일 등록</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th class="text-center">엑셀 등록</th>
+                                <td>
+                                    <div class="col-md-8 col-sm-9 pt-1">
+                                        <label class="py-1 px-3 rounded-2">
+                                            &lt;!&ndash; .xls,.xlsx  &ndash;&gt;
+                                            <input type="file" name="contentsFile" multiple="" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="return false;" th:text="#{lang.contents.image.file}">
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    &lt;!&ndash; //컨텐츠 엑셀 등록 &ndash;&gt;
+
+                    <div class="form-group row">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-sm btn-warning" onclick="bulk.excelImage();" th:text="#{lang.contents.button.register}"></button>
+                        </div>
+                    </div>
+                </form>
+            </div>-->
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

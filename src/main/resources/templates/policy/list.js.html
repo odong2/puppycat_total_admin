@@ -1,0 +1,98 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        policy.list(page);
+    });
+
+    let policy = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/policy',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                let title = el.title.replace(/<[^>]*>?/g, '');
+                                if(title.length > 30){
+                                    title = title.substring(0,30);
+                                    title = title.concat('...');
+                                }
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${el.idx.toLocaleString()}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>>
+                                    <td class="text-center">${el.required}</td>
+                                    <td class="text-center">${el.menuName}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="policy.view(${el.idx});">${title}</a></td>
+                                    <td class="text-center">${el.currentText}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("policy", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="5" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 상세
+        view: function (idx) {
+            location.href = '[[${SERVER.currentDomain}]]/policy/view/' + idx ;
+        },// 등록
+        regist: function () {
+            location.href = '[[${SERVER.currentDomain}]]/policy/regist';
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/policy/list';
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

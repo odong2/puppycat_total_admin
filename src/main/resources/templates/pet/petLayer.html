@@ -1,0 +1,26 @@
+<div th:fragment="layerFragment" class="modal-content" xmlns:layout="http://www.w3.org/1999/xhtml">
+  <!-- 컨텐츠 영역 -->
+  <div class="modal-header">
+    <h5 class="modal-title" th:text="#{lang.walk.pet.entry.info.title.list}"></h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <!-- 현재 페이지 -->
+    <input type="hidden" id="page" name="page" value="1">
+    <!-- list -->
+    <table class="table table-hover" id="petListLayer">
+      <thead class="table-active">
+      <tr class="text-center">
+        <th scope="col" th:text="#{lang.pet.num}" class="text-center"></th>
+        <th scope="col" th:text="#{lang.pet.name}" class="text-center"></th>
+        <th scope="col" th:text="#{lang.pet.type}" class="text-center"></th>
+        <th scope="col" th:text="#{lang.pet.breed}" class="text-center"></th>
+        <th scope="col" th:text="#{lang.pet.age}" class="text-center"></th>
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <!-- 컨텐츠 영역 -->
+</div>

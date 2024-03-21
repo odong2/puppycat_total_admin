@@ -1,0 +1,154 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    const dataTransfer = new DataTransfer();
+    let form = $("#frm")[0];
+
+    let text = {
+        addBtn: "[[#{lang.push.admin.button.regist}]]",             // 등록 버튼
+        registConfirm: "[[#{lang.push.admin.confirm.regist}]]",     // 등록 confirm
+    }
+
+    let pushAdmin = {
+        list: function () {
+            location.href = "[[${SERVER.currentDomain}]]/push/admin/list?[(${backUrl})]";
+        },
+
+        // 등록
+        regist: function () {
+            let formData = new FormData(form);
+
+            // 이미지 row
+            if (pushImageRow != null) {
+                formData.append('uploadFile', pushImageRow);
+            }
+
+            if (confirm(text.registConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.pushDomain}]]/v1/push/admin',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'POST',
+                    enctype: 'multipart/form-data',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            // 성공
+                            alert(res.message);
+                            location.href = "[[${SERVER.currentDomain}]]/push/admin/list";
+                        } else {
+                            // 실패
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+    }
+
+
+    /** 이미지 **/
+        // modal
+    let myModal;
+    // 등록할 임시
+    let pushImageRowTemp = null;
+    let pushImageRow = null;
+
+    let pushImage = {
+        // 이미지 등록 레이어
+        layer: function (type, idx) {
+            myModal = new bootstrap.Modal($('#layer_dialog'), {
+                keyboard: false
+            });
+
+            // 레이어 load
+            $('#section_dialog').load("[[${SERVER.currentDomain}]]/push/admin/imageLayer", function () {
+                // 레이어 미리보기
+                pushImage.layerPreview();
+            });
+
+            myModal.show($('#section_dialog'));
+
+            return false;
+        },
+        // 이미지 파일 선택
+        imageChange: function () {
+            const fileDom = document.querySelector("input[name=fileData]");
+            pushImageRowTemp = fileDom.files[0]; // 등록할 이미지에 넣기
+
+            // 레이어 미리보기
+            pushImage.layerPreview();
+        },
+        // 이미지 파일 선택 미리 보기
+        layerPreview: function () {
+            if (pushImageRowTemp != null) {
+                let imgHtml = "";
+                // 미리 보기용 이미지 url
+                const imageSrc = URL.createObjectURL(pushImageRowTemp);
+
+                // 미리 보기 html
+                imgHtml += `
+                    <div class="image-preview-wrap mr5">
+                        <div class="bg">
+                            <input class="preview-data" type="hidden" name="image_path" value="">
+                            <div class="preview-img">
+                                <a href="${imageSrc}" target="_blank">
+                                    <img src="${imageSrc}">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                $("#preview span").hide();
+                $("#preview").html(imgHtml);
+            }
+        },
+        // 레이어에서 form 으로 이미지 파일 정보 전달
+        add: function () {
+            // modal close
+            $(".btn-close").click();
+            pushImageRow = pushImageRowTemp;
+
+            // 이미지 배열에 등록할 임시 이미지 넣기
+            const imageSrc = URL.createObjectURL(pushImageRow);
+
+            // sort table
+            let sortHtml = "";
+            sortHtml += `
+                <tr class="cut-tr cutnum1">
+                    <td class="text-center nosort">
+                        <img src="${imageSrc}" width="250px" height="250px" style="cursor: pointer"/>
+                    </td>
+                    <td class="text-center nosort">
+                        <button type="button" class="btn_minus" onclick="pushImage.delete($(this))"></button>
+                    </td>
+                </tr>
+            `;
+            $("#sortTable tbody").html(sortHtml);
+        },
+        // 레이어 이미지 등록 취소
+        cancel: function () {
+            // 임시 이미지 초기화
+            pushImageRowTemp = null;
+
+            // 모달 닫기
+            myModal._hideModal();
+        },
+        // 사진 삭제
+        delete: function (_this) {
+            let imageRow = _this.closest("tr");
+            // 이미지 초기화
+            pushImageRow = null;
+            // row 삭제
+            imageRow.remove();
+        }
+    }
+
+</script>

@@ -1,0 +1,212 @@
+<script type="text/javascript" th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        partner_product.list(page);
+
+        // 뷰 개수
+         $('select[name="recordSize"]').change(function() {
+                var selectedValue = $(this).val(); // 선택된 값 가져오기
+                partner_product.list(page);
+          });
+
+        // 상태값
+        $('.custom-tab').click(function() {
+            var tabButtons = document.querySelectorAll('.custom-tab');
+                tabButtons.forEach(function(button) {
+                button.classList.remove('active-tab');
+            });
+            var dataValue = $(this).data('value');
+
+            var activeTabButton = document.querySelector('.custom-tab[data-value="' + dataValue + '"]');
+            activeTabButton.classList.add('active-tab');
+
+            $('#state').val(dataValue);
+            partner_product.list(page);
+        });
+    });
+
+
+    let text = {
+        modiButton:"[[#{lang.product.partner.button.modify}]]",
+    }
+
+    let partner_product = {
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/shop/product/partner/list';
+        },
+        // 날짜 세팅
+        searchDate : function (range) {
+            var endDate = new Date(); // Today's date
+            var startDate = new Date();
+
+            if (range === 'week') {
+                startDate.setDate(startDate.getDate() - 7);
+            } else if (range === 'oneMonth') {
+                startDate.setMonth(startDate.getMonth() - 1);
+            } else if (range === 'threeMonths') {
+                startDate.setMonth(startDate.getMonth() - 3);
+            }
+
+            // Format dates as 'YYYY-MM-DD' for input fields
+            var startDateString = startDate.toISOString().split('T')[0];
+            var endDateString = endDate.toISOString().split('T')[0];
+
+            // Set values in the input fields
+            $('#searchStartDate').val(startDateString);
+            $('#searchEndDate').val(endDateString);
+        },
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/product/partner',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                let title = el.productName.replace(/<[^>]*>?/g, '');
+                                if(title.length > 30){
+                                    title = title.substring(0,30);
+                                    title = title.concat('...');
+                                }
+
+                                // 재고 수량
+                                if(el.state != 10){
+                                    if(el.unlimit == 1){
+                                        el.stock = "∞";
+                                    }else{
+                                        el.stock = el.stock.toLocaleString();
+                                    }
+                                }else{
+                                    el.stock ="-";
+                                }
+
+                                // 품절알람/카운트
+                                if(el.state != 10) {
+                                    if (el.alarm == 1) {
+                                        setAlarmText = el.alarmText + "/(" + el.alarmCount.toLocaleString() + ")";
+                                    } else {
+                                        setAlarmText = el.alarmText;
+                                    }
+                                }else{
+                                    setAlarmText = "-";
+                                }
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${el.partnerProductIdx.toLocaleString()}</td>
+                                    <td class="text-center">${el.idx.toLocaleString()}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="partner_product.view(${el.partnerProductIdx});">${title}</a></td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center"><span class="badge ${el.openStateBg}">${el.openStateText}</span></td>
+                                    <td class="text-center">${el.minPriceStateText}</td>
+                                    <td class="text-center"><span class="badge ${el.benefitStateBg}">${el.benefitStateText}</span></td>
+                                    <td class="text-center"><span class="badge ${el.syncBg}">${el.syncText}</span></td>
+                                    <td class="text-center">${el.stock}</td>
+                                    <td class="text-center">${setAlarmText}</td>
+                                    <td class="text-center">${el.paymentTypeText}</td>
+                                    <td class="text-center"><span class="badge ${el.isCombineBg}">${el.isCombineText}</span></td>
+                                    <td class="text-center">${el.salePrice.toLocaleString()}</td>
+                                    <td class="text-center">${el.discountPrice.toLocaleString()}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                    <td class="text-center">${el.companyName}</td>
+                                    <td class="text-center">${el.approvalDate}</td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("partner_product", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="18" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    var responseObject = JSON.parse(request.responseText);
+                    var message = responseObject.message;
+                    var code = responseObject.code;
+
+                    if(!isNaN(parseInt(code))){
+                        toast.alert("[[#{lang.common.exception.error}]] [ " +code + " ]");
+                    }else{
+                        toast.alert(message+"[ "+code+" ]");
+                    }
+
+                }
+            });
+            return false;
+        },
+         excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/product/partner/excel?' + $("#frm").serialize();
+        },
+        view: function (idx) {
+            js_popup('[[${SERVER.currentDomain}]]/shop/product/partner/view/'+ idx, 'partner_product_view_'+new Date().getTime(), '1050', '800');
+        },
+    }
+
+    /** 체크박스 전체선택, 전체해제 **/
+    function checkAll(){
+        if( $("#th_checkAll").is(':checked') ){ // 체크되어 있는지 확인
+            $("input[name=checkRow]").prop("checked", true);
+        }else{
+            $("input[name=checkRow]").prop("checked", false);
+        }
+    }
+
+    function sort(column) {
+        // 클릭된 버튼 요소를 가져옵니다.
+        var button = document.querySelector('button.arrowButton[data-column="' + column + '"]');
+
+        // 버튼에 현재 화살표 방향이 저장되어 있는지 확인합니다.
+        var sortOrder = button.getAttribute('data-sort-order');
+
+        // 화살표 방향을 변경합니다.
+        if (sortOrder === 'desc') {
+            button.innerHTML = '▼'; // 아래쪽 화살표로 변경합니다.
+            button.setAttribute('data-sort-order', 'asc'); // 오름차순으로 설정합니다.
+        } else {
+            button.innerHTML = '▲'; // 위쪽 화살표로 변경합니다.
+            button.setAttribute('data-sort-order', 'desc'); // 내림차순으로 설정합니다.
+        }
+
+        $('#sort').val(column+'_'+sortOrder);
+        partner_product.list();
+    }
+</script>

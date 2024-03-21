@@ -1,0 +1,67 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.member.title.rank}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="member.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <!-- 팔로우/팔로워 랭킹 -->
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-3">
+                                            <select name="searchTargetType" class="form-control form-select">
+                                                <option th:value="follower" th:text="#{lang.follow.member.type.follower.rank}" th:selected="${search.searchTargetType} == 'follower'"></option>
+                                                <option th:value="follow" th:text="#{lang.follow.member.type.follow.rank}" th:selected="${search.searchTargetType} == 'follow'"></option>
+                                            </select>
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.member.button.search}" onclick="member.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="member.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.member.rank}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.state}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.member.id}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.nick}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.member.name}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.follow.member.type.follower.cnt}" class="text-center" ></th>
+                            <th scope="col" th:text="#{lang.follow.member.type.follow.cnt}" class="text-center" ></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

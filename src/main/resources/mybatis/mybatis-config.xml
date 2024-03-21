@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+    <properties resource="mybatis.properties"></properties>
+
+    <settings>
+        <setting name="cacheEnabled" value="true"/>
+        <setting name="callSettersOnNulls" value="true"/>
+        <setting name="lazyLoadingEnabled" value="false"/>
+        <setting name="aggressiveLazyLoading" value="true"/>
+        <setting name="multipleResultSetsEnabled" value="true"/>
+        <setting name="useColumnLabel" value="true"/>
+        <setting name="useGeneratedKeys" value="false"/>
+        <setting name="autoMappingBehavior" value="PARTIAL"/>
+        <setting name="defaultExecutorType" value="REUSE" />
+        <setting name="defaultStatementTimeout" value="25000" />
+        <setting name="jdbcTypeForNull" value="NULL"/>
+        <setting name="mapUnderscoreToCamelCase" value="true" />
+    </settings>
+
+    <typeAliases>
+        <typeAlias type="java.util.HashMap" alias="hashMap" />
+        <typeAlias type="java.lang.String" alias="String"/>
+        <typeAlias type="com.architecture.admin.models.dto.admin.AdminDto" alias="AdminDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.member.MemberDto" alias="MemberDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.member.MemberPointDto" alias="MemberPointDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.member.MemberImageDto" alias="MemberImageDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.restrain.member.MemberRestrainDto" alias="MemberRestrainDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.restrain.partner.PartnerRestrainDto" alias="PartnerRestrainDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.follow.FollowDto" alias="FollowDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.menu.MenuDto" alias="MenuDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.log.AdminActionLogDto" alias="AdminActionLogDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.SearchDto" alias="SearchDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.member.OutMemberDto" alias="OutMemberDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.block.BlockMemberDto" alias="BlockMemberDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.notice.NoticeDto" alias="NoticeDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.report.ReportCodeDto" alias="ReportCodeDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.report.ContentsReportDto" alias="ContentsReportDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.report.CommentReportDto" alias="CommentReportDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.faq.FaqDto" alias="FaqDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.policy.PolicyDto" alias="PolicyDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.wordcheck.member.MemberWordCheckDto" alias="MemberWordCheckDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.wordcheck.pet.PetWordCheckDto" alias="PetWordCheckDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.wordcheck.contents.ContentsWordCheckDto" alias="ContentsWordCheckDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.log.MemberAccessLogDto" alias="MemberAccessLogDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.comment.CommentDto" alias="CommentDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.contents.ContentsDto" alias="ContentsDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.contents.ContentsImgDto" alias="ContentsImgDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.contents.ContentsMenuDto" alias="ContentsMenuDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.contents.ContentsImgTagDto" alias="ContentsImgTagDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.contents.ContentsLikeDto" alias="ContentsLikeDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.restrain.contents.ContentsImgRestrainDto" alias="ContentsImgRestrainDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.tag.HashTagDto" alias="HashTagDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.tag.MentionTagDto" alias="MentionTagDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.badge.BadgeDto" alias="BadgeDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.push.AdminPushDto" alias="AdminPushDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.noti.NotiDto" alias="NotiDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.push.PushDto" alias="PushDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.cron.CronDto" alias="CronDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.pet.PetDto" alias="PetDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.pet.BreedDto" alias="BreedDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.ip.IpDto" alias="IpDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.category.CategoryDto" alias="CategoryDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.brand.BrandDto" alias="BrandDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.pet.HealthDto" alias="HealthDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.pet.AllergyDto" alias="AllergyDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.notice.PartnerNoticeDto" alias="PartnerNoticeDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.coupon.CouponDto" alias="CouponDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.product.ProductDto" alias="ProductDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.qna.PartnerQnaDto" alias="PartnerQnaDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerDto" alias="PartnerDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerImgDto" alias="PartnerImgDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerReasonDto" alias="PartnerReasonDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerManagerDto" alias="PartnerManagerDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerInfoDto" alias="PartnerInfoDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerBankDto" alias="PartnerBankDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.partner.PartnerHolidayDto" alias="PartnerHolidayDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.bank.BankDto" alias="BankDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.coupon.excel.CouponProductExcelDto" alias="CouponProductExcelDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.certification.CertificationDto" alias="CertificationDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.attributeSet.AttributeSetDto" alias="AttributeSetDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.product.ProductImgDto" alias="ProductImgDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.product.SearchProductDto" alias="SearchProductDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.deliveryPolicy.DeliveryPolicyDto" alias="DeliveryPolicyDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.chat.ChatMessageReportDto" alias="ChatMessageReportDto"/>
+        <typeAlias type="com.architecture.admin.models.dto.shopping.payments.PaymentsDto" alias="PaymentsDto"/>
+
+
+    </typeAliases>
+
+    <mappers>
+    </mappers>
+
+</configuration>

@@ -1,0 +1,262 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        report.list(page);
+    });
+
+    let text = {
+        restrainConfirm: "[[#{lang.report.confirm.restrain}]]",         // 제재 confirm
+        confirmConfirm: "[[#{lang.report.confirm.confirm}]]",           // 확인 confirm
+        deleteConfirm: "[[#{lang.report.delete.confirm}]]",             // 삭제 confirm
+        reportCode: "[[#{lang.report.reason}]]",                        // 신고사유
+        exceptionSelect: "[[#{lang.report.exception.noSelect}]]"        // 대상 선택 안내
+    }
+
+    let report = {
+        // 조회
+        list: function (page) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/report/contents/list',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        // 페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount);
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center"><input type="checkbox" name="checkRow" id="c_list" value="${el.idx}"></td>
+                                    <td class="text-center">${listNum}</td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="report.view(${el.memberIdx});">${el.id}(${el.nick})</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="report.view(${el.reportMemberIdx});">${el.reportMemberId}(${el.reportMemberNick})</a></td>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="report.viewContents(${el.contentsIdx});">${el.contents}</a></td>
+                                    <td class="text-center" id="tooltip">${el.name}
+                                    `;
+                                if(el.reportCodeIdx == 8){
+                                    listTbody +=`<span class="tooltip-text tooltip-right">${el.reason}</span>`;
+                                }
+                                listTbody +=`</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-center">${el.regDate}</td>
+                                    <td class="text-center"><span class="badge ${el.adminChkBg}">${el.adminChkStateText}</span></td>
+                                    <td class="text-center">${el.adminChkDate || '-'}</td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("report", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="11" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 회원 상세
+        view: function (memberIdx) {
+            location.href = '[[${SERVER.currentDomain}]]/members/view/' + memberIdx ;
+        },
+        // 상세
+        viewContents: function (contentsIdx) {
+            js_popup('[[${SERVER.currentDomain}]]/contents/view/' + contentsIdx + '?viewType=report', 'contents_view', '1200', '1000');
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/report/contents/list';
+        },
+        // 선택된 체크박스 삭제
+        restrain: function () {
+            var indexList = [];
+            $("input:checkbox[name='checkRow']:checked").each(function() {
+                indexList.push($(this).val());  // 체크된 것만 값을 뽑아서 배열에 push
+            })
+
+            if(indexList.length === 0){
+                alert(text.exceptionSelect);
+                return false;
+            }
+            // 신고 제재
+            if(confirm(text.restrainConfirm)){
+
+                let formData = new FormData();
+
+                indexList.forEach(item => {
+                    formData.append('idxList', item);
+                })
+
+                $.ajax({
+                    url: '[[${SERVER.snsDomain}]]/v1/report/contents/restrain',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: "PUT",
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            report.list(1);
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+        // 선택된 체크박스 삭제
+        delete: function () {
+            var indexList = [];
+            $("input:checkbox[name='checkRow']:checked").each(function() {
+                indexList.push($(this).val());  // 체크된 것만 값을 뽑아서 배열에 push
+            })
+
+            if(indexList.length === 0){
+                alert(text.exceptionSelect);
+                return false;
+            }
+            // 신고 제재
+            if(confirm(text.deleteConfirm)){
+
+                let formData = new FormData();
+
+                indexList.forEach(item => {
+                    formData.append('idxList', item);
+                })
+
+                $.ajax({
+                    url: '[[${SERVER.snsDomain}]]/v1/report/contents',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: "DELETE",
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            report.list(1);
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+        // 선택된 체크박스 삭제
+        confirm : function () {
+            var indexList = [];
+            $("input:checkbox[name='checkRow']:checked").each(function() {
+                indexList.push($(this).val());  // 체크된 것만 값을 뽑아서 배열에 push
+            })
+
+            if(indexList.length === 0){
+                alert(text.exceptionSelect);
+                return false;
+            }
+            // 신고 확인
+            if(confirm(text.confirmConfirm)){
+                let formData = new FormData();
+
+                indexList.forEach(item => {
+                    formData.append('idxList', item);
+                });
+
+                $.ajax({
+                    url: '[[${SERVER.snsDomain}]]/v1/report/contents/confirm',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: "PUT",
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+                            report.list(1);
+                        } else {
+                            // ajax exception error
+                            toast.alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/report/contents/excel?'+$("#frm").serialize();
+        },
+    }
+
+    /** 체크박스 전체선택, 전체해제 **/
+    function checkAll(){
+        if( $("#th_checkAll").is(':checked') ){ // 체크되어 있는지 확인
+            $("input[name=checkRow]").prop("checked", true);
+        }else{
+            $("input[name=checkRow]").prop("checked", false);
+        }
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

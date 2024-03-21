@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.push.PushDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <select id="getPushTypeTitle" parameterType="int" resultType="String">
+        SELECT
+            `snputy`.`title`
+        FROM
+            <include refid="databaseSns" />`sns_push_type` as `snputy`
+        WHERE
+            `snputy`.`idx` = #{idx}
+        LIMIT 1
+    </select>
+
+    <!-- 1:1 푸시 받을 회원 토큰 리스트 가져오기 -->
+    <select id="getPushTokenList" parameterType="PushDto" resultType="string">
+        SELECT
+            `anmeap`.`fcm_token`
+        FROM
+            <include refid="databaseSns" />`sns_member_app` AS `anmeap`
+        LEFT JOIN <include refid="databaseSns" />`sns_member_notification_sub_setting` AS `snmenosuse`
+            ON `snmenosuse`.`member_idx` = `anmeap`.`member_idx`
+        INNER JOIN `sns_push_type` AS `snputy`
+            ON  `snputy`.`noti_type` = `snmenosuse`.`noti_type`
+            AND `snputy`.`sub_type` = `snmenosuse`.`sub_type`
+        WHERE
+                `anmeap`.`member_idx` = #{receiverIdx}
+            AND `snputy`.`idx` = #{typeIdx}
+            AND	`anmeap`.`state` = 1
+            AND `snmenosuse`.`state` = 1
+            AND  `anmeap`.`fcm_token` != "";
+    </select>
+
+    <!-- 1:1 푸시 받을 회원 토큰 리스트 가져오기 -->
+    <select id="getNightPushTokenList" parameterType="PushDto" resultType="string">
+        SELECT
+            `anmeap`.`fcm_token`
+        FROM
+            <include refid="databaseSns" />`sns_member_app` AS `anmeap`
+        LEFT JOIN <include refid="databaseSns" />`sns_member_notification_sub_setting` AS `snmenosuse`
+            ON `snmenosuse`.`member_idx` = `anmeap`.`member_idx`
+        LEFT JOIN `sns_member_notification_sub_setting` AS `snmenosuse1`
+            ON `snmenosuse1`.`member_idx` = `anmeap`.`member_idx`
+            AND `snmenosuse1`.`noti_type` = 3
+            AND `snmenosuse1`.`sub_type` = 1
+        INNER JOIN `sns_push_type` AS `snputy`
+            ON  `snputy`.`noti_type` = `snmenosuse`.`noti_type`
+            AND `snputy`.`sub_type` = `snmenosuse`.`sub_type`
+        WHERE
+                `anmeap`.`member_idx` = #{receiverIdx}
+            AND `snputy`.`idx` = #{typeIdx}
+            AND	`anmeap`.`state` = 1
+            AND `snmenosuse1`.`state` = 1
+            AND `snmenosuse`.`state` = 1
+            AND  `anmeap`.`fcm_token` != "";
+    </select>
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

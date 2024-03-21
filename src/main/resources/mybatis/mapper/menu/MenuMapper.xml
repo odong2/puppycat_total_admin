@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.menu.MenuDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="menuColumns">
+        `toadme`.*,
+	    `toadmena`.`name`,
+	    `toadmena`.`lang`
+    </sql>
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 등록하기 : `sns_admin_menu` -->
+    <insert id="insert" parameterType="MenuDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="databaseTotal" />`total_admin_menu`
+        <set>
+            `parent`  = #{parent},
+            `link`    = #{link},
+            `sort`    = #{sort},
+            `level`   = #{level},
+            `state`   = #{state},
+            `reg_date` = #{regDate},
+            `reg_date_tz` = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 등록하기 : `sns_admin_menu_name` -->
+    <insert id="insertName" parameterType="MenuDto" useGeneratedKeys="true" keyProperty="menuInsertedName">
+        INSERT INTO <include refid="databaseTotal" />`total_admin_menu_name`
+        <set>
+            `menu_idx`  =  #{insertedIdx},
+            `lang`      = 'ko',
+            `name`      = #{name}
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 수정하기 : `sns_admin_menu` -->
+    <update id="updateCate" parameterType="MenuDto" useGeneratedKeys="true" keyProperty="affectedRow">
+        UPDATE <include refid="databaseTotal" />`total_admin_menu`
+        <set>
+            `level` =  #{level},
+            `state` =  #{state},
+            `link` =  #{link}
+        </set>
+        WHERE
+            `idx`= #{idx}
+    </update>
+
+    <!-- 수정하기 : `sns_admin_menu_name` -->
+    <update id="updateName" parameterType="MenuDto" useGeneratedKeys="true" keyProperty="menuAffectedRow">
+        UPDATE <include refid="databaseTotal" />`total_admin_menu_name`
+        <set>
+            `name` = #{name}
+        </set>
+        WHERE
+                `menu_idx` = #{idx}
+            AND `lang` = 'ko'
+    </update>
+
+    <!-- 정렬값 수정 -->
+    <update id="updateSort" parameterType="int"  useGeneratedKeys="false" >
+        UPDATE <include refid="databaseTotal" />`total_admin_menu`
+        <set>
+            `sort` = #{sort}
+        </set>
+         WHERE
+             `idx` = #{idx}
+    </update>
+</mapper>

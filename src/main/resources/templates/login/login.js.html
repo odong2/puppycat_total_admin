@@ -1,0 +1,30 @@
+<script th:fragment="importJsFragment">
+    var admin = {
+        login: function () {
+            // 가입 폼 처리
+            var form = $("#frm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/login',
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        location.href = res.data.location;
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+    }
+</script>

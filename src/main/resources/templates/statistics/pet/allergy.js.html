@@ -1,0 +1,93 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        pet_allergy.list(page);
+    });
+
+    let pet_allergy = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            if($("#type").val() =="" ){
+                $("#type").val(1);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/statistics/pet/allergy',
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+
+                        if (res.data.list.length > 0) {
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center"><a href="javascript:void(0);" onclick="pet_allergy.searchType(${el.idx});">${el.allergyName}</a></td>
+                                    <td class="text-right">${el.totalCnt.toLocaleString()}</td>
+                                </tr> `;
+                            });
+                            $("#lists tbody").html(listTbody);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="2" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                        }
+
+                        if (res.data.detailLists.length > 0) {
+                            // list
+                            let detailListsTbody = "";
+                            $.each(res.data.detailLists, function (index, el2) {
+                                detailListsTbody +=`
+                                <tr>
+                                    <td class="text-center">${el2.allergyName}</td>
+                                    <td class="text-center">${el2.breedName}</td>
+                                    <td class="text-center">${el2.typeName}</td>
+                                    <td class="text-right">${el2.totalCnt.toLocaleString()}</td>
+                                </tr> `;
+                            $("#detailLists tbody").html(detailListsTbody);
+                            });
+                        } else {
+                            // 결과 없음
+                            let detailListsTbody = `<tr><td colspan="4" class="text-center">${res.message}</td></tr>`;
+                            $("#detailLists tbody").html(detailListsTbody);
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        searchType:function(type){
+            $("#type").val(type);
+            pet_allergy.list(1)
+        },
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/statistics/pet/allergy';
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

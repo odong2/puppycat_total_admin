@@ -1,0 +1,27 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.partner.title.holiday}"></h5>
+            </div>
+
+            <div class="card-body row calendar-wrap">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 캘린더 -->
+                    <div class="d-flex justify-content-center">
+                        <div id="calendar" style="width: 65%"></div>
+                    </div>
+                    <div class="d-flex mt-3" style="width: 83%">
+                        <div class="col text-right">
+                            <button type="button"  class="btn btn-sm btn-danger mr-2" onclick="calendar.allDelete();" th:text="#{lang.partner.button.all.holiday.delete}"></button>
+                            <button type="button"  class="btn btn-sm btn-primary" onclick="calendar.regist();" th:text="#{lang.partner.button.holiday.regist}"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

@@ -1,0 +1,64 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        inspect.list();
+    });
+
+    let inspect = {
+        // 조회
+        list: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/inspect/list',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.code === "1000") {
+                            // list
+                            let listTbody = "";
+                            listTbody +=`
+                                <tr>
+                                    <td class="text-center">${res.data.list.targetServiceList.toString()}</td>
+                                    <td class="text-center">${res.data.list.message}</td>
+                                    <td class="text-center">${res.data.list.startDate}</td>
+                                    <td class="text-center">${res.data.list.endDate}</td>
+                                </tr>
+                            `;
+
+                            $("#lists tbody").html(listTbody);
+                            // paging - common.js
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="5" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        regist: function () {
+            location.href = '[[${SERVER.currentDomain}]]/inspect/regist';
+        },
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+</script>

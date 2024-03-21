@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:layout="">
+<!-- head -->
+<th:block th:replace="common/head.html :: headFragment"></th:block>
+
+<body>
+<!-- contents -->
+<div class="row col-md-12">
+    <th:block layout:fragment="content"></th:block>
+</div>
+
+<!-- footer -->
+<th:block th:replace="common/footer.html :: footerFragment"></th:block>
+
+<!-- layer -->
+<th:block th:replace="common/layer.html :: layerFragment"></th:block>
+
+<!-- import_js -->
+<th:block th:if="${#maps.containsKey(importFile, 'importJs')} and ${importFile.importJs} != ''">
+    <th:block th:replace="${importFile.importJs} :: importJsFragment"></th:block>
+</th:block>
+
+</body>
+</html>

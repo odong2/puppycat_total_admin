@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.follow.FollowDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="followColumns">
+        `snmefo`.`member_uuid`
+        ,`pume`.`idx` AS `memberIdx`
+        ,`pume`.`id` AS `member_id`
+        ,IFNULL(`pume`.`nick`,'') AS `member_nick`
+        ,`pume`.`is_del` AS `member_state`
+        ,`snmefo`.`follow_uuid`
+        ,`pume2`.`idx` AS `followIdx`
+        ,`pume2`.`id` AS `follow_id`
+        ,IFNULL(`pume2`.`nick`,'') AS `follow_nick`
+        ,`pume2`.`is_del` AS `follow_state`
+        ,CONVERT_TZ( `snmefo`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+    </sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <choose>
+                <when test="type != null and type == 1">
+                    <if test="searchWord != '' and searchWord != null">
+                        <bind name="val" value="'%' + searchWord + '%'" />
+                        <choose>
+                            <when test="searchType == 'id'">
+                                AND `pume`.`id` LIKE #{val}
+                            </when>
+                            <when test="searchType == 'nick'">
+                                AND `pume`.`nick` LIKE #{val}
+                            </when>
+                        </choose>
+                    </if>
+                    <if test='state != null'>
+                        AND `pume`.`is_del` <![CDATA[ = ]]> #{state}
+                    </if>
+                </when>
+                <when test="type != null and type == 2">
+                    <if test="searchWord != '' and searchWord != null">
+                        <bind name="val" value="'%' + searchWord + '%'" />
+                        <choose>
+                            <when test="searchType == 'id'">
+                                AND `pume2`.`id` LIKE #{val}
+                            </when>
+                            <when test="searchType == 'nick'">
+                                AND `pume2`.`nick` LIKE #{val}
+                            </when>
+                        </choose>
+                    </if>
+                    <if test='state != null'>
+                        AND `pume2`.`is_del` <![CDATA[ = ]]> #{state}
+                    </if>
+                </when>
+            </choose>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <![CDATA[
+                AND (`snmefo`.`reg_date` >= #{searchStartDate} AND `snmefo`.`reg_date` <= #{searchEndDate})
+                ]]>
+            </if>
+            AND `snmefo`.`state` = 1
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 회원 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="FollowDto">
+        SELECT
+            <include refid="followColumns"/>
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmefo`.`member_uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `pume2`.`uuid` = `snmefo`.`follow_uuid`
+        <include refid="searchCondition"/>
+        ORDER BY  `snmefo`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snmefo`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmefo`.`member_uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `pume2`.`uuid` = `snmefo`.`follow_uuid`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 회원 팔로잉 목록 by memberUuid-->
+    <select id="getFollowingList" parameterType="FollowDto" resultType="FollowDto">
+        SELECT
+            <include refid="followColumns"/>
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmefo`.`member_uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `pume2`.`uuid` = `snmefo`.`follow_uuid`
+        WHERE
+                `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        ORDER BY  `snmefo`.`reg_date` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 회원 팔로워 목록 by memberUuid-->
+    <select id="getFollowerList" parameterType="FollowDto" resultType="FollowDto">
+        SELECT
+            <include refid="followColumns"/>
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `snmefo`.`member_uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume2`
+            ON `pume2`.`uuid` = `snmefo`.`follow_uuid`
+        WHERE
+                `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        ORDER BY  `snmefo`.`reg_date` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 팔로워 전체 카운트 sns_member_follow_cnt -->
+    <select id="getTotalFollowerCnt" parameterType="long" resultType="_long">
+        SELECT
+            `snmefocn`.`follower_cnt`
+        FROM
+            <include refid="databaseSns"/>`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+                `snmefocn`.`member_uuid` = #{memberIdx}
+            AND `snmefo`.`state` = 1
+    </select>
+
+    <!-- 팔로우/팔로워 카운트 -->
+    <select id="getMemberFollowTotalCount" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`pume`.`uuid`) AS `totalCount`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        INNER JOIN<include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    ON `pume`.`uuid` = `snmefo`.`follow_uuid`
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    ON `pume`.`uuid` = `snmefo`.`member_uuid`
+                </when>
+            </choose>
+            AND `snmefo`.`state` = 1
+        <where>
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    AND `snmefo`.`member_uuid` = #{memberUuid}
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    AND `snmefo`.`follow_uuid` = #{memberUuid}
+                </when>
+            </choose>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'"/>
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `pumein`.`name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            AND `snmefo`.`state` = 1
+        </where>
+    </select>
+
+    <!-- 팔로우/팔로워 회원 리스트 -->
+    <select id="getMemberFollowList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            `pumein`.`name`,
+            CONVERT_TZ( `snmefo`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseMember"/>`puppycat_member` AS `pume`
+        INNER JOIN<include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        INNER JOIN <include refid="databaseSns"/>`sns_member_follow` AS `snmefo`
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    ON `pume`.`uuid` = `snmefo`.`follow_uuid`
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    ON `pume`.`uuid` = `snmefo`.`member_uuid`
+                </when>
+            </choose>
+            AND `snmefo`.`state` = 1
+        <where>
+            <choose>
+                <when test="searchTargetType == 'follow'">
+                    AND `snmefo`.`member_uuid` = #{memberUuid}
+                </when>
+                <when test="searchTargetType == 'follower'">
+                    AND `snmefo`.`follow_uuid` = #{memberUuid}
+                </when>
+            </choose>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'"/>
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'name'">
+                        AND `pumein`.`name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            AND `snmefo`.`state` = 1
+        </where>
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

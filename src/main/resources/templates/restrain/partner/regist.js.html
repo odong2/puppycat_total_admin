@@ -1,0 +1,43 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+
+        // 오늘 날짜로 디폴트 & min 속성 지정
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = today;
+        document.getElementById('startDate').min = today;
+
+    });
+
+    let restrain_regist = {
+        regist:function (){
+            var form = $("#registForm")[0];
+            var formData = new FormData(form);
+
+            $.ajax({
+                url: '[[${SERVER.shopDomain}]]/v1/restrain/partner',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result === true) {
+                        alert(res.message);
+                        //location.href = res.data.location;
+                        opener.location.reload();
+                        self.close();
+                    } else {
+                        toast.alert(res.message);
+                    }
+                },
+                error: function(request, status, error) {
+                    toast.alert("code: "+request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+        },
+    }
+
+</script>

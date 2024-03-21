@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.cron.CronDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="state != null">
+                AND `state` = #{state}
+            </if>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                AND `name` LIKE #{val}
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 크론 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`idx`) AS `cnt`
+        FROM
+        <choose>
+            <when test="searchType.equals('member')">
+                <include refid="databaseMember" />`puppycat_member_cron`
+            </when>
+            <when test="searchType.equals('contents')">
+                <include refid="databaseSns" />`sns_cron`
+            </when>
+        </choose>
+        <include refid="searchCondition" />
+    </select>
+
+    <!-- 크론 리스트 -->
+    <select id="getListCron" parameterType="SearchDto" resultType="CronDto">
+        SELECT
+            `idx`
+            , `name`
+            , `detail`
+            , `state`
+            , `regular_expression`
+            , CONVERT_TZ(`reg_date`, 'UTC', '${convertTZ}') AS `regDate`
+        FROM
+        <choose>
+            <when test="searchType == null or searchType.equals('member')">
+                <include refid="databaseMember" />`puppycat_member_cron`
+            </when>
+            <when test="searchType.equals('contents')">
+                <include refid="databaseSns" />`sns_cron`
+            </when>
+        </choose>
+        <include refid="searchCondition" />
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

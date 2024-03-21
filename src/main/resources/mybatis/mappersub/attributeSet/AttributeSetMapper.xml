@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.shopping.attributeSet.AttributeSetDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="attributeSetColumns">
+    </sql>
+
+
+    <select id="getAttributeSetList" resultType="AttributeSetDto">
+        SELECT
+            `shpratse`.`idx`
+            , `shpratse`.`attribute_set_name`
+            , `shpratse`.`state`
+            , `shpratse`.`reg_date`
+            , `shpratse`.`reg_date_tz`
+            , `shpratna`.`idx` AS `attributeIdx`
+            , `shpratna`.`attribute_name`
+        FROM <include refid="databaseShop"/>shop_product_attribute_set AS `shpratse`
+        JOIN <include refid="databaseShop"/>shop_product_attribute_name AS `shpratna`
+            ON `shpratse`.idx = `shpratna`.`attribute_set_idx`
+        ORDER BY
+            `shpratse`.`attribute_set_name` ASC, `shpratna`.`attribute_set_idx` ASC
+    </select>
+
+</mapper>

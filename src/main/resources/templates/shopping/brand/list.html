@@ -1,0 +1,72 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.brand.title.view}"></h5>
+            </div>
+
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-sm-4">
+                    <form onsubmit="return false;">
+                        <table class="table">
+                            <thead>
+                                <tr style="border:solid currentColor; border-width:2px 0px;">
+                                    <th class="table-dark w-50" th:text="#{lang.brand.list}" style="border: solid #212529; border-width: 2px 0px;"></th>
+                                    <th class="table-dark text-right align-middle py-0" style="border: solid #212529; border-width: 2px 0px;">
+                                        <button type="button" class="btn btn-sm btn-primary" id="add" name="add" onclick="brand.add()" th:text="#{lang.brand.button.add}"></button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="brandList">
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+                <div class="col-sm-8 sticky-top d-none" style="height:300px;">
+                    <form id="frm" accept-charset="utf-8" onsubmit="return false;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="table-primary" colspan="2" th:text="#{lang.brand.information}" style="border:solid currentColor; border-width:2px 0px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th class="text-center" th:text="#{lang.brand.idx}"></th>
+                                <td class="p-0 pl-2" name="idxText" id="idxText"></td>
+                                <input type="hidden" name="idx" id="idx">
+                            </tr>
+                            <tr>
+                                <th class="text-center" th:text="#{lang.brand.name}"></th>
+                                <td class="p-0 pl-2">
+                                    <input type="text" class="form-control form-control-sm" name="brandName" id="brandName" required="">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-center" th:text="#{lang.brand.state}"></th>
+                                <td class="p-0 pl-2">
+                                    <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                        <input type="radio" class="btn-check" name="state" id="state1" value="1" autocomplete="off">
+                                        <label class="btn btn-sm btn-outline-success" for="state1" th:text="#{lang.brand.state.used}"></label>
+                                        <input type="radio" class="btn-check" name="state" id="state0" value="0" autocomplete="off">
+                                        <label class="btn btn-sm btn-outline-danger" for="state0" th:text="#{lang.brand.state.not_used}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+
+                    <div class="form-group row">
+                        <div class="col text-right">
+                            <button type="button" id="registerBrand" name="registerBrand" class="btn btn-sm btn-warning" th:text="#{lang.common.button.modify}"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

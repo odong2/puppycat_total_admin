@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.comment.CommentDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <!-- 조건 검색 -->
+    <sql id="searchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'id'">
+                        AND `pume`.`id` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'nick'">
+                        AND `pume`.`nick` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contents'">
+                        AND `sncoco`.`contents` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'contentsIdx'">
+                        AND `sncoco`.`contents_idx` = #{searchWord}
+                    </when>
+                    <when test="searchType == 'commentIdx'">
+                        AND `sncoco`.`idx` = #{searchWord}
+                        OR `sncoco`.`parent_idx` = #{searchWord}
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                AND `sncoco`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+            <if test="searchSort.equals('comment')">
+                AND `sncoco`.`parent_idx` <![CDATA[ = ]]> 0
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null">
+                <choose>
+                    <when test="searchDateType.equals('commentRegDate')">
+                        <![CDATA[
+                        AND (`sncoco`.`reg_date` >= #{searchStartDate} AND `sncoco`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType.equals('contentsRegDate')">
+                        <![CDATA[
+                        AND (`snco`.`reg_date` >= #{searchStartDate} AND `snco`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 댓글 목록 -->
+    <select id="getList" parameterType="SearchDto" resultType="CommentDto">
+        SELECT
+            `snco`.`idx` AS `contentsIdx`,
+            `sncoco`.`idx` AS `idx`,
+            `pume`.`uuid` AS `member_uuid`,
+            `pume`.`id` AS `member_id`,
+            `pume`.`idx` AS `member_idx`,
+            IFNULL(`pume`.`nick`, '') AS `member_nick`,
+            `sncoco`.`state` AS `state`,
+            `sncoco`.`parent_idx` AS `parent_idx`,
+            `sncoco`.`contents` AS `contents`,
+            `sncocolicn`.`like_cnt` AS `likeCnt`,
+            COUNT(`sncoco2`.`idx`) AS `commentCnt`,
+            CONVERT_TZ( `sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            IFNULL(CONVERT_TZ( `sncoco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `sncoco`.`member_uuid`
+            AND `pume`.`state` = 1
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `sncoco`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco2`
+            ON `sncoco`.`idx` = `sncoco2`.`parent_idx`
+            AND `sncoco2`.`state` = 1
+        <include refid="searchCondition"/>
+        GROUP BY `sncoco`.`idx`
+        <choose>
+            <when test="searchType == 'commentIdx'">
+                ORDER BY `sncoco`.`reg_date` ASC
+            </when>
+            <when test="searchSort == 'recent'">
+                ORDER BY `sncoco`.`reg_date` DESC
+            </when>
+            <when test="searchSort == 'like'">
+                ORDER BY `sncocolicn`.`like_cnt` DESC, `sncoco`.`reg_date` DESC
+            </when>
+            <when test="searchSort == 'comment'">
+                ORDER BY `commentCnt` DESC, `sncoco`.`reg_date` DESC
+            </when>
+        </choose>
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 전체 카운트 -->
+    <select id="getTotalCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`sncoco`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `sncoco`.`member_uuid`
+        INNER JOIN <include refid="databaseSns"/>`sns_contents` AS `snco`
+            ON `sncoco`.`contents_idx` = `snco`.`idx`
+        <include refid="searchCondition"/>
+    </select>
+
+    <!-- 회원 댓글 최근 20개 목록 by memberUuid -->
+    <select id="getCommentLastTwentyCasesList" parameterType="CommentDto" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+            `pume`.`id` AS `member_id`,
+            `pume`.`nick` AS `member_nick`,
+            `sncoco`.`state` AS `state`,
+            `sncoco`.`parent_idx` AS `parent_idx`,
+            `sncoco`.`contents` AS `contents`,
+            CONVERT_TZ( `sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            IFNULL(CONVERT_TZ( `sncoco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `sncoco`.`member_uuid`
+        WHERE
+            `sncoco`.`member_uuid` = #{memberUuid}
+        ORDER BY  `sncoco`.`reg_date` DESC
+        LIMIT 20
+    </select>
+
+    <!-- 댓글 상세 by CommentDto-->
+    <select id="getDetailComment" parameterType="CommentDto" resultType="CommentDto">
+        SELECT
+            `pume`.id AS `member_id`,
+            IFNULL(`pume`.`nick`, '') AS `member_nick`,
+            `sncoco`.`state` AS `state`,
+            `sncoco`.`parent_idx` AS `parent_idx`,
+            `sncoco`.`contents` AS `contents`,
+            <if test="viewType == 'report'">
+                `sncocore`.`contents` AS `reportContents`,
+            </if>
+            CONVERT_TZ( `sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            CONVERT_TZ( `sncoco`.`modi_date`, 'UTC', '${convertTZ}') AS `modi_date`
+        FROM
+            <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `sncoco`.`member_uuid`
+        <if test="viewType == 'report'">
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_comment_report` AS `sncocore`
+            ON `sncoco`.`idx` = `sncocore`.`comment_idx`
+        </if>
+        WHERE
+            `sncoco`.`idx` = #{idx}
+        ORDER BY  `sncoco`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+    <!-- 좋아요 회원 카운트 -->
+    <select id="getLikeMemberTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            `like_cnt`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_like_cnt`
+        WHERE
+            `comment_idx` = #{idx}
+    </select>
+
+    <!-- 좋아요 회원 리스트 -->
+    <select id="getLikeMemberList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            CONVERT_TZ(`sncocoli`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_like` AS `sncocoli`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncocoli`.`member_uuid` = `pume`.`uuid`
+        WHERE
+                `sncocoli`.`comment_idx` = #{idx}
+            AND `sncocoli`.`state` = 1
+        ORDER BY `sncocoli`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 컨텐츠 신고 카운트 -->
+    <select id="getReportMemberTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_report`
+        WHERE
+                `comment_idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 컨텐츠 신고한 회원 리스트 -->
+    <select id="getReportMemberList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            CONVERT_TZ(`sncocore`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment_report` AS `sncocore`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncocore`.`member_uuid` = `pume`.`uuid`
+        WHERE
+                `sncocore`.`comment_idx` = #{idx}
+            AND `sncocore`.`state` = 1
+        ORDER BY `sncocore`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 댓글 작성한 회원 카운트 -->
+    <select id="getCommentsTotalCnt" parameterType="SearchDto" resultType="int">
+        SELECT
+            COUNT(`idx`) AS `totalCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_comment`
+        WHERE
+            `parent_idx` = #{idx}
+    </select>
+
+    <!-- 답글 리스트 -->
+    <select id="getCommentsList" parameterType="SearchDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pume`.`id`,
+            `pume`.`nick`,
+            `sncoco`.`contents`,
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM <include refid="databaseSns"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `sncoco`.`member_uuid` = `pume`.`uuid`
+        WHERE
+                `sncoco`.`parent_idx` = #{idx}
+            AND `sncoco`.`state` = 1
+        ORDER BY `sncoco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 댓글 신고 개수 -->
+    <select id="getReportCntByIdxList" parameterType="List" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+            IFNULL(COUNT(`sncocore`.`idx`), 0) AS `reportCnt`
+        FROM <include refid="databaseSns"/>`sns_contents_comment` AS  `sncoco`
+        LEFT JOIN <include refid="databaseSns"/>`sns_contents_comment_report` AS `sncocore`
+            ON `sncoco`.`idx` = `sncocore`.`comment_idx`
+            AND `sncocore`.`state` = 1
+        WHERE
+            `sncocore`.`comment_idx` IN
+            <foreach collection="list" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        GROUP BY `sncoco`.`idx`
+    </select>
+
+</mapper>

@@ -1,0 +1,138 @@
+<script th:fragment="importJsFragment">
+
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        coupon.list(page);
+    });
+
+    let text = {
+        likeTitle : "[[#{lang.contents.title.like.list}]]",         // 좋아요 한 회원 리스트 제목
+        saveTitle : "[[#{lang.contents.title.save.list}]]",         // 저장한 회원 리스트 제목
+        commentsTitle : "[[#{lang.contents.title.comments.list}]]", // 댓글 단 회원 리스트 제목
+        reportTitle : "[[#{lang.contents.title.report.list}]]",     // 신고한 회원 리스트 제목
+        memberId : "[[#{lang.member.id}]]",                         // 아이디
+        memberNick : "[[#{lang.member.nick}]]",                     // 닉네임
+        contents : "[[#{lang.contents.contents}]]",                 // 내용
+        contentsRegDate: "[[#{lang.contents.regdate}]]",            // 등록일
+    }
+
+    var coupon = {
+        // 조회
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/coupon',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                let managementName = el.managementName;
+                                if (managementName.length > 10) {
+                                    managementName = managementName.substring(0, 10) + '...';
+                                }
+
+                                listTbody +=`
+                                <tr>
+                                    <td class="text-center">${el.idx}</td>
+                                    <td class="text-center"><span class="badge ${el.stateBg}">${el.stateText}</span></td>
+                                    <td class="text-left"><a href="javascript:void(0);" onclick="coupon.view(${el.idx});">${el.name}</a></td>
+                                    <td class="text-left inline-block text-truncate" >${managementName}</td>
+                                    <td class="text-right">${el.discount.toLocaleString()}</td>
+                                    <td class="text-right">${el.useCondition.toLocaleString()}</td>
+                                    <td class="text-center">${el.host}</td>
+                                    <td class="text-center">${el.rangeName}</td>
+                                    <td class="text-center">${el.typeName}</td>
+                                    <td class="text-center">${el.isLimitText}</td>
+                                    <td class="text-center">${el.issueConditionText}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                    <td class="text-center">${el.modiDate}</td>
+                                 </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("coupon", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="13" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        // 상세
+        view: function (idx) {
+            js_popup('[[${SERVER.currentDomain}]]/coupon/view/' + idx, 'coupon_view', '800', '800');
+        },
+        // 검색 리셋
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/coupon';
+        },
+        // 등록 레이어 호출
+        registLayer : function () {
+            js_popup('[[${SERVER.currentDomain}]]/coupon/regist', 'coupon_regist', '800', '800');
+        },
+        // 날짜 세팅
+        searchDate : function (range) {
+
+            var endDate = new Date(); // Today's date
+            var startDate = new Date();
+
+            if (range === 'week') {
+                startDate.setDate(startDate.getDate() - 7);
+            } else if (range === 'oneMonth') {
+                startDate.setMonth(startDate.getMonth() - 1);
+            } else if (range === 'threeMonths') {
+                startDate.setMonth(startDate.getMonth() - 3);
+            }
+
+            // Format dates as 'YYYY-MM-DD' for input fields
+            var startDateString = startDate.toISOString().split('T')[0];
+            var endDateString = endDate.toISOString().split('T')[0];
+
+            // Set values in the input fields
+            $('#searchStartDate').val(startDateString);
+            $('#searchEndDate').val(endDateString);
+        }
+    }
+
+    //뒤로가기 이벤트 시 실행
+    $(window).on('popstate', function(event) {
+        window.location = document.location.href;
+    });
+
+</script>

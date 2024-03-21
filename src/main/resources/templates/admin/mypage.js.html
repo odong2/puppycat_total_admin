@@ -1,0 +1,117 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        admin.view();
+    });
+
+    let form = $("#frm")[0];
+    let formData = new FormData(form);
+
+    let text = {
+        modifyConfirm: "[[#{lang.admin.confirm.modify}]]" // 수정 confirm
+    }
+
+    let admin = {
+        // 내 정보 상세
+        view: function () {
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/admin/view/[[${idx}]]',
+                headers: {
+                    'Authorization': `Bearer ` + $.cookie('accessToken'),
+                },
+                method: 'GET',
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        if (res.data != undefined) {
+
+                            // 관리자 내 정보 상세 정보 폼
+                            $("td[name=idx]").text(res.data.idx);
+                            $("td[name=id]").text(res.data.id);
+                            $("td[name=name]").html(`<input type="text" name="name" id="name" class="form-control form-control-sm" value="${res.data.name || ""}" style="width:20%;">`);
+                            $("input[name=level]").radioSelect(res.data.level);
+                            $("input[name=state]").radioSelect(res.data.state);
+                            $("td[name=loginDate]").text(res.data.lastLoginDate);
+                            $("td[name=regdate]").text(res.data.regDate);
+                            $("td[name=loginIp]").text(res.data.loginIp);
+                            $("td[name=joinIp]").text(res.data.joinIp);
+
+                        } else {
+                            // 결과 없음
+                            toast.alert(res.message);
+                        }
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+
+            return false;
+        },
+        // 새로고침
+        reset: function () {
+            location.href = '[[${SERVER.currentDomain}]]/admin//mypage/[[${idx}]]';
+        },
+        // 목록
+        list: function () {
+            let qStr = $.cookie("backUrl");
+            location.href = "[[${SERVER.currentDomain}]]/";
+        },
+        // 내 정보 수정
+        modify: function () {
+            formData = new FormData(form);
+
+            if (confirm(text.modifyConfirm)) {
+                $.ajax({
+                    url: '[[${SERVER.currentDomain}]]/v1/admin/mypage/[[${idx}]]',
+                    headers: {
+                        'Authorization': `Bearer ` + $.cookie('accessToken'),
+                    },
+                    method: 'PUT',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res.result) {
+                            toast.alert(res.message);
+
+                        } else {
+                            // ajax exception error
+                            location.href = "[[${SERVER.currentDomain}]]/admin/mypage/[[${idx}]]";
+                            alert(res.message);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        // filter error
+                        toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                    }
+                });
+            }
+            return false;
+        },
+        // 비밀번호 변경 팝업
+        modifyPasswordPopup: function () {
+            js_popup('[[${SERVER.currentDomain}]]/admin/mypage/password/[[${idx}]]', 'modify_password', '500', '450');
+        }
+    }
+
+    // 라디오 버튼 checked
+    $.fn.radioSelect = function (val) {
+        this.each(function () {
+            let _this = $(this);
+
+            if (_this.val() == val) {
+                _this.prop('checked', true);
+            }
+        });
+        return this;
+    }
+
+</script>

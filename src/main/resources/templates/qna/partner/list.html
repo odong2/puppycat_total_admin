@@ -1,0 +1,101 @@
+<th:block layout:decorate="~{common/layout}" xmlns:layout="http://www.w3.org/1999/xhtml">
+    <div layout:fragment="content" class="col-lg-12 mt-3">
+        <!-- 컨텐츠 영역 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="font-weight-bold text-primary float-left" th:text="#{lang.qna.title.list}"></h5>
+            </div>
+            <div class="card-body row">
+                <!-- 리스트 -->
+                <div class="col-12">
+                    <!-- 검색 폼 -->
+                    <form id="frm" class="d-flex bd-highlight gx-3" onsubmit="qna.list(1); return false;" accept-charset="utf-8">
+                        <table class="table m-0">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <div class="row p-0">
+                                        <div class="col-auto input-group input-group-sm m-1 p-0 col-7">
+                                            <select name="type" class="form-select form-select-sm col-1.5">
+                                                <option value="" th:text="#{lang.qna.menu}"></option>
+                                                <th:block th:each="menu : ${menuList}">
+                                                    <option th:value="${menu.idx}" th:text="${menu.menuName}" th:selected="${search.type} == '${menu.idx}'"></option>
+                                                </th:block>
+                                            </select>
+                                            <select name="show" class="form-select form-select-sm col-1.5">
+                                                <option value="" th:text="#{lang.qna.state}"></option>
+                                                <option th:value="1" th:text="#{lang.qna.state.normal}" th:selected="${search.state} == '1'"></option>
+                                                <option th:value="0" th:text="#{lang.qna.state.delete}" th:selected="${search.state} == '0'"></option>
+                                            </select>
+                                            <select name="state" class="form-select form-select-sm col-1.5">
+                                                <option value="" th:text="#{lang.qna.answer.all}"></option>
+                                                <option th:value="1" th:text="#{lang.qna.answer.state.stay}" th:selected="${search.code} == '1'"></option>
+                                                <option th:value="2" th:text="#{lang.qna.answer.state.prc}" th:selected="${search.code} == '2'"></option>
+                                                <option th:value="3" th:text="#{lang.qna.answer.state.ok}" th:selected="${search.code} == '3'"></option>
+                                            </select>
+                                            <select name="searchType" class="form-control form-select">
+                                                <option value="" th:text="#{lang.qna.search}" ></option>
+                                                <option th:value="title" th:text="#{lang.qna.title}" th:selected="${search.searchType} == 'title'"></option>
+                                                <option th:value="contents" th:text="#{lang.qna.contents}" th:selected="${search.searchType} == 'contents'"></option>
+                                                <option th:value="company" th:text="#{lang.qna.partner.company}" th:selected="${search.searchType} == 'company'"></option>
+                                                <option th:value="partnerId" th:text="#{lang.qna.partner.id}" th:selected="${search.searchType} == 'partnerId'"></option>
+                                            </select>
+                                            <!-- 검색어 -->
+                                            <input type="text" name="searchWord" class="form-control form-control-sm text-center" th:value="${search.searchWord}" th:placeholder="#{lang.qna.placeholder.search.word}" style="width:30%;">
+
+                                            <!-- 현재 페이지 -->
+                                            <input type="hidden" id="page" name="page" value="1">
+                                        </div>
+                                        <div class="col-auto btn-group btn-group-sm m-1 p-0">
+                                            <!-- 검색버튼 -->
+                                            <button type="button" id="searchBtn" th:text="#{lang.qna.button.search}" onclick="qna.list(1);" class="btn btn-success pr-3 pl-3"></button>
+                                            <button type="button" class="btn btn-outline-success" onclick="qna.reset();"><i class="fa-solid fa-rotate-left"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-inline p-0">
+                                        <div class="float-left form-control-sm">
+                                            <strong class="totalCount" th:text="#{lang.qna.search.result} + ' : ' "></strong> <span></span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                    <!-- //검색 폼 -->
+
+                    <!-- list -->
+                    <table class="table table-hover" id="lists">
+                        <thead class="table-dark">
+                        <tr class="text-center">
+                            <th scope="col" th:text="#{lang.qna.idx}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.menu}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.title}" class="text-center" style="width:40%;"></th>
+                            <th scope="col" th:text="#{lang.qna.partner.company}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.partner.id}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.state}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.regdate}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.answer}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.admin.id}" class="text-center"></th>
+                            <th scope="col" th:text="#{lang.qna.answer.regdate}" class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <th:block layout:fragment="paging">
+                        <div class="col-md-12 d-flex flex-row-reverse my-3">
+                            <ul class="pagination" style="font-size: 12px;">
+                            </ul>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <!-- 컨텐츠 영역 -->
+    </div>
+</th:block>

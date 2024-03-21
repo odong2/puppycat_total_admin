@@ -1,0 +1,103 @@
+<script th:fragment="importJsFragment">
+    $(document).ready(function () {
+        let page = "[[${page}]]";
+        payments.list(page);
+    })
+
+    let payments = {
+        list: function (page = 1) {
+            if (page != undefined) {
+                $("input[name=page]").val(page);
+            }
+            $.ajax({
+                url: '[[${SERVER.currentDomain}]]/v1/payments',
+                headers: {
+                    'Authorization': `Bearer `+$.cookie('accessToken'),
+                },
+                cache : true,
+                method: 'GET',
+                data: $("#frm").serialize(),
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.result) {
+                        //페이지 url 갱신 ( 검색 후 새로고침 시 검색값 유지 )
+                        if( window.location.search !== "?"+ $("#frm").serialize() ){
+                            history.pushState(null, null, "?" + $("#frm").serialize());
+                        }
+                        // total count
+                        $(".totalCount").next().text(res.data.params.pagination.totalRecordCount.toLocaleString());
+
+                        if (res.data.list.length > 0) {
+                            // 순서 계산
+                            let totalRecordCount = res.data.params.pagination.totalRecordCount;
+                            let recordSize = res.data.params.recordSize;
+
+                            // list
+                            let listTbody = "";
+                            $.each(res.data.list, function (index, el) {
+                                // 순서 계산
+                                let listNum = totalRecordCount-((page-1) * recordSize + index);
+
+
+
+                                // 결제금액
+                                let total_amount = (el.total_amount != undefined) ? addComma(el.total_amount) : 0;
+
+                                // state
+                                let bgClass = "";
+                                if (el.state == 0) {
+                                    bgClass = "bg-secondary";
+                                }
+
+                                listTbody +=`
+                                <tr class="${bgClass}">
+                                    <td class="text-center">${listNum}</td>
+                                    <td class="text-center">${el.method}</td>
+                                    <td class="text-left">${el.orderId}</td>
+                                    <td class="text-left">${el.MId}</td>
+                                    <td class="text-center"><span class="p-1 badge ${el.stateBg}">${el.stateText}</span></td>>
+
+                                    <td class="text-right">${addComma(el.totalAmount)}</td>
+                                    <td class="text-center">${el.regDate}</td>
+                                </tr>
+                            `;
+                            });
+                            $("#lists tbody").html(listTbody);
+
+                            // paging - common.js
+                            pagination("payments", res.data.params.page, res.data.params.pagination);
+                            $.cookie("backUrl", $("#frm").serialize());
+                        } else {
+                            // 결과 없음
+                            let listTbody = `<tr><td colspan="7" class="text-center">${res.message}</td></tr>`;
+                            $("#lists tbody").html(listTbody);
+                            $(".pagination").html("");
+                        }
+
+                    } else {
+                        // ajax exception error
+                        toast.alert(res.message);
+                    }
+                },
+                error: function (request, status, error) {
+                    // filter error
+                    toast.alert("code: " + request.status + "<br>" + "message: " + request.responseText + "<br>" + "error :" + error);
+                }
+            });
+            return false;
+        },
+        reset: function () {
+            $("input[name=searchStartDate]").val("");
+            $("input[name=searchEndDate]").val("");
+            $("input[name=searchWord]").val("");
+            payments.list(1);
+
+        },
+        // 엑셀
+        excel: function () {
+            location.href = '[[${SERVER.currentDomain}]]/v1/payments/excel?'+$("#frm").serialize();
+        },
+    }
+</script>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.coupon.CouponDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="databaseSns">${databaseRefIdSns}</sql>
+    <sql id="databaseMember">${databaseRefIdMember}</sql>
+    <sql id="databasePush">${databaseRefIdPush}</sql>
+    <sql id="databaseTotal">${databaseRefIdTotal}</sql>
+    <sql id="databaseShop">${databaseRefIdShop}</sql>
+
+    <sql id="couponSearchCondition">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                <bind name="val" value="'%' + searchWord + '%'" />
+                <choose>
+                    <when test="searchType == 'name'">
+                        AND `shco`.`name` LIKE #{val}
+                    </when>
+                    <when test="searchType == 'managementName'">
+                        AND `shco`.`management_name` LIKE #{val}
+                    </when>
+                </choose>
+            </if>
+            <if test="searchStartDate != '' and searchStartDate != null and searchEndDate != '' and searchEndDate != null ">
+                <choose>
+                    <when test="searchDateType == 'regDate'">
+                        <![CDATA[
+                        AND (`shco`.`reg_date` >= #{searchStartDate} AND `shco`.`reg_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType == 'issueEndDate'">
+                        <![CDATA[
+                        AND (`shco`.`issue_end` >= #{searchStartDate} AND `shco`.`issue_end` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                    <when test="searchDateType == 'modiDate'">
+                        <![CDATA[
+                        AND (`shco`.`modi_date` >= #{searchStartDate} AND `shco`.`modi_date` <= #{searchEndDate})
+                        ]]>
+                    </when>
+                </choose>
+            </if>
+            <if test='state != null'>
+                <![CDATA[
+                AND `shco`.`state`  = #{state}
+                ]]>
+            </if>
+            <if test='type != null'>
+                <![CDATA[
+                AND `shco`.`type_idx`  = #{type}
+                ]]>
+            </if>
+            <if test='range != null'>
+                <![CDATA[
+                AND `shco`.`range_idx`  = #{range}
+                ]]>
+            </if>
+            <if test='isLimit != null'>
+                <![CDATA[
+                AND `shco`.`is_limit`  = #{isLimit}
+                ]]>
+            </if>
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 쿠폰 카운트 -->
+    <select id="getCouponTotalCount" parameterType="string" resultType="_int">
+        SELECT
+            COUNT(`shco`.`idx`) AS `iTotalCount`
+        FROM <include refid="databaseShop"/>`shop_coupon` AS `shco`
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_type` AS `shcoty`
+            ON `shco`.`type_idx` = `shcoty`.`idx`
+            AND `shcoty`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_range` AS `shcora`
+            ON `shco`.`range_idx` = `shcora`.`idx`
+            AND `shcora`.`state` = 1
+        <include refid="couponSearchCondition"/>
+    </select>
+
+    <!-- 쿠폰 리스트 -->
+    <select id="getCouponList" parameterType="SearchDto" resultType="CouponDto">
+        SELECT
+            `shco`.`idx`,
+            `shco`.`name`,
+            `shco`.`management_name`,
+            `shco`.`discount`,
+            `shco`.`use_condition`,
+            `shco`.`host`,
+            `shco`.`is_limit`,
+            `shcoty`.`name` AS `typeName`,
+            `shcora`.`name` AS `rangeName`,
+            `shco`.`issue_condition`,
+            `shco`.`state`,
+            CONVERT_TZ( `shco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            IFNULL(CONVERT_TZ( `shco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`
+        FROM <include refid="databaseShop"/>`shop_coupon` AS `shco`
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_type` AS `shcoty`
+            ON `shco`.`type_idx` = `shcoty`.`idx`
+            AND `shcoty`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_range` AS `shcora`
+            ON `shco`.`range_idx` = `shcora`.`idx`
+            AND `shcora`.`state` = 1
+        <include refid="couponSearchCondition"/>
+        ORDER BY
+            `shco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 쿠폰 상세 -->
+    <select id="getCouponView" parameterType="CouponDto" resultType="CouponDto">
+        SELECT
+            `shco`.`idx`,
+            `shco`.`name`,
+            `shco`.`management_name`,
+            `shco`.`discount`,
+            `shco`.`use_condition`,
+            `shco`.`host`,
+            `shco`.`is_limit`,
+            `shco`.`qty`,
+            `shco`.`use_days`,
+            `shco`.`use_start`,
+            `shco`.`use_end`,
+            `shco`.`issue_start`,
+            `shco`.`issue_end`,
+            `shcoty`.`idx` AS `typeIdx`,
+            `shcoty`.`name` AS `typeName`,
+            `shcora`.`idx` AS `rangeIdx`,
+            `shcora`.`name` AS `rangeName`,
+            `shco`.`issue_condition`,
+            `shco`.`state`,
+            `toad`.`id` AS `adminId`,
+            CONVERT_TZ( `shco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            IFNULL(CONVERT_TZ( `shco`.`modi_date`, 'UTC', '${convertTZ}'), '-') AS `modi_date`
+        FROM <include refid="databaseShop"/>`shop_coupon` AS `shco`
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_type` AS `shcoty`
+            ON `shco`.`type_idx` = `shcoty`.`idx`
+            AND `shcoty`.`state` = 1
+        INNER JOIN <include refid="databaseShop"/>`shop_coupon_range` AS `shcora`
+            ON `shco`.`range_idx` = `shcora`.`idx`
+            AND `shcora`.`state` = 1
+        INNER JOIN <include refid="databaseTotal"/>`total_admin` AS `toad`
+            ON `shco`.`admin_idx` = `toad`.`idx`
+        WHERE
+            `shco`.`idx` = #{idx}
+    </select>
+
+    <!-- 쿠폰 발급 방식 리스트 -->
+    <select id="getCouponTypeList" resultType="CouponDto">
+        SELECT
+            `shcoty`.`idx` AS `typeIdx`,
+            `shcoty`.`name` AS `typeName`
+        FROM <include refid="databaseShop"/>`shop_coupon_type` AS `shcoty`
+        WHERE
+            `shcoty`.`state` = 1
+    </select>
+
+    <!-- 쿠폰 사용 범위 리스트 -->
+    <select id="getCouponRangeList" resultType="CouponDto">
+        SELECT
+            `shcora`.`idx` AS `rangeIdx`,
+            `shcora`.`name` AS `rangeName`
+        FROM <include refid="databaseShop"/>`shop_coupon_range` AS `shcora`
+        WHERE
+            `shcora`.`state` = 1
+    </select>
+
+    <!-- 적용 상품 매핑 조회 -->
+    <select id="getCouponMemberMapping" parameterType="CouponDto" resultType="MemberDto">
+        SELECT
+            `pume`.`uuid`,
+            `pumein`.`name`,
+            `pumein`.`phone`
+        FROM <include refid="databaseShop"/>`shop_coupon_member` AS `shcome`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member` AS `pume`
+            ON `pume`.`uuid` = `shcome`.`member_uuid`
+        INNER JOIN <include refid="databaseMember"/>`puppycat_member_info` AS `pumein`
+            ON `pume`.`uuid` = `pumein`.`member_uuid`
+        WHERE
+            `shcome`.`coupon_idx`  =  #{idx}
+    </select>
+
+    <!-- 적용 상품 매핑 조회 -->
+    <select id="getCouponProductMapping" parameterType="CouponDto" resultType="CouponDto">
+        SELECT
+            `shpr`.`idx` AS `targetIdx`,
+            `shpr`.`product_name` AS `name`
+        FROM <include refid="databaseShop"/>`shop_coupon_product` AS `shcopr`
+        INNER JOIN <include refid="databaseShop"/>`shop_product` AS `shpr`
+            ON `shpr`.`idx` = `shcopr`.`product_idx`
+            AND `shpr`.`state` = 1
+        WHERE
+                `shcopr`.`coupon_idx` = #{idx}
+            AND `shcopr`.`state`      = 1
+    </select>
+
+    <!-- 적용 카테고리 매핑 조회 -->
+    <select id="getCouponCategoryMapping" parameterType="CouponDto" resultType="CouponDto">
+        SELECT
+            `shprca`.`idx` AS `targetIdx`,
+            CASE
+            WHEN `shprca`.`depth` = 1 THEN `shprca1`.`category`
+            WHEN `shprca`.`depth` = 2 THEN CONCAT(`shprca1`.`category`, ' > ', `shprca2`.`category`)
+            WHEN `shprca`.`depth` = 3 THEN CONCAT(`shprca1`.`category`, ' > ', `shprca2`.`category`, ' > ', `shprca3`.`category`)
+            END AS `name`
+        FROM <include refid="databaseShop"/>`shop_coupon_category` AS `shcoca`
+        INNER JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca`
+            ON `shprca`.`idx` = `shcoca`.`category_idx`
+            AND `shprca`.`state` = 1
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca1`
+            ON `shprca1`.`depth` = 1
+            AND `shprca`.`code` LIKE CONCAT(`shprca1`.`code`, '%')
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca2`
+            ON `shprca2`.`depth` = 2
+            AND `shprca`.`code` LIKE CONCAT(`shprca2`.`code`, '%')
+        LEFT JOIN <include refid="databaseShop"/>`shop_product_category` AS `shprca3`
+            ON `shprca3`.`depth` = 3
+            AND `shprca`.`code` LIKE CONCAT(`shprca3`.`code`, '%')
+        WHERE
+                `shcoca`.`coupon_idx` = #{idx}
+            AND `shcoca`.`state`      = 1
+    </select>
+
+    <!-- 적용 브랜드 매핑 조회 -->
+    <select id="getCouponBrandMapping" parameterType="CouponDto" resultType="CouponDto">
+        SELECT
+            `shprbr`.`idx` AS `targetIdx`,
+            `shprbr`.`brand_name` AS `name`
+        FROM <include refid="databaseShop"/>`shop_coupon_brand` AS `shcobr`
+        INNER JOIN <include refid="databaseShop"/>`shop_product_brand` AS `shprbr`
+            ON `shprbr`.`idx` = `shcobr`.`brand_idx`
+            AND `shprbr`.`state` = 1
+        WHERE
+                `shcobr`.`coupon_idx` = #{idx}
+            AND `shcobr`.`state`      = 1
+    </select>
+
+</mapper>
